@@ -132,7 +132,9 @@
     "ambulance": "Call 108 ambulance",
     "directions": "Directions",
     "ok": "I am safe, go back",
-    "km": "{{n}} km away"
+    "km": "{{n}} km away",
+    "sampleDataNotice": "Showing sample hospital — live service unavailable",
+    "osmAttribution": "© OpenStreetMap contributors"
   },
   "learn": {
     "title": "Learn",
@@ -245,7 +247,8 @@
     "type": {
       "hospital": "Govt Hospital",
       "phc": "Primary Health Centre (PHC)",
-      "chc": "Community Health Centre (CHC)"
+      "chc": "Community Health Centre (CHC)",
+      "clinic": "Clinic / Dispensary"
     },
     "gynBadge": "Women's doctor",
     "hub": {
@@ -257,7 +260,30 @@
       "summaryDesc": "Summary of your cycle and symptoms",
       "schemesTitle": "Govt schemes",
       "schemesDesc": "Free care & financial support"
-    }
+    },
+    "findingCare": "Finding care near you...",
+    "geoDenied": "Location permission was denied. You can search by town, village, or PIN code below.",
+    "geoError": "Could not detect location. Please search manually below.",
+    "useLocation": "Use my location",
+    "changeLocation": "Change location",
+    "searchPlaceholder": "Search village, town, or PIN code...",
+    "searchButton": "Search",
+    "searching": "Searching...",
+    "noSearchResults": "No places found. Try another town or district name.",
+    "radiusSummary": "{{count}} centres within {{radius}} km",
+    "filterAll": "All",
+    "filterHospitals": "Hospitals",
+    "filterCentres": "Health centres",
+    "filterGovt": "Government",
+    "govtBadge": "Govt",
+    "womenDoctorBadge": "Women's health doctor",
+    "phoneNotListed": "Phone not listed",
+    "approx": "approx",
+    "drive": "drive",
+    "callNotice": "Hours and services can change. Please call before you go.",
+    "osmAttribution": "© OpenStreetMap contributors",
+    "sampleDataBanner": "Showing sample data — no internet or service unavailable",
+    "cachedDataBanner": "Showing cached results (last updated: {{time}})"
   },
   "questions": {
     "title": "Doctor question prep",

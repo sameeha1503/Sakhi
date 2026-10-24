@@ -14,6 +14,7 @@ export type HospitalMapProps = {
     call: string;
     directions: string;
     gynAvailable: string;
+    phoneNotListed?: string;
   };
 };
 
@@ -76,7 +77,7 @@ export function HospitalMap({
         className="h-full w-full"
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           maxZoom={18}
         />
@@ -117,26 +118,32 @@ export function HospitalMap({
                     {place.name}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {place.town}, {place.district}
+                    {place.address || `${place.town}, ${place.district}`}
                     {place.km != null && ` · ${place.km} km`}
                   </p>
-                  {place.hasGynaecology && (
+                  {(place.hasWomenHealth || place.hasGynaecology) && (
                     <p className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-accent">
                       <Stethoscope className="size-3" /> {labels.gynAvailable}
                     </p>
                   )}
-                  <div className="mt-2 flex gap-2">
-                    <a
-                      href={`tel:${place.phone}`}
-                      className="inline-flex items-center gap-1 rounded-lg bg-primary px-2 py-1 text-xs font-bold text-primary-foreground"
-                    >
-                      <Phone className="size-3" /> {labels.call}
-                    </a>
+                  <div className="mt-2 flex items-center gap-2">
+                    {place.phone ? (
+                      <a
+                        href={`tel:${place.phone}`}
+                        className="inline-flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1 text-xs font-bold text-primary-foreground"
+                      >
+                        <Phone className="size-3" /> {labels.call}
+                      </a>
+                    ) : (
+                      <span className="text-[10px] font-semibold text-muted-foreground">
+                        {labels.phoneNotListed || "Phone not listed"}
+                      </span>
+                    )}
                     <a
                       href={`https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1 rounded-lg border border-primary px-2 py-1 text-xs font-bold text-primary"
+                      className="inline-flex items-center gap-1 rounded-lg border border-primary px-2.5 py-1 text-xs font-bold text-primary"
                     >
                       <Navigation className="size-3" /> {labels.directions}
                     </a>

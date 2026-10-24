@@ -1,491 +1,667 @@
-// Sample healthcare facilities directory for Telangana, Andhra Pradesh, and nearby states.
-// NOTE: This is sample data for demonstration. Replace with real National Health Portal API later.
+// Live OpenStreetMap Overpass & Location Services for Healthcare Facilities.
+// Provides live Overpass queries, progressive radius expansion, OSRM road distance,
+// Nominatim manual geocoding, session caching, and graceful offline fallback.
+
 import { storage } from "./storage";
+import { SAMPLE_FACILITIES, type SampleFacility, type FacilityType } from "@/data/sampleFacilities";
 
-export type FacilityType = "hospital" | "phc" | "chc";
+export type { FacilityType };
 
-export type Place = {
+export interface Place {
   id: string;
   name: string;
   type: FacilityType;
+  lat: number;
+  lng: number;
+  phone: string | null;
+  address: string | null;
   town: string;
   district: string;
   state: string;
+  operator: string | null;
+  isGovernment: boolean;
+  emergency: boolean;
+  hasWomenHealth: boolean;
+  hasGynaecology: boolean; // Backwards-compatible alias
+  opening_hours: string | null;
+  km: number | null; // Distance in km (straight-line or road)
+  roadDistanceKm?: number | null;
+  driveTimeMinutes?: number | null;
+  isApproxDistance?: boolean; // true if straight-line, false if road distance
+}
+
+export interface FindNearbyResult {
+  places: Place[];
+  radiusUsedKm: number;
+  totalFound: number;
+  isCached: boolean;
+  isFallbackSample: boolean;
+  lastUpdated?: string | null;
+}
+
+export interface GeocodingResult {
   lat: number;
   lng: number;
-  phone: string;
-  hasGynaecology: boolean;
-};
+  displayName: string;
+  name: string;
+}
 
-export const PLACES: Place[] = [
-  // Telangana - Hyderabad & Ranga Reddy
-  {
-    id: "ts_1",
-    name: "Gandhi Hospital",
-    type: "hospital",
-    town: "Secunderabad",
-    district: "Hyderabad",
-    state: "Telangana",
-    lat: 17.4239,
-    lng: 78.5026,
-    phone: "04027505566",
-    hasGynaecology: true,
-  },
-  {
-    id: "ts_2",
-    name: "Govt Maternity Hospital Koti",
-    type: "hospital",
-    town: "Hyderabad",
-    district: "Hyderabad",
-    state: "Telangana",
-    lat: 17.3833,
-    lng: 78.4867,
-    phone: "04024652155",
-    hasGynaecology: true,
-  },
-  {
-    id: "ts_3",
-    name: "Osmania General Hospital",
-    type: "hospital",
-    town: "Hyderabad",
-    district: "Hyderabad",
-    state: "Telangana",
-    lat: 17.3753,
-    lng: 78.4744,
-    phone: "04024600121",
-    hasGynaecology: true,
-  },
-  {
-    id: "ts_4",
-    name: "PHC Shamshabad",
-    type: "phc",
-    town: "Shamshabad",
-    district: "Ranga Reddy",
-    state: "Telangana",
-    lat: 17.2543,
-    lng: 78.4054,
-    phone: "08413220012",
-    hasGynaecology: false,
-  },
-  {
-    id: "ts_5",
-    name: "CHC Shadnagar",
-    type: "chc",
-    town: "Shadnagar",
-    district: "Ranga Reddy",
-    state: "Telangana",
-    lat: 17.0722,
-    lng: 78.2089,
-    phone: "08548252244",
-    hasGynaecology: true,
-  },
-  {
-    id: "ts_6",
-    name: "PHC Rajendranagar",
-    type: "phc",
-    town: "Rajendranagar",
-    district: "Ranga Reddy",
-    state: "Telangana",
-    lat: 17.3173,
-    lng: 78.4078,
-    phone: "04024015022",
-    hasGynaecology: false,
-  },
+export interface PlaceFilters {
+  onlyHospitals?: boolean;
+  onlyGynaecology?: boolean;
+  type?: FacilityType | "all";
+  governmentOnly?: boolean;
+}
 
-  // Telangana - Warangal & Karimnagar
-  {
-    id: "ts_7",
-    name: "MGM Hospital Warangal",
-    type: "hospital",
-    town: "Warangal",
-    district: "Warangal",
-    state: "Telangana",
-    lat: 17.9784,
-    lng: 79.5941,
-    phone: "08702441011",
-    hasGynaecology: true,
-  },
-  {
-    id: "ts_8",
-    name: "Govt Maternity Hospital Hanamkonda",
-    type: "hospital",
-    town: "Hanamkonda",
-    district: "Warangal",
-    state: "Telangana",
-    lat: 18.0125,
-    lng: 79.5636,
-    phone: "08702578844",
-    hasGynaecology: true,
-  },
-  {
-    id: "ts_9",
-    name: "PHC Dharmasagar",
-    type: "phc",
-    town: "Dharmasagar",
-    district: "Warangal",
-    state: "Telangana",
-    lat: 17.9942,
-    lng: 79.4321,
-    phone: "08711284100",
-    hasGynaecology: false,
-  },
-  {
-    id: "ts_10",
-    name: "District Hospital Karimnagar",
-    type: "hospital",
-    town: "Karimnagar",
-    district: "Karimnagar",
-    state: "Telangana",
-    lat: 18.4386,
-    lng: 79.1288,
-    phone: "08782243003",
-    hasGynaecology: true,
-  },
-  {
-    id: "ts_11",
-    name: "CHC Huzurabad",
-    type: "chc",
-    town: "Huzurabad",
-    district: "Karimnagar",
-    state: "Telangana",
-    lat: 18.1912,
-    lng: 79.3905,
-    phone: "08727255022",
-    hasGynaecology: true,
-  },
+// Re-export static sample facilities as Place objects for backwards compatibility
+export const PLACES: Place[] = SAMPLE_FACILITIES.map((s) => ({
+  id: s.id,
+  name: s.name,
+  type: s.type,
+  lat: s.lat,
+  lng: s.lng,
+  phone: s.phone,
+  address: `${s.town}, ${s.district}, ${s.state}`,
+  town: s.town,
+  district: s.district,
+  state: s.state,
+  operator: s.isGovernment ? "Government" : null,
+  isGovernment: !!s.isGovernment,
+  emergency: s.type === "hospital",
+  hasWomenHealth: s.hasGynaecology,
+  hasGynaecology: s.hasGynaecology,
+  opening_hours: null,
+  km: null,
+  isApproxDistance: true,
+}));
 
-  // Telangana - Nizamabad, Khammam & Mahbubnagar
+// In-memory session cache for Overpass results
+const sessionCache = new Map<
+  string,
   {
-    id: "ts_12",
-    name: "Govt General Hospital Nizamabad",
-    type: "hospital",
-    town: "Nizamabad",
-    district: "Nizamabad",
-    state: "Telangana",
-    lat: 18.6725,
-    lng: 78.0941,
-    phone: "08462232014",
-    hasGynaecology: true,
-  },
-  {
-    id: "ts_13",
-    name: "PHC Armoor",
-    type: "phc",
-    town: "Armoor",
-    district: "Nizamabad",
-    state: "Telangana",
-    lat: 18.7914,
-    lng: 78.2917,
-    phone: "08463222100",
-    hasGynaecology: false,
-  },
-  {
-    id: "ts_14",
-    name: "District Hospital Khammam",
-    type: "hospital",
-    town: "Khammam",
-    district: "Khammam",
-    state: "Telangana",
-    lat: 17.2473,
-    lng: 80.1514,
-    phone: "08742223055",
-    hasGynaecology: true,
-  },
-  {
-    id: "ts_15",
-    name: "CHC Madhira",
-    type: "chc",
-    town: "Madhira",
-    district: "Khammam",
-    state: "Telangana",
-    lat: 16.9205,
-    lng: 80.3644,
-    phone: "08749274220",
-    hasGynaecology: false,
-  },
-  {
-    id: "ts_16",
-    name: "Govt General Hospital Mahbubnagar",
-    type: "hospital",
-    town: "Mahbubnagar",
-    district: "Mahbubnagar",
-    state: "Telangana",
-    lat: 16.7488,
-    lng: 77.9856,
-    phone: "08542242011",
-    hasGynaecology: true,
-  },
-  {
-    id: "ts_17",
-    name: "PHC Jadcherla",
-    type: "phc",
-    town: "Jadcherla",
-    district: "Mahbubnagar",
-    state: "Telangana",
-    lat: 16.7712,
-    lng: 78.1405,
-    phone: "08542256033",
-    hasGynaecology: false,
-  },
+    result: FindNearbyResult;
+    timestamp: number;
+  }
+>();
 
-  // Telangana - Siddipet, Nalgonda & Adilabad
-  {
-    id: "ts_18",
-    name: "District Hospital Siddipet",
-    type: "hospital",
-    town: "Siddipet",
-    district: "Siddipet",
-    state: "Telangana",
-    lat: 18.1018,
-    lng: 78.852,
-    phone: "08457222044",
-    hasGynaecology: true,
-  },
-  {
-    id: "ts_19",
-    name: "CHC Gajwel",
-    type: "chc",
-    town: "Gajwel",
-    district: "Siddipet",
-    state: "Telangana",
-    lat: 17.8521,
-    lng: 78.6811,
-    phone: "08454234055",
-    hasGynaecology: true,
-  },
-  {
-    id: "ts_20",
-    name: "Govt General Hospital Nalgonda",
-    type: "hospital",
-    town: "Nalgonda",
-    district: "Nalgonda",
-    state: "Telangana",
-    lat: 17.0577,
-    lng: 79.2684,
-    phone: "08682224018",
-    hasGynaecology: true,
-  },
-  {
-    id: "ts_21",
-    name: "RIMS Adilabad",
-    type: "hospital",
-    town: "Adilabad",
-    district: "Adilabad",
-    state: "Telangana",
-    lat: 19.6641,
-    lng: 78.532,
-    phone: "08732226022",
-    hasGynaecology: true,
-  },
+export function clearPlacesCache(): void {
+  sessionCache.clear();
+}
 
-  // Andhra Pradesh - Visakhapatnam & Vijayawada
-  {
-    id: "ap_1",
-    name: "King George Hospital",
-    type: "hospital",
-    town: "Visakhapatnam",
-    district: "Visakhapatnam",
-    state: "Andhra Pradesh",
-    lat: 17.7042,
-    lng: 83.3032,
-    phone: "08912564891",
-    hasGynaecology: true,
-  },
-  {
-    id: "ap_2",
-    name: "Govt Victoria Hospital for Women",
-    type: "hospital",
-    town: "Visakhapatnam",
-    district: "Visakhapatnam",
-    state: "Andhra Pradesh",
-    lat: 17.6989,
-    lng: 83.2985,
-    phone: "08912563344",
-    hasGynaecology: true,
-  },
-  {
-    id: "ap_3",
-    name: "Govt General Hospital Vijayawada",
-    type: "hospital",
-    town: "Vijayawada",
-    district: "NTR / Krishna",
-    state: "Andhra Pradesh",
-    lat: 16.5165,
-    lng: 80.6415,
-    phone: "08662577741",
-    hasGynaecology: true,
-  },
-  {
-    id: "ap_4",
-    name: "PHC Kankipadu",
-    type: "phc",
-    town: "Kankipadu",
-    district: "Krishna",
-    state: "Andhra Pradesh",
-    lat: 16.4255,
-    lng: 80.7712,
-    phone: "08662822100",
-    hasGynaecology: false,
-  },
-
-  // Andhra Pradesh - Guntur, Tirupati & Kurnool
-  {
-    id: "ap_5",
-    name: "Govt General Hospital Guntur",
-    type: "hospital",
-    town: "Guntur",
-    district: "Guntur",
-    state: "Andhra Pradesh",
-    lat: 16.3067,
-    lng: 80.4365,
-    phone: "08632234055",
-    hasGynaecology: true,
-  },
-  {
-    id: "ap_6",
-    name: "CHC Mangalagiri",
-    type: "chc",
-    town: "Mangalagiri",
-    district: "Guntur",
-    state: "Andhra Pradesh",
-    lat: 16.4328,
-    lng: 80.5592,
-    phone: "08645232014",
-    hasGynaecology: true,
-  },
-  {
-    id: "ap_7",
-    name: "SVRR Govt General Hospital",
-    type: "hospital",
-    town: "Tirupati",
-    district: "Tirupati",
-    state: "Andhra Pradesh",
-    lat: 13.6335,
-    lng: 79.4082,
-    phone: "08772287777",
-    hasGynaecology: true,
-  },
-  {
-    id: "ap_8",
-    name: "Govt Maternity Hospital Tirupati",
-    type: "hospital",
-    town: "Tirupati",
-    district: "Tirupati",
-    state: "Andhra Pradesh",
-    lat: 13.6288,
-    lng: 79.4144,
-    phone: "08772286622",
-    hasGynaecology: true,
-  },
-  {
-    id: "ap_9",
-    name: "Govt General Hospital Kurnool",
-    type: "hospital",
-    town: "Kurnool",
-    district: "Kurnool",
-    state: "Andhra Pradesh",
-    lat: 15.8281,
-    lng: 78.0373,
-    phone: "08518255400",
-    hasGynaecology: true,
-  },
-  {
-    id: "ap_10",
-    name: "CHC Nandyal",
-    type: "chc",
-    town: "Nandyal",
-    district: "Nandyal",
-    state: "Andhra Pradesh",
-    lat: 15.4872,
-    lng: 78.4839,
-    phone: "08514242100",
-    hasGynaecology: true,
-  },
-
-  // Other States
-  {
-    id: "del_1",
-    name: "Safdarjung Hospital",
-    type: "hospital",
-    town: "New Delhi",
-    district: "New Delhi",
-    state: "Delhi",
-    lat: 28.5685,
-    lng: 77.2066,
-    phone: "01126707444",
-    hasGynaecology: true,
-  },
-  {
-    id: "hr_1",
-    name: "CHC Sohna",
-    type: "chc",
-    town: "Sohna",
-    district: "Gurugram",
-    state: "Haryana",
-    lat: 28.2472,
-    lng: 77.0657,
-    phone: "01242362016",
-    hasGynaecology: true,
-  },
-  {
-    id: "up_1",
-    name: "District Hospital Varanasi",
-    type: "hospital",
-    town: "Varanasi",
-    district: "Varanasi",
-    state: "Uttar Pradesh",
-    lat: 25.3176,
-    lng: 82.9739,
-    phone: "05422501080",
-    hasGynaecology: true,
-  },
-  {
-    id: "ka_1",
-    name: "Bowring & Lady Curzon Hospital",
-    type: "hospital",
-    town: "Bengaluru",
-    district: "Bengaluru Urban",
-    state: "Karnataka",
-    lat: 12.9822,
-    lng: 77.6033,
-    phone: "08025591325",
-    hasGynaecology: true,
-  },
-];
+// Nominatim Rate Limiter (strictly $\le 1$ request per second as per OSM policy)
+let lastNominatimCallTime = 0;
 
 /**
- * Great-circle distance between two coordinates in kilometers using Haversine formula.
+ * Calculates straight-line distance in kilometres using the Haversine formula.
  */
 export function distanceKm(
   a: { lat: number; lng: number },
   b: { lat: number; lng: number },
 ): number {
   const R = 6371; // Earth radius in km
-  const toRad = Math.PI / 180;
-  const dLat = (b.lat - a.lat) * toRad;
-  const dLng = (b.lng - a.lng) * toRad;
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(a.lat * toRad) * Math.cos(b.lat * toRad) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(h));
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const lat1 = (a.lat * Math.PI) / 180;
+  const lat2 = (b.lat * Math.PI) / 180;
+
+  const sinDLat = Math.sin(dLat / 2);
+  const sinDLng = Math.sin(dLng / 2);
+
+  const h = sinDLat * sinDLat + Math.cos(lat1) * Math.cos(lat2) * sinDLng * sinDLng;
+  const c = 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+  return R * c;
 }
 
-export type FacilityFilter = {
-  onlyHospitals?: boolean;
-  onlyGynaecology?: boolean;
-  type?: FacilityType | "all";
-};
+/**
+ * Cleans and normalizes phone numbers into a standard callable representation.
+ */
+export function normalizePhone(rawPhone?: string | null): string | null {
+  if (!rawPhone) return null;
+  // Pick the first phone if multiple are separated by commas, semicolons, or slashes
+  const first = rawPhone.split(/[,;/]/)[0]?.trim();
+  if (!first) return null;
+
+  // Strip spaces, dashes, dots, and parentheses
+  const cleaned = first.replace(/[\s\-().]/g, "");
+  // Must have at least 6 digits to be a credible contact number
+  const digitsOnly = cleaned.replace(/\D/g, "");
+  if (digitsOnly.length < 6) return null;
+
+  return cleaned;
+}
 
 /**
- * Returns facilities sorted by distance from the specified coordinate.
+ * Classifies the healthcare facility type based on OSM tags and name heuristics.
+ */
+export function classifyFacilityType(tags: Record<string, string>): FacilityType {
+  const amenity = tags["amenity"] || "";
+  const healthcare = tags["healthcare"] || "";
+  const name = tags["name"] || "";
+
+  if (amenity === "hospital" || healthcare === "hospital") {
+    return "hospital";
+  }
+
+  // Common Indian public health center keywords
+  if (
+    /CHC|Community Health/i.test(name) ||
+    /community_health_centre/i.test(healthcare) ||
+    /community_health_centre/i.test(amenity)
+  ) {
+    return "chc";
+  }
+
+  if (
+    /Primary Health|PHC|Sub[- ]Centre|Urban Health|Arogya Mandir|Aravind|Basti Dawakhana/i.test(
+      name,
+    ) ||
+    /primary_health_centre/i.test(healthcare) ||
+    /primary_health_centre/i.test(amenity)
+  ) {
+    return "phc";
+  }
+
+  return "clinic";
+}
+
+/**
+ * Determines whether the facility is government/public operated.
+ */
+export function isGovernmentFacility(tags: Record<string, string>): boolean {
+  const operatorType = tags["operator:type"] || "";
+  const operator = tags["operator"] || "";
+  const name = tags["name"] || "";
+
+  if (operatorType.toLowerCase() === "government" || operatorType.toLowerCase() === "public") {
+    return true;
+  }
+
+  const govtPattern =
+    /govt|government|district|civil|area hospital|general hospital|community health|primary health|phc|chc|arogya mandir|state|ministry|public|zila|zilla/i;
+
+  return govtPattern.test(operator) || govtPattern.test(name);
+}
+
+/**
+ * Identifies if the facility provides women's health (gynaecology, obstetrics, maternity).
+ */
+export function hasWomenHealthService(tags: Record<string, string>): boolean {
+  const speciality = tags["healthcare:speciality"] || "";
+  const description = tags["description"] || "";
+  const name = tags["name"] || "";
+  const combined = `${speciality} ${description} ${name}`.toLowerCase();
+
+  return (
+    combined.includes("gynaecology") ||
+    combined.includes("gynecology") ||
+    combined.includes("obstetrics") ||
+    combined.includes("maternity") ||
+    combined.includes("women") ||
+    combined.includes("stree") ||
+    combined.includes("mahila")
+  );
+}
+
+/**
+ * Formats address pieces from addr:* tags into a human-readable string.
+ */
+export function formatAddress(tags: Record<string, string>): string | null {
+  const parts: string[] = [];
+
+  const street = tags["addr:street"];
+  const sub = tags["addr:suburb"] || tags["addr:village"] || tags["addr:locality"];
+  const city = tags["addr:city"] || tags["addr:town"];
+  const district = tags["addr:district"];
+  const postcode = tags["addr:postcode"];
+
+  if (street) parts.push(street);
+  if (sub && sub !== street) parts.push(sub);
+  if (city && city !== sub) parts.push(city);
+  if (district && district !== city) parts.push(district);
+  if (postcode) parts.push(postcode);
+
+  if (parts.length > 0) {
+    return parts.join(", ");
+  }
+
+  return tags["operator"] || null;
+}
+
+/**
+ * Parses raw Overpass JSON elements into structured Place models.
+ */
+export function parseOverpassElements(
+  elements: Array<{
+    type: "node" | "way" | "relation";
+    id: number;
+    lat?: number;
+    lon?: number;
+    center?: { lat: number; lon: number };
+    tags?: Record<string, string>;
+  }>,
+  userCoords: { lat: number; lng: number },
+): Place[] {
+  const places: Place[] = [];
+  const seenCoordinates = new Set<string>();
+
+  for (const el of elements) {
+    const tags = el.tags || {};
+    const lat = el.lat ?? el.center?.lat;
+    const lng = el.lon ?? el.center?.lon;
+
+    if (lat == null || lng == null) continue;
+
+    // Deduplicate items mapped as both a node and way at identical coordinates
+    const coordKey = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+    if (seenCoordinates.has(coordKey)) continue;
+    seenCoordinates.add(coordKey);
+
+    const name = tags["name"] || tags["name:en"] || tags["name:hi"] || "Health facility";
+    const type = classifyFacilityType(tags);
+    const isGovt = isGovernmentFacility(tags);
+    const hasWomen = hasWomenHealthService(tags);
+    const phone = normalizePhone(
+      tags["phone"] || tags["contact:phone"] || tags["contact:mobile"] || tags["mobile"],
+    );
+    const address = formatAddress(tags);
+    const town = tags["addr:city"] || tags["addr:town"] || tags["addr:suburb"] || address || "";
+    const district = tags["addr:district"] || "";
+    const state = tags["addr:state"] || "";
+    const emergency = tags["emergency"] === "yes";
+    const opening_hours = tags["opening_hours"] || null;
+
+    const straightDist = Number(distanceKm(userCoords, { lat, lng }).toFixed(1));
+
+    places.push({
+      id: `${el.type}/${el.id}`,
+      name,
+      type,
+      lat,
+      lng,
+      phone,
+      address,
+      town,
+      district,
+      state,
+      operator: tags["operator"] || null,
+      isGovernment: isGovt,
+      emergency,
+      hasWomenHealth: hasWomen,
+      hasGynaecology: hasWomen,
+      opening_hours,
+      km: straightDist,
+      isApproxDistance: true,
+    });
+  }
+
+  return places.sort((a, b) => (a.km ?? 0) - (b.km ?? 0));
+}
+
+/**
+ * Builds the Overpass QL query string for a given coordinate and radius.
+ */
+function buildOverpassQuery(lat: number, lng: number, radiusMeters: number): string {
+  return `[out:json][timeout:10];
+(
+  nwr["amenity"~"hospital|clinic|doctors"](around:${radiusMeters},${lat},${lng});
+  nwr["healthcare"~"hospital|clinic|centre|doctor"](around:${radiusMeters},${lat},${lng});
+);
+out center tags;`;
+}
+
+/**
+ * Fetches Overpass JSON with a timeout using AbortController.
+ */
+async function fetchOverpassEndpoint(
+  url: string,
+  query: string,
+  timeoutMs = 10000,
+): Promise<{ elements: unknown[] }> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      },
+      body: `data=${encodeURIComponent(query)}`,
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      throw new Error(`Overpass HTTP ${res.status}: ${res.statusText}`);
+    }
+
+    const data = await res.json();
+    return data;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Tries fetching from primary Overpass endpoint and falls back to mirror if needed.
+ */
+async function queryOverpass(
+  lat: number,
+  lng: number,
+  radiusMeters: number,
+): Promise<
+  Array<{
+    type: "node" | "way" | "relation";
+    id: number;
+    lat?: number;
+    lon?: number;
+    center?: { lat: number; lon: number };
+    tags?: Record<string, string>;
+  }>
+> {
+  const query = buildOverpassQuery(lat, lng, radiusMeters);
+
+  // 1. Primary: overpass-api.de
+  try {
+    const data = await fetchOverpassEndpoint(
+      "https://overpass-api.de/api/interpreter",
+      query,
+      10000,
+    );
+    if (Array.isArray(data?.elements)) {
+      return data.elements as never;
+    }
+  } catch (primaryErr) {
+    console.warn("[places] Primary Overpass failed, trying mirror:", primaryErr);
+  }
+
+  // 2. Fallback mirror: overpass.kumi.systems
+  try {
+    const mirrorData = await fetchOverpassEndpoint(
+      "https://overpass.kumi.systems/api/interpreter",
+      query,
+      10000,
+    );
+    if (Array.isArray(mirrorData?.elements)) {
+      return mirrorData.elements as never;
+    }
+  } catch (mirrorErr) {
+    console.warn("[places] Fallback Overpass mirror failed:", mirrorErr);
+  }
+
+  throw new Error("All Overpass endpoints failed or timed out");
+}
+
+/**
+ * Enriches the top 10 nearest facilities with road distance and drive duration from OSRM.
+ * Non-blocking: fails gracefully without interrupting straight-line distance presentation.
+ */
+async function enrichWithOsrmRoadDistance(
+  userCoords: { lat: number; lng: number },
+  places: Place[],
+): Promise<void> {
+  const top10 = places.slice(0, 10);
+  if (top10.length === 0) return;
+
+  const coordPairs = [
+    `${userCoords.lng},${userCoords.lat}`,
+    ...top10.map((p) => `${p.lng},${p.lat}`),
+  ].join(";");
+
+  const url = `https://router.project-osrm.org/table/v1/driving/${coordPairs}?sources=0&annotations=distance,duration`;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 4000); // Fast 4-second timeout
+
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) return;
+
+    const data = await res.json();
+    if (
+      data?.code === "Ok" &&
+      Array.isArray(data.distances?.[0]) &&
+      Array.isArray(data.durations?.[0])
+    ) {
+      const distancesRow: number[] = data.distances[0];
+      const durationsRow: number[] = data.durations[0];
+
+      top10.forEach((p, idx) => {
+        const distMeters = distancesRow[idx + 1];
+        const durSeconds = durationsRow[idx + 1];
+
+        if (distMeters != null && distMeters > 0) {
+          p.roadDistanceKm = Number((distMeters / 1000).toFixed(1));
+          p.km = p.roadDistanceKm;
+          p.isApproxDistance = false;
+        }
+        if (durSeconds != null && durSeconds > 0) {
+          p.driveTimeMinutes = Math.round(durSeconds / 60);
+        }
+      });
+    }
+  } catch {
+    // Non-blocking: keep straight-line distance with isApproxDistance = true
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Searches for healthcare facilities near the user coordinates with progressive radius expansion.
+ * Attempts 5 km, 10 km, 25 km, and 50 km until at least 8 results are returned.
+ */
+export async function findNearby(
+  lat: number,
+  lng: number,
+  maxRadiusLimitKm = 50,
+): Promise<FindNearbyResult> {
+  const cacheKey = `${lat.toFixed(2)},${lng.toFixed(2)}`;
+
+  // 1. Check in-memory session cache
+  const cached = sessionCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < 1000 * 60 * 15) {
+    return cached.result;
+  }
+
+  const radiiKm = [5, 10, 25, 50].filter((r) => r <= maxRadiusLimitKm);
+  if (radiiKm.length === 0) radiiKm.push(maxRadiusLimitKm);
+
+  let finalPlaces: Place[] = [];
+  let radiusUsedKm = radiiKm[0]!;
+  let fetchSucceeded = false;
+
+  for (const radiusKm of radiiKm) {
+    try {
+      const rawElements = await queryOverpass(lat, lng, radiusKm * 1000);
+      const parsed = parseOverpassElements(rawElements, { lat, lng });
+
+      finalPlaces = parsed;
+      radiusUsedKm = radiusKm;
+      fetchSucceeded = true;
+
+      if (finalPlaces.length >= 8) {
+        break; // Found sufficient facilities
+      }
+    } catch {
+      // Continue to next radius or let outer error handler manage failure
+      break;
+    }
+  }
+
+  if (fetchSucceeded && finalPlaces.length > 0) {
+    // Enrich top 10 with road distances (non-blocking)
+    await enrichWithOsrmRoadDistance({ lat, lng }, finalPlaces);
+
+    const result: FindNearbyResult = {
+      places: finalPlaces,
+      radiusUsedKm,
+      totalFound: finalPlaces.length,
+      isCached: false,
+      isFallbackSample: false,
+      lastUpdated: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    };
+
+    // Store in session cache
+    sessionCache.set(cacheKey, { result, timestamp: Date.now() });
+
+    // Store in persistent storage only if user opted in
+    if (locationPrefs.isRememberEnabled()) {
+      storage.set("cached_places_result", {
+        ...result,
+        isCached: true,
+      });
+    }
+
+    return result;
+  }
+
+  // 2. Fallback: check persistent storage cache (if available)
+  const savedCache = storage.get<FindNearbyResult | null>("cached_places_result", null);
+  if (savedCache && Array.isArray(savedCache.places) && savedCache.places.length > 0) {
+    return {
+      ...savedCache,
+      isCached: true,
+      isFallbackSample: false,
+    };
+  }
+
+  // 3. Ultimate fallback: sample facilities with visible fallback banner
+  const sampleFallbackPlaces: Place[] = SAMPLE_FACILITIES.map((s) => {
+    const dist = Number(distanceKm({ lat, lng }, s).toFixed(1));
+    return {
+      id: s.id,
+      name: s.name,
+      type: s.type,
+      lat: s.lat,
+      lng: s.lng,
+      phone: s.phone,
+      address: `${s.town}, ${s.district}, ${s.state}`,
+      town: s.town,
+      district: s.district,
+      state: s.state,
+      operator: s.isGovernment ? "Government" : null,
+      isGovernment: !!s.isGovernment,
+      emergency: s.type === "hospital",
+      hasWomenHealth: s.hasGynaecology,
+      hasGynaecology: s.hasGynaecology,
+      opening_hours: null,
+      km: dist,
+      isApproxDistance: true,
+    };
+  }).sort((a, b) => (a.km ?? 0) - (b.km ?? 0));
+
+  return {
+    places: sampleFallbackPlaces,
+    radiusUsedKm: 50,
+    totalFound: sampleFallbackPlaces.length,
+    isCached: false,
+    isFallbackSample: true,
+  };
+}
+
+/**
+ * Searches for a location by query string (village, town, or PIN code) using OpenStreetMap Nominatim.
+ * Strictly respects Nominatim usage policy: $\le 1$ request per second.
+ */
+export async function searchLocationNominatim(query: string): Promise<GeocodingResult[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+
+  // Enforce Nominatim 1-second rate limit
+  const now = Date.now();
+  const timeSinceLast = now - lastNominatimCallTime;
+  if (timeSinceLast < 1000) {
+    await new Promise((resolve) => setTimeout(resolve, 1000 - timeSinceLast));
+  }
+  lastNominatimCallTime = Date.now();
+
+  const url = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=in&limit=5&q=${encodeURIComponent(
+    trimmed,
+  )}`;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+      },
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      throw new Error(`Nominatim HTTP ${res.status}`);
+    }
+
+    const data: Array<{ lat: string; lon: string; display_name: string; name?: string }> =
+      await res.json();
+
+    return data.map((item) => ({
+      lat: parseFloat(item.lat),
+      lng: parseFloat(item.lon),
+      displayName: item.display_name,
+      name: item.name || item.display_name.split(",")[0] || trimmed,
+    }));
+  } catch (err) {
+    console.warn("[places] Nominatim search failed:", err);
+    return [];
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Finds the nearest emergency hospital for urgent care, preferring emergency=yes and hospitals.
+ */
+export async function getNearestEmergencyHospital(coords?: {
+  lat: number;
+  lng: number;
+}): Promise<{ place: Place; isFallbackSample: boolean }> {
+  const userLoc = coords || locationPrefs.getSaved() || { lat: 17.4239, lng: 78.5026 };
+
+  try {
+    const result = await findNearby(userLoc.lat, userLoc.lng, 25);
+    // Prefer emergency=true hospitals first, then any hospital, then nearest
+    const emergencyHospital =
+      result.places.find((p) => p.emergency && p.type === "hospital") ||
+      result.places.find((p) => p.type === "hospital") ||
+      result.places[0];
+
+    if (emergencyHospital) {
+      return { place: emergencyHospital, isFallbackSample: result.isFallbackSample };
+    }
+  } catch {
+    // continue to sample fallback
+  }
+
+  // Sample fallback
+  const fallback = nearest(userLoc, true)[0]!;
+  return {
+    place: {
+      ...fallback,
+      address: `${fallback.town}, ${fallback.district}`,
+      operator: "Government",
+      isGovernment: true,
+      emergency: true,
+      hasWomenHealth: fallback.hasGynaecology,
+      opening_hours: null,
+      isApproxDistance: true,
+    },
+    isFallbackSample: true,
+  };
+}
+
+/**
+ * Synchronous nearest facility sorter matching the existing signature for backwards compatibility.
  */
 export function nearest(
-  from: { lat: number; lng: number } | null,
-  onlyHospitalsOrFilter?: boolean | FacilityFilter,
-  onlyGynaecology = false,
+  from?: { lat: number; lng: number } | null,
+  onlyHospitalsOrFilter?: boolean | PlaceFilters,
 ): (Place & { km: number | null })[] {
   let onlyHospitals = false;
-  let onlyGyn = onlyGynaecology;
+  let onlyGyn = false;
+  let govtOnly = false;
   let selectedType: FacilityType | "all" = "all";
 
   if (typeof onlyHospitalsOrFilter === "boolean") {
@@ -493,23 +669,42 @@ export function nearest(
   } else if (onlyHospitalsOrFilter) {
     onlyHospitals = !!onlyHospitalsOrFilter.onlyHospitals;
     onlyGyn = !!onlyHospitalsOrFilter.onlyGynaecology;
+    govtOnly = !!onlyHospitalsOrFilter.governmentOnly;
     selectedType = onlyHospitalsOrFilter.type ?? "all";
   }
 
-  const list = PLACES.filter((p) => {
+  const list: Place[] = SAMPLE_FACILITIES.map((p) => ({
+    id: p.id,
+    name: p.name,
+    type: p.type,
+    town: p.town,
+    district: p.district,
+    state: p.state,
+    lat: p.lat,
+    lng: p.lng,
+    phone: p.phone,
+    address: `${p.town}, ${p.district}`,
+    operator: p.isGovernment ? "Government" : null,
+    isGovernment: !!p.isGovernment,
+    emergency: p.type === "hospital",
+    hasWomenHealth: p.hasGynaecology,
+    hasGynaecology: p.hasGynaecology,
+    opening_hours: null,
+    km: from ? Number(distanceKm(from, p).toFixed(1)) : null,
+    isApproxDistance: true,
+  })).filter((p) => {
     if (onlyHospitals && p.type !== "hospital") return false;
     if (selectedType !== "all" && p.type !== selectedType) return false;
-    if (onlyGyn && !p.hasGynaecology) return false;
+    if (onlyGyn && !p.hasWomenHealth) return false;
+    if (govtOnly && !p.isGovernment) return false;
     return true;
   });
 
   if (!from) {
-    return list.map((p) => ({ ...p, km: null }));
+    return list;
   }
 
-  return list
-    .map((p) => ({ ...p, km: Number(distanceKm(from, p).toFixed(1)) }))
-    .sort((a, b) => a.km - b.km);
+  return list.sort((a, b) => (a.km ?? 0) - (b.km ?? 0));
 }
 
 /**
@@ -526,7 +721,7 @@ export function getUniqueTowns(): {
     string,
     { town: string; district: string; state: string; lat: number; lng: number }
   >();
-  for (const p of PLACES) {
+  for (const p of SAMPLE_FACILITIES) {
     if (!map.has(p.town)) {
       map.set(p.town, {
         town: p.town,
@@ -564,6 +759,7 @@ export const locationPrefs = {
     storage.set("remember_location", enabled);
     if (!enabled) {
       storage.remove("saved_location");
+      storage.remove("cached_places_result");
     }
   },
 };
