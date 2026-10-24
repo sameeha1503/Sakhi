@@ -1,0 +1,30 @@
+{
+  "short_name": "Sakhi",
+  "name": "Sakhi — Women's Healthcare Companion",
+  "description": "Your private, bilingual women's healthcare companion for rural and semi-urban India.",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    }
+  ],
+  "start_url": "/home",
+  "scope": "/",
+  "background_color": "#fdfaf7",
+  "theme_color": "#b5532f",
+  "display": "standalone",
+  "orientation": "portrait"
+}
