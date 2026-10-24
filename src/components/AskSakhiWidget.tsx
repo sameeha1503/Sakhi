@@ -69,6 +69,28 @@ export function AskSakhiWidget() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen]);
 
+  const handleSendRef = useRef<(text?: string) => Promise<void>>(undefined);
+
+  // Global event listener for opening chat widget from pattern flags or other modules
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const onAskSakhi = (e: Event) => {
+      const detail = (e as CustomEvent<{ query?: string }>).detail;
+      setIsOpen(true);
+      if (showTooltip) {
+        setShowTooltip(false);
+        storage.set(TOOLTIP_SEEN_KEY, true);
+      }
+      if (detail?.query) {
+        handleSendRef.current?.(detail.query);
+      }
+    };
+
+    window.addEventListener("ask-sakhi", onAskSakhi);
+    return () => window.removeEventListener("ask-sakhi", onAskSakhi);
+  }, [showTooltip]);
+
   const handleOpen = () => {
     setIsOpen(true);
     if (showTooltip) {
@@ -135,6 +157,7 @@ export function AskSakhiWidget() {
       setIsTyping(false);
     }
   };
+  handleSendRef.current = handleSend;
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();

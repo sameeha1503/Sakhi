@@ -105,7 +105,6 @@ The automated test suite `src/test/locales-parity.test.ts` validates:
   - Lockout protection: 5 consecutive failed attempts trigger a 5-minute lockout (escalating on repeated failures).
   - Auto-locks after 2 minutes of inactivity or immediately upon leaving the vault.
   - Backed by IndexedDB for large documents (photos and PDFs) with in-memory fallback, and integrated with the _"Delete all my data"_ purge.
-- **Educational Guides (`/learn`)**: Plain-language explainers for PCOS/PCOD and endometriosis.
 - **"Ask Sakhi" Floating Chat Assistant**:
   - Accessible floating widget with chat icon fixed at the bottom right. Sits comfortably above mobile bottom navigation (`bottom-20`) so it never overlaps the navigation bar.
   - Opens a responsive panel: a bottom sheet on phones and an anchored 380px panel on desktop.
@@ -288,16 +287,14 @@ screenshot-to-spark-0803-main/
 │   │   ├── cycle.tsx        # Cycle calendar and history (/cycle)
 │   │   ├── scan.tsx         # Prescription camera/upload & confirmation (/scan)
 │   │   ├── medicines.tsx    # Today's doses, adherence, refill alerts (/medicines)
-│   │   ├── learn.tsx        # Health explainers (/learn)
 │   │   ├── urgent.tsx       # Red-flag hospital & emergency screen (/urgent)
 │   │   ├── profile.tsx      # User profile & logout (/profile)
 │   │   ├── settings.tsx     # Demo profile loader/clearer, language switch, delete data (/settings)
-│   │   ├── care.tsx         # Hospital locator & doctor visit hub (/care)
-│   │   ├── care.questions.tsx # Suggested & custom questions for doctor (/care/questions)
-│   │   ├── care.visits.tsx  # Doctor visits timeline & follow-up reminders (/care/visits)
-│   │   ├── care.summary.tsx # 1-page printable doctor summary (/care/summary)
-│   │   ├── care.schemes.tsx # Government health schemes finder (/care/schemes)
-│   │   └── vault.tsx        # Private PIN-locked document vault (/vault)
+│   │   ├── care.tsx         # Hospital locator & facilities (/care)
+│   │   ├── visit.tsx        # Consolidated doctor visit (questions, visits, summary) (/visit)
+│   │   ├── schemes.tsx      # Government health schemes finder (/schemes)
+│   │   ├── vault.tsx        # Private PIN-locked document vault (/vault)
+│   │   └── api.chat.ts      # Server route for Ask Sakhi assistant (/api/chat)
 │   ├── services/            # Centralized data access and business logic
 │   │   ├── auth.ts          # User profile, session, and onboarding preferences
 │   │   ├── cycle.ts         # Menstrual cycle analytics and red-flag rules

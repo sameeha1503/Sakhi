@@ -44,4 +44,11 @@ describe("App routing", () => {
     expect(matchedRouteId).toBe("/schemes");
     expect(matchedRouteId).not.toBe("/care");
   });
+
+  it("asserts /learn is removed and does not match a valid route", () => {
+    const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
+
+    const matches = router.matchRoutes("/learn");
+    expect(matches.at(-1)?.routeId).toBe(rootRouteId);
+  });
 });

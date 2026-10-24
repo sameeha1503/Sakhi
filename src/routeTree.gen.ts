@@ -14,7 +14,6 @@ import { Route as CareRouteImport } from './routes/care'
 import { Route as ConsentRouteImport } from './routes/consent'
 import { Route as CycleRouteImport } from './routes/cycle'
 import { Route as HomeRouteImport } from './routes/home'
-import { Route as LearnRouteImport } from './routes/learn'
 import { Route as LogRouteImport } from './routes/log'
 import { Route as MedicinesRouteImport } from './routes/medicines'
 import { Route as ProfileRouteImport } from './routes/profile'
@@ -50,11 +49,6 @@ const CycleRoute = CycleRouteImport.update({
 const HomeRoute = HomeRouteImport.update({
   id: '/home',
   path: '/home',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LearnRoute = LearnRouteImport.update({
-  id: '/learn',
-  path: '/learn',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LogRoute = LogRouteImport.update({
@@ -119,7 +113,6 @@ export interface FileRoutesByFullPath {
   '/consent': typeof ConsentRoute
   '/cycle': typeof CycleRoute
   '/home': typeof HomeRoute
-  '/learn': typeof LearnRoute
   '/log': typeof LogRoute
   '/medicines': typeof MedicinesRoute
   '/profile': typeof ProfileRoute
@@ -138,7 +131,6 @@ export interface FileRoutesByTo {
   '/consent': typeof ConsentRoute
   '/cycle': typeof CycleRoute
   '/home': typeof HomeRoute
-  '/learn': typeof LearnRoute
   '/log': typeof LogRoute
   '/medicines': typeof MedicinesRoute
   '/profile': typeof ProfileRoute
@@ -158,7 +150,6 @@ export interface FileRoutesById {
   '/consent': typeof ConsentRoute
   '/cycle': typeof CycleRoute
   '/home': typeof HomeRoute
-  '/learn': typeof LearnRoute
   '/log': typeof LogRoute
   '/medicines': typeof MedicinesRoute
   '/profile': typeof ProfileRoute
@@ -179,7 +170,6 @@ export interface FileRouteTypes {
     | '/consent'
     | '/cycle'
     | '/home'
-    | '/learn'
     | '/log'
     | '/medicines'
     | '/profile'
@@ -198,7 +188,6 @@ export interface FileRouteTypes {
     | '/consent'
     | '/cycle'
     | '/home'
-    | '/learn'
     | '/log'
     | '/medicines'
     | '/profile'
@@ -217,7 +206,6 @@ export interface FileRouteTypes {
     | '/consent'
     | '/cycle'
     | '/home'
-    | '/learn'
     | '/log'
     | '/medicines'
     | '/profile'
@@ -237,7 +225,6 @@ export interface RootRouteChildren {
   ConsentRoute: typeof ConsentRoute
   CycleRoute: typeof CycleRoute
   HomeRoute: typeof HomeRoute
-  LearnRoute: typeof LearnRoute
   LogRoute: typeof LogRoute
   MedicinesRoute: typeof MedicinesRoute
   ProfileRoute: typeof ProfileRoute
@@ -286,13 +273,6 @@ declare module '@tanstack/react-router' {
       path: '/home'
       fullPath: '/home'
       preLoaderRoute: typeof HomeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/learn': {
-      id: '/learn'
-      path: '/learn'
-      fullPath: '/learn'
-      preLoaderRoute: typeof LearnRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/log': {
@@ -381,7 +361,6 @@ const rootRouteChildren: RootRouteChildren = {
   ConsentRoute: ConsentRoute,
   CycleRoute: CycleRoute,
   HomeRoute: HomeRoute,
-  LearnRoute: LearnRoute,
   LogRoute: LogRoute,
   MedicinesRoute: MedicinesRoute,
   ProfileRoute: ProfileRoute,

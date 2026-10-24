@@ -6,7 +6,6 @@ import {
   Pill,
   HeartPulse,
   CalendarHeart,
-  BookOpen,
   CheckCircle2,
   Clock,
   Lock,
@@ -291,29 +290,6 @@ function HomePage() {
               {t("care.title", "Find hospitals & PHCs")}
             </p>
             <span className="inline-flex items-center gap-1 text-sm font-bold text-module-green mt-4 group-hover:translate-x-1 transition-transform">
-              Open &rarr;
-            </span>
-          </div>
-        </Link>
-
-        {/* Learn Card (Amber) */}
-        <Link
-          to="/learn"
-          className="group tap card-soft flex flex-col justify-between p-6 border-2 border-module-amber/30 bg-card transition-all hover:-translate-y-0.5 hover:border-module-amber"
-        >
-          <div className="flex items-center justify-between">
-            <div className="grid size-14 place-items-center rounded-2xl bg-module-amber/15 text-module-amber">
-              <BookOpen className="size-8" />
-            </div>
-            <span className="rounded-full bg-module-amber/15 px-3 py-1 text-xs font-bold text-module-amber">
-              Guides
-            </span>
-          </div>
-
-          <div className="mt-6">
-            <h2 className="text-2xl font-bold text-foreground">{t("learn.title")}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">PCOS & endometriosis explainers</p>
-            <span className="inline-flex items-center gap-1 text-sm font-bold text-module-amber mt-4 group-hover:translate-x-1 transition-transform">
               Open &rarr;
             </span>
           </div>

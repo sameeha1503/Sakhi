@@ -147,26 +147,6 @@
     "sampleDataNotice": "Showing sample hospital — live service unavailable",
     "osmAttribution": "© OpenStreetMap contributors"
   },
-  "learn": {
-    "title": "Learn",
-    "open": "Learn about your body",
-    "what": "What is it?",
-    "signs": "Common signs",
-    "when": "When to see a doctor",
-    "note": "This is general information, not a diagnosis.",
-    "pcos": {
-      "name": "PCOS / PCOD",
-      "what": "A common hormone condition. The ovaries may not release an egg every month.",
-      "signs": "Late or missed periods, pimples, extra face hair, hair fall, weight gain.",
-      "when": "If periods stay irregular for 3 months or more, or you find it hard to get pregnant."
-    },
-    "endo": {
-      "name": "Endometriosis",
-      "what": "Tissue like the inside of the womb grows outside it. It can cause strong pain.",
-      "signs": "Very painful periods, pain during sex, heavy bleeding, pain in lower belly or back.",
-      "when": "If period pain stops daily work or painkillers do not help."
-    }
-  },
   "medicines": {
     "title": "Medicines",
     "todayDoses": "Today's tablets",

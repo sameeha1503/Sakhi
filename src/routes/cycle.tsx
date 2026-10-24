@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CalendarHeart, BookOpen, ArrowLeft } from "lucide-react";
+import { CalendarHeart, ArrowLeft } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { FlagCards } from "@/components/FlagCards";
 import { logService, todayISO, type DailyLog } from "@/services/logs";
@@ -123,22 +123,6 @@ function CyclePage() {
               <p className="text-base font-semibold text-muted-foreground">{t("cycle.noData")}</p>
             </div>
           )}
-
-          {/* Learn Link Card */}
-          <Link
-            to="/learn"
-            className="tap card-soft border border-border/80 flex items-center gap-4 p-5 text-lg font-bold text-foreground transition-all hover:border-primary/50 hover:-translate-y-0.5"
-          >
-            <div className="grid size-12 place-items-center rounded-2xl bg-accent/15 text-accent">
-              <BookOpen className="size-7" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <span>{t("learn.open")}</span>
-              <p className="text-xs font-normal text-muted-foreground">
-                Understand PCOS & endometriosis
-              </p>
-            </div>
-          </Link>
         </div>
 
         {/* Right Column (lg:col-span-7): Wider 5-row 35-day Calendar Grid & Flags */}
