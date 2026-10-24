@@ -569,5 +569,106 @@
       "summary": "Doctor summary"
     },
     "nonDiagnosticNotice": "Sakhi shares patterns and questions only. It does not diagnose."
+  },
+  "chat": {
+    "title": "Ask Sakhi",
+    "subtitle": "Health information assistant",
+    "disclaimer": "Sakhi shares general information, not medical advice.",
+    "tooltip": "Ask Sakhi",
+    "clear": "Clear chat",
+    "close": "Close",
+    "inputPlaceholder": "Ask a question about your health...",
+    "send": "Send",
+    "typing": "Sakhi is typing...",
+    "greeting": "Hello! I am Sakhi, your health companion. Tap a question below or type your own question.",
+    "fallback": "I don't have information on that yet. For medical symptoms or questions, please consult a doctor or healthcare worker at your nearest clinic.",
+    "emergencyNotice": "If you have severe pain, heavy bleeding, or difficulty breathing, please go to the nearest hospital or call 108 immediately.",
+    "chipsLabel": "Common Questions",
+    "chips": {
+      "pcos": "What is PCOS?",
+      "endometriosis": "What are signs of endometriosis?",
+      "cycleNormal": "Is my cycle normal?",
+      "whenDoctor": "When should I see a doctor?",
+      "howToLog": "How do I log my symptoms?",
+      "findHospital": "Find a hospital near me",
+      "govtSchemes": "What government schemes can I get?",
+      "shareRecords": "How do I share my records with my doctor?",
+      "privacy": "Is my data private?"
+    },
+    "actions": {
+      "logSymptoms": "Open my symptom log",
+      "findCare": "Find care near me",
+      "doctorVisit": "Doctor visit",
+      "schemes": "Government schemes",
+      "medicines": "Medicines",
+      "vault": "Open private vault",
+      "emergency": "Go to a hospital now"
+    },
+    "kb": {
+      "pcosWhat": {
+        "keywords": "pcos, pcod, polycystic, ovaries, cysts, ovarian cysts, what is pcos, what is pcod",
+        "answer": "PCOS (Polycystic Ovary Syndrome) is a common hormonal condition where the ovaries produce slightly higher amounts of male hormones. This can cause irregular periods, acne, excess facial or body hair, and weight changes. It can be managed well with healthy food, exercise, and medical guidance."
+      },
+      "pcosSigns": {
+        "keywords": "pcos signs, pcod signs, symptoms of pcos, symptoms of pcod, facial hair, hirsutism, cystic acne, dark neck patches",
+        "answer": "Common signs of PCOS include periods that come late, rarely, or not at all; sudden weight gain or difficulty losing weight; acne on face, chest or back; thinning hair on head; and dark patches on neck folds. Tracking your symptoms helps your doctor evaluate you."
+      },
+      "endoWhat": {
+        "keywords": "endometriosis, endo, what is endometriosis, uterine lining, pelvic disease",
+        "answer": "Endometriosis is a condition where tissue similar to the lining inside the uterus grows outside the uterus, such as on the ovaries or pelvis. During periods, this tissue also bleeds and causes inflammation, swelling, and severe pain. A doctor can diagnose and suggest treatment options."
+      },
+      "endoSigns": {
+        "keywords": "endometriosis signs, endo symptoms, pelvic pain between periods, pain during sex, severe period cramps, painful bowel movements",
+        "answer": "Key signs of endometriosis include severe period cramps that do not improve with common rest, sharp pelvic pain between periods, pain during or after intimacy, deep lower back pain, painful urination or bowel movements during periods, and unusually heavy bleeding."
+      },
+      "cycleNormal": {
+        "keywords": "normal cycle, normal period, cycle length, how many days period, regular period, 28 days, cycle duration, is my cycle normal",
+        "answer": "A normal menstrual cycle typically lasts between 21 and 35 days, counted from the first day of one period to the first day of the next. Bleeding usually lasts 2 to 7 days. Mild variations of a few days from month to month are normal."
+      },
+      "cycleIrregular": {
+        "keywords": "irregular periods, missed period, late period, irregular cycle, period delays, skipped period, uneven cycle",
+        "answer": "Your cycle may be irregular if it comes sooner than 21 days, later than 35 days, or varies unpredictably by more than 7 days each month. Common causes include stress, hormonal changes (like PCOS or thyroid), weight changes, or lack of sleep. Discuss persistent changes with a doctor."
+      },
+      "periodPain": {
+        "keywords": "period pain, dysmenorrhea, bad cramps, menstrual pain, stomach pain period, abdominal cramps, severe cramps",
+        "answer": "Mild cramping is common, but severe pain that stops you from working, going to school, or sleeping is not normal. Severe cramps can be caused by endometriosis, fibroids, or infections. Warm water compresses can soothe mild pain, but please consult a doctor for severe pain."
+      },
+      "heavyBleeding": {
+        "keywords": "heavy bleeding, menorrhagia, soaking pads, blood clots, flooding, excessive bleeding, bleeding for weeks, continuous bleeding",
+        "answer": "Bleeding is considered heavy if you soak through one or more pads every 1 to 2 hours, pass blood clots larger than a coin, bleed for more than 7 days, or feel dizzy, faint, and exhausted. Please see a doctor to check your iron levels and cause."
+      },
+      "whenDoctor": {
+        "keywords": "when to see doctor, doctor visit, consult doctor, red flags, warning signs, see a gynecologist, clinic visit, when should i see a doctor",
+        "answer": "You should see a doctor if: you miss 3 or more periods in a row; periods come more often than 21 days; bleeding is very heavy or lasts over 7 days; you have severe pelvic pain; you bleed after menopause; or you notice unusual foul-smelling discharge or fever."
+      },
+      "howToLog": {
+        "keywords": "how to log, symptom log, tracking symptoms, daily check in, log period, log pain, logging, how do i log my symptoms",
+        "answer": "To log your symptoms, tap 'Log' in the bottom menu. Select your flow level (spotting, light, medium, heavy), pain score, any physical symptoms like cramps or headache, mood, sleep hours, and medicines taken. Tap 'Save check-in' to record your day."
+      },
+      "howReminders": {
+        "keywords": "medicine reminders, pill reminder, dose alert, reminder, set reminder, reminder notifications, how reminders work",
+        "answer": "You can set daily medicine reminders in the 'Medicines' tab. Add your medicine name, dose, and choose morning, afternoon, evening, or night. Sakhi displays timely reminder banners on your dashboard and tracks doses you take."
+      },
+      "findHospitals": {
+        "keywords": "find hospital, clinic near me, nearest doctor, health facility, phc, chc, government hospital, medical care, find a hospital near me",
+        "answer": "Tap 'Care' in the bottom menu to view verified government hospitals, community health centres (CHCs), primary health centres (PHCs), and clinics near you. You can enable GPS to sort by distance, view phone numbers, and get directions."
+      },
+      "govtSchemes": {
+        "keywords": "government schemes, pmjay, ayushman bharat, arogya mandir, jsy, pmmvy, maternity benefits, free hospital, cash support, what government schemes can i get",
+        "answer": "Government health schemes offer financial support and free care: PM-JAY provides up to ₹5 lakh free hospital care for eligible families; Ayushman Arogya Mandirs offer free check-ups and cancer screenings; and JSY / PMMVY provide cash assistance for pregnancy and delivery."
+      },
+      "shareRecords": {
+        "keywords": "share records, doctor summary, print summary, show doctor, share with doctor, medical report, records for doctor, how do i share my records with my doctor",
+        "answer": "You can create a clear, one-page printable Doctor Summary by visiting 'Doctor visit' and selecting the 'Doctor summary' tab. It organizes your last 90 days of symptoms, cycle history, and logged questions into a format doctors can review in 2 minutes."
+      },
+      "privacyVault": {
+        "keywords": "is my data private, privacy, vault, pin, confidential, data safety, secure, who sees my data",
+        "answer": "All your personal health logs, cycle dates, and notes are saved strictly on your own device and are never sent to external servers without your permission. You can also lock your sensitive notes with a private 4-digit PIN in the Vault under Settings."
+      },
+      "missedDose": {
+        "keywords": "missed dose, forgot medicine, skipped pill, miss medicine, what if i forget tablet, missed tablet",
+        "answer": "If you forget a dose of your regular medicine, take it as soon as you remember, unless it is almost time for your next scheduled dose. Never take a double dose to make up for a missed one. If you are unsure, consult your doctor or pharmacist."
+      }
+    }
   }
 }

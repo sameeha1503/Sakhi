@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -15,6 +15,7 @@ import {
 import { prefs } from "@/services/auth";
 import { storage } from "@/services/storage";
 import { LanguageSelect } from "@/components/LanguageSelect";
+import { AskSakhiWidget } from "@/components/AskSakhiWidget";
 
 const tabs = [
   { to: "/home", icon: Home, key: "home" },
@@ -27,9 +28,18 @@ const tabs = [
 export function AppShell({ children, title }: { children: ReactNode; title?: string }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const routerState = useRouterState();
   const [ok, setOk] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const [storageError, setStorageError] = useState<string | null>(null);
+
+  const pathname = routerState.location.pathname;
+  const isWidgetHidden =
+    pathname === "/" ||
+    pathname === "/consent" ||
+    pathname === "/signup" ||
+    pathname === "/urgent" ||
+    pathname.startsWith("/share");
 
   useEffect(() => {
     if (!prefs.language()) navigate({ to: "/" });
@@ -182,6 +192,9 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
           ))}
         </div>
       </nav>
+
+      {/* Floating Ask Sakhi Widget */}
+      {!isWidgetHidden && <AskSakhiWidget />}
     </div>
   );
 }

@@ -106,6 +106,15 @@ The automated test suite `src/test/locales-parity.test.ts` validates:
   - Auto-locks after 2 minutes of inactivity or immediately upon leaving the vault.
   - Backed by IndexedDB for large documents (photos and PDFs) with in-memory fallback, and integrated with the _"Delete all my data"_ purge.
 - **Educational Guides (`/learn`)**: Plain-language explainers for PCOS/PCOD and endometriosis.
+- **"Ask Sakhi" Floating Chat Assistant**:
+  - Accessible floating widget with chat icon fixed at the bottom right. Sits comfortably above mobile bottom navigation (`bottom-20`) so it never overlaps the navigation bar.
+  - Opens a responsive panel: a bottom sheet on phones and an anchored 380px panel on desktop.
+  - Includes a permanent non-diagnostic safety note: _"Sakhi shares general information, not medical advice."_
+  - **Tappable Suggestion Chips**: Greeting presents common questions (_"What is PCOS?"_, _"What are signs of endometriosis?"_, _"Is my cycle normal?"_, _"When should I see a doctor?"_, _"How do I log my symptoms?"_, _"Find a hospital near me"_, _"What government schemes can I get?"_, _"How do I share my records with my doctor?"_, _"Is my data private?"_) for effortless 1-tap inquiries.
+  - **Mode 1 (Offline Curated Knowledge Base)**: 16 intents in `src/data/knowledge.ts` covering PCOS, endometriosis, normal cycle duration, heavy bleeding, period pain, red flags, symptom logging, reminders, nearest hospitals, government schemes, doctor summary sharing, and privacy vault. Matches using Unicode NFC normalisation and substring matching (avoiding `\w`/`\b` regexes that break on Indic scripts) across all 11 languages.
+  - **Mode 2 (Optional AI Integration)**: Server route `/api/chat` in TanStack Start enabled only when `LLM_API_KEY` and `LLM_API_URL` are set. Enforces input validation (max 500 characters, last 6 messages only), rate-limiting (~10 requests/minute/client), 15-second timeout, and automatic fallback to Mode 1.
+  - **Privacy Guarantee**: By default, **Sakhi does NOT send the user's logs, medicines, or location to the model**; only the user's conversation messages are sent.
+  - **Data Deletion Integration**: Chat history is persisted via the storage adapter and is completely wiped whenever the user chooses _"Delete all my data"_ in Settings.
 
 ---
 

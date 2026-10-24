@@ -18,6 +18,13 @@
   - **Government Schemes (`/schemes`)**: Dedicated top-level route with 4 big-button questions (age, pregnancy, household category, state) matching schemes from `src/data/schemes.ts` (PM-JAY, Arogya Mandirs, JSY, PMMVY, PMSMA, JSSK) with what it offers, documents to carry, and official links.
   - **Home Dashboard**: Wide "Doctor visit" module card (tag: `RECORDS`) with 3 step buttons (1 Prepare questions, 2 Log a visit, 3 Doctor summary) and upcoming follow-up badge ("Follow-up in 2 days"). Dedicated Government schemes module card.
   - **Global Card/Link Audit**: Replaced shadowed card row on `/care` with two clean cards ("Doctor visit" $\rightarrow$ `/visit`, "Government schemes" $\rightarrow$ `/schemes`), updated `FlagCards` and `DoseReminders` links, and verified all 117 Vitest tests passing with 100% i18n key parity across 11 languages.
+- [x] "Ask Sakhi" Floating Chat Assistant Widget & Service:
+  - **Floating Trigger Button**: Positioned fixed at bottom-right (`bottom-20 right-4` on mobile, `bottom-6 right-6` on desktop) sitting strictly above the mobile floating navigation bar so they never overlap. Displays a friendly "Ask Sakhi ✨" speech-bubble tooltip on first visit. Hidden automatically on signed-out pages, consent, signup, `/urgent`, and `/share`.
+  - **Accessible Chat Panel**: Bottom sheet on mobile devices (`max-h-[85vh]`), 380px panel anchored bottom-right on desktop. Features Sakhi avatar, clear chat, close, Esc keyboard dismiss, focus trap, and live announcements. Includes permanent safety notice: _"Sakhi shares general information, not medical advice."_
+  - **Tappable Suggestion Chips**: 9 curated chips in greeting for zero-typing interaction: _"What is PCOS?"_, _"What are signs of endometriosis?"_, _"Is my cycle normal?"_, _"When should I see a doctor?"_, _"How do I log my symptoms?"_, _"Find a hospital near me"_, _"What government schemes can I get?"_, _"How do I share my records with my doctor?"_, _"Is my data private?"_.
+  - **Mode 1 (Knowledge Base)**: 16 intents in `src/data/knowledge.ts` covering PCOS, endometriosis, cycle normalcy, irregular periods, heavy bleeding, period pain, doctor red flags, symptom logging, reminders, finding care, government schemes, doctor summary sharing, privacy vault, and missed medicine dose. Uses Unicode NFC normalisation and space-padded substring matching (avoiding `\w`/`\b` regexes that break on Indian scripts). Includes direct 1-tap action buttons opening `/log`, `/care`, `/visit`, `/schemes`, `/medicines`, or `/vault`.
+  - **Mode 2 (Server LLM Route `/api/chat`)**: TanStack Start server route activated only when `LLM_API_KEY` and `LLM_API_URL` exist. Enforces 500-char max, last 6 messages only, rate limiting (~10 req/min/client), 15s timeout, and automatic fallback to Mode 1. Never sends user logs, medicines, or location data to the model.
+  - **Storage & Data Wipe**: Chat history saved in local storage (`sakhi:chat_history`) and wiped completely when "Delete all my data" is triggered in Settings.
 
 ## Manual Browser Testing Checklist
 
@@ -58,7 +65,21 @@
    - Answer the 4 quick eligibility questions (age, pregnancy, household category, state) and tap "See matching schemes".
    - Verify matching scheme cards display benefits, documents to carry, and official portal links.
 
-7. **Data Deletion Verification**:
+7. **"Ask Sakhi" Floating Chat Assistant**:
+   - On signed-in pages (`/home`, `/log`, `/medicines`, `/care`, `/visit`, etc.), inspect the round floating button at the bottom-right.
+   - On phone width (e.g. 390px): verify the button sits at `bottom-20`, clearly above the floating pill bottom navigation without overlapping.
+   - On first visit: verify the "Ask Sakhi ✨" speech-bubble tooltip appears.
+   - Tap the button: verify it opens as a smooth bottom sheet on phones, or an anchored 380px panel on desktop.
+   - Verify the permanent safety note: _"Sakhi shares general information, not medical advice."_
+   - Tap suggestion chip **"What is PCOS?"**: verify it sends, displays the assistant response with plain-language explanation, and displays the **"Doctor visit"** action link (`/visit`).
+   - Tap **"Find a hospital near me"**: verify response displays with **"Find care near me"** action link (`/care`).
+   - Type a custom question (e.g. _"I missed my medicine dose"_) and tap Send: verify it returns guidance and links to `/medicines`.
+   - Switch language to हिन्दी: verify chips, answers, and interface adapt into Hindi, and typing _"पीसीओएस क्या है"_ returns accurate Hindi response.
+   - Press **Escape** or tap Close: panel closes.
+   - Verify the widget is NOT present on `/`, `/consent`, `/signup`, or `/urgent`.
+
+8. **Data Deletion Verification**:
    - Go to `/settings` and tap **"Delete all data"**.
    - Confirm deletion.
+   - Reopen Ask Sakhi chat: verify conversation history has been completely wiped.
    - Reopen `/visit`: verify visits timeline is empty and question ticks/custom questions are reset.
