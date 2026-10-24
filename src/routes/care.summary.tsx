@@ -248,7 +248,7 @@ function DoctorSummaryPage() {
                         : `${starts.length} period starts recorded in 90 days`}
                     </p>
                     {summary.irregular && (
-                      <p className="font-semibold text-amber-700 mt-0.5">
+                      <p className="font-semibold text-warning mt-0.5">
                         ⚠️ {t("summary.irregularCycleNotice")}
                       </p>
                     )}
@@ -298,7 +298,7 @@ function DoctorSummaryPage() {
           {/* Pattern Flags: Worded as "Worth discussing with a doctor" */}
           <section className="print-card mb-3 rounded-2xl border border-border/80 bg-muted/20 p-3">
             <h2 className="flex items-center gap-2 text-sm font-bold text-foreground">
-              <AlertTriangle className="size-4 text-amber-600 print:text-black" />
+              <AlertTriangle className="size-4 text-warning print:text-black" />
               {t("summary.flagsTitle")}
             </h2>
 
@@ -306,7 +306,7 @@ function DoctorSummaryPage() {
               <ul className="mt-1.5 flex flex-col gap-1 text-xs">
                 {flags.map((f) => (
                   <li key={f} className="flex items-start gap-1.5">
-                    <span className="font-bold text-amber-700 print:text-black">•</span>
+                    <span className="font-bold text-warning print:text-black">•</span>
                     <span className="font-semibold">{t(`flags.${f}`)}</span>
                   </li>
                 ))}

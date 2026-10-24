@@ -15,6 +15,7 @@
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -33,41 +34,80 @@
   --color-destructive-foreground: var(--destructive-foreground);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-tint: var(--warning-tint);
+  --color-warning-border: var(--warning-border);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-ring-offset-background: var(--background);
+
+  --color-module-teal: var(--module-teal);
+  --color-module-berry: var(--module-berry);
+  --color-module-violet: var(--module-violet);
+  --color-module-amber: var(--module-amber);
+  --color-module-green: var(--module-green);
+  --color-module-coral: var(--module-coral);
 }
 
 :root {
   --radius: 1.25rem;
-  --background: oklch(0.975 0.018 75);
-  --foreground: oklch(0.25 0.04 40);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.25 0.04 40);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.25 0.04 40);
-  --primary: oklch(0.52 0.15 35);
-  --primary-foreground: oklch(0.99 0.01 75);
-  --secondary: oklch(0.93 0.05 80);
-  --secondary-foreground: oklch(0.3 0.06 45);
-  --muted: oklch(0.94 0.02 70);
-  --muted-foreground: oklch(0.45 0.04 45);
-  --accent: oklch(0.55 0.1 165);
-  --accent-foreground: oklch(0.99 0.01 75);
-  --destructive: oklch(0.52 0.2 25);
-  --destructive-foreground: oklch(0.99 0 0);
-  --success: oklch(0.55 0.13 150);
-  --success-foreground: oklch(0.99 0 0);
-  --border: oklch(0.88 0.03 70);
-  --input: oklch(0.85 0.03 70);
-  --ring: oklch(0.52 0.15 35);
-  --shadow-soft: 0 6px 20px -8px oklch(0.4 0.1 40 / 0.25);
+
+  /* Base palette */
+  --background: #fff8fa;
+  --foreground: #2b1b2e;
+  --card: #ffffff;
+  --card-foreground: #2b1b2e;
+  --popover: #ffffff;
+  --popover-foreground: #2b1b2e;
+  --muted: #f6eef2;
+  --muted-foreground: #6b5b73;
+  --border: #ebdde4;
+  --input: #ebdde4;
+
+  /* Primary teal & ring */
+  --primary: #0b7a75;
+  --primary-foreground: #ffffff;
+  --ring: #0b7a75;
+
+  /* Secondary soft mint/teal */
+  --secondary: #d9f2ef;
+  --secondary-foreground: #0a4f4c;
+
+  /* Accent berry rose (cycle day, flow, women's health) */
+  --accent: #c2255c;
+  --accent-foreground: #ffffff;
+
+  /* Feedback tokens */
+  --success: #276749;
+  --success-foreground: #ffffff;
+  --destructive: #b42318;
+  --destructive-foreground: #ffffff;
+  --warning: #92580a;
+  --warning-foreground: #ffffff;
+  --warning-tint: #fff4db;
+  --warning-border: #f5dca8;
+
+  /* Module accents for dashboard cards */
+  --module-teal: #0b7a75;
+  --module-berry: #c2255c;
+  --module-violet: #6d4ac2;
+  --module-amber: #92580a;
+  --module-green: #276749;
+  --module-coral: #c2410c;
+
+  /* Faint plum-tinted soft shadows */
+  --shadow-soft: 0 8px 24px -6px rgba(43, 27, 46, 0.08), 0 2px 8px -2px rgba(43, 27, 46, 0.04);
 }
 
 @layer base {
   * {
     border-color: var(--color-border);
+  }
+  *:focus-visible {
+    outline: 2.5px solid var(--color-primary);
+    outline-offset: 2px;
   }
   html,
   body {
@@ -75,6 +115,8 @@
   }
   body {
     background-color: var(--color-background);
+    background-image: radial-gradient(circle at 100% 0%, #f1fbf7 0%, transparent 40%);
+    background-attachment: fixed;
     color: var(--color-foreground);
     font-size: 1.125rem;
     -webkit-tap-highlight-color: transparent;

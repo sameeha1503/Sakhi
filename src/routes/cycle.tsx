@@ -26,11 +26,11 @@ export const Route = createFileRoute("/cycle")({
 });
 
 const flowColor: Record<string, string> = {
-  none: "bg-muted",
-  light: "bg-destructive/30",
-  medium: "bg-destructive/60",
-  heavy: "bg-destructive/85",
-  veryHeavy: "bg-destructive",
+  none: "bg-muted/40",
+  light: "bg-accent/25 text-foreground",
+  medium: "bg-accent/60 text-accent-foreground",
+  heavy: "bg-accent text-accent-foreground",
+  veryHeavy: "bg-destructive text-destructive-foreground",
 };
 
 function CyclePage() {
@@ -81,7 +81,7 @@ function CyclePage() {
           {s.cycleDay ? (
             <div className="card-soft border border-border/80 p-6 flex flex-col items-center sm:items-start gap-5">
               <div className="flex items-center gap-5 w-full">
-                <div className="grid size-24 shrink-0 place-items-center rounded-3xl bg-primary text-primary-foreground shadow-md">
+                <div className="grid size-24 shrink-0 place-items-center rounded-3xl bg-accent text-accent-foreground shadow-md">
                   <span className="text-4xl font-extrabold">{s.cycleDay}</span>
                 </div>
                 <div className="min-w-0 flex-1">
@@ -165,9 +165,11 @@ function CyclePage() {
                   >
                     <span
                       className={`text-xs font-bold ${
-                        l && (l.flow === "heavy" || l.flow === "veryHeavy")
+                        l && l.flow === "veryHeavy"
                           ? "text-destructive-foreground"
-                          : "text-foreground/80"
+                          : l && (l.flow === "heavy" || l.flow === "medium")
+                            ? "text-accent-foreground"
+                            : "text-foreground/85"
                       }`}
                     >
                       {dayNum}
@@ -180,19 +182,19 @@ function CyclePage() {
             {/* Flow Legend */}
             <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border/50 pt-3 text-xs text-muted-foreground font-semibold">
               <div className="flex items-center gap-1.5">
-                <span className="size-3 rounded-full bg-muted border border-border" />
+                <span className="size-3 rounded-full bg-muted/60 border border-border" />
                 <span>{t("log.flow.none")}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="size-3 rounded-full bg-destructive/30" />
+                <span className="size-3 rounded-full bg-accent/25 border border-accent/40" />
                 <span>{t("log.flow.light")}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="size-3 rounded-full bg-destructive/60" />
+                <span className="size-3 rounded-full bg-accent/60" />
                 <span>{t("log.flow.medium")}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="size-3 rounded-full bg-destructive" />
+                <span className="size-3 rounded-full bg-accent" />
                 <span>{t("log.flow.heavy")}</span>
               </div>
             </div>

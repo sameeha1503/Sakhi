@@ -68,7 +68,7 @@ function Profile() {
 
           <button
             onClick={handleLogout}
-            className="tap card-soft border border-border/80 flex w-full items-center justify-between p-5 text-xl font-bold text-muted-foreground hover:text-destructive transition-colors hover:border-destructive/40"
+            className="tap card-soft border border-border/80 flex w-full items-center justify-between p-5 text-xl font-bold text-muted-foreground hover:text-primary transition-colors hover:border-primary/50"
           >
             <div className="flex items-center gap-3.5">
               <LogOut className="size-7" />

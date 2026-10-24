@@ -103,12 +103,18 @@ function Tile({
       className={`tap card-soft relative flex flex-col items-center justify-center gap-2 border-2 p-4 sm:p-5 text-base sm:text-lg font-semibold transition-all hover:scale-[1.01] ${
         on
           ? danger
-            ? "border-destructive bg-destructive/10"
-            : "border-primary bg-secondary shadow-xs"
-          : "border-border/60 hover:border-primary/40"
+            ? "border-destructive bg-destructive/10 text-destructive"
+            : "border-primary bg-secondary text-secondary-foreground shadow-xs"
+          : "border-border/70 bg-card hover:border-primary/40 text-foreground"
       }`}
     >
-      {on && <Check className="absolute right-2.5 top-2.5 size-5 text-primary" />}
+      {on && (
+        <Check
+          className={`absolute right-2.5 top-2.5 size-5 ${
+            danger ? "text-destructive" : "text-primary"
+          }`}
+        />
+      )}
       {children}
     </button>
   );
@@ -199,7 +205,11 @@ function LogPage() {
                         >
                           <Icon
                             className={`${flowSize[f]} ${
-                              f === "none" ? "text-muted-foreground" : "text-destructive"
+                              f === "none"
+                                ? "text-muted-foreground"
+                                : f === "veryHeavy"
+                                  ? "text-destructive"
+                                  : "text-accent"
                             }`}
                           />
                           <span className="text-center">{t(`log.flow.${f}`)}</span>
@@ -234,7 +244,7 @@ function LogPage() {
                     onClick={() => set({ painAreas: [], painLevel: 0 })}
                     className={`tap mt-4 flex min-h-[48px] w-full items-center justify-center rounded-2xl border-2 text-base sm:text-lg font-semibold transition-colors ${
                       log.painAreas.length === 0
-                        ? "border-primary bg-secondary text-primary"
+                        ? "border-primary bg-secondary text-secondary-foreground font-bold shadow-xs"
                         : "border-border hover:border-primary/40 text-foreground"
                     }`}
                   >

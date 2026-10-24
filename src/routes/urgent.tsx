@@ -99,7 +99,7 @@ function UrgentPage() {
             role="status"
             className="flex items-center gap-2.5 rounded-2xl bg-black/25 px-4 py-2.5 text-xs font-semibold text-white/95"
           >
-            <AlertTriangle className="size-4 shrink-0 text-amber-300" />
+            <AlertTriangle className="size-4 shrink-0 text-warning-tint" />
             <span>{t("urgent.sampleDataNotice")}</span>
           </div>
         )}

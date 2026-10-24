@@ -365,7 +365,7 @@ function VaultPage() {
           {/* Honest Security Disclaimer */}
           <div className="rounded-2xl border border-border/80 bg-muted/30 p-3.5 text-xs text-muted-foreground leading-relaxed">
             <p className="flex items-start gap-2">
-              <ShieldAlert className="size-4 shrink-0 text-amber-600 mt-0.5" />
+              <ShieldAlert className="size-4 shrink-0 text-warning mt-0.5" />
               <span>{t("vault.disclaimer")}</span>
             </p>
           </div>
@@ -468,7 +468,7 @@ function VaultPage() {
           {/* Honest Security Disclaimer */}
           <div className="rounded-2xl border border-border/80 bg-muted/30 p-3.5 text-xs text-muted-foreground leading-relaxed">
             <p className="flex items-start gap-2">
-              <ShieldAlert className="size-4 shrink-0 text-amber-600 mt-0.5" />
+              <ShieldAlert className="size-4 shrink-0 text-warning mt-0.5" />
               <span>{t("vault.disclaimer")}</span>
             </p>
           </div>
@@ -651,7 +651,7 @@ function VaultPage() {
         {/* Honest Security Disclaimer */}
         <div className="rounded-2xl border border-border/80 bg-muted/30 p-3.5 text-xs text-muted-foreground leading-relaxed mt-2">
           <p className="flex items-start gap-2">
-            <ShieldAlert className="size-4 shrink-0 text-amber-600 mt-0.5" />
+            <ShieldAlert className="size-4 shrink-0 text-warning mt-0.5" />
             <span>{t("vault.disclaimer")}</span>
           </p>
         </div>

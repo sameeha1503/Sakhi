@@ -21,7 +21,7 @@ export type HospitalMapProps = {
 // Create crisp, SVG-based divIcons to avoid missing PNG assets in Vite
 const hospitalIcon = L.divIcon({
   className: "custom-map-icon",
-  html: `<div style="background-color: #b5532f; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; border: 2.5px solid white; box-shadow: 0 3px 8px rgba(0,0,0,0.3); font-weight: bold; font-size: 14px;">H</div>`,
+  html: `<div style="background-color: #0B7A75; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; border: 2.5px solid white; box-shadow: 0 3px 8px rgba(43,27,46,0.25); font-weight: bold; font-size: 14px;">H</div>`,
   iconSize: [32, 32],
   iconAnchor: [16, 16],
   popupAnchor: [0, -18],
@@ -29,7 +29,7 @@ const hospitalIcon = L.divIcon({
 
 const clinicIcon = L.divIcon({
   className: "custom-map-icon",
-  html: `<div style="background-color: #2b7a78; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; border: 2px solid white; box-shadow: 0 3px 8px rgba(0,0,0,0.3); font-weight: bold; font-size: 12px;">+</div>`,
+  html: `<div style="background-color: #C2255C; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; border: 2px solid white; box-shadow: 0 3px 8px rgba(43,27,46,0.25); font-weight: bold; font-size: 12px;">+</div>`,
   iconSize: [28, 28],
   iconAnchor: [14, 14],
   popupAnchor: [0, -16],
@@ -37,7 +37,7 @@ const clinicIcon = L.divIcon({
 
 const userIcon = L.divIcon({
   className: "custom-map-icon",
-  html: `<div style="background-color: #17252a; width: 18px; height: 18px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 0 5px rgba(43, 122, 120, 0.4);"></div>`,
+  html: `<div style="background-color: #2B1B2E; width: 18px; height: 18px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 0 5px rgba(11, 122, 117, 0.4);"></div>`,
   iconSize: [18, 18],
   iconAnchor: [9, 9],
 });

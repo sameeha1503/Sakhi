@@ -44,7 +44,7 @@ export const Route = createFileRoute("/care/questions")({
 function getCategoryIcon(cat: QuestionCategory) {
   switch (cat) {
     case "flag":
-      return <AlertTriangle className="size-4 shrink-0 text-amber-600" />;
+      return <AlertTriangle className="size-4 shrink-0 text-warning" />;
     case "symptom":
       return <Activity className="size-4 shrink-0 text-primary" />;
     case "medicine":
@@ -270,7 +270,7 @@ function QuestionPrepPage() {
                     <span
                       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold ${
                         q.category === "flag"
-                          ? "bg-amber-100 text-amber-800"
+                          ? "bg-warning-tint text-warning border border-warning/30"
                           : q.category === "symptom"
                             ? "bg-primary/15 text-primary"
                             : "bg-secondary text-secondary-foreground"

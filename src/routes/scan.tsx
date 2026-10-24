@@ -245,13 +245,13 @@ function ScanPage() {
             </span>
           </div>
 
-          {/* Prominent warning in all languages */}
+          {/* Caution notice in all languages */}
           <div
             role="alert"
-            className="flex items-start gap-3 rounded-2xl border-2 border-destructive bg-destructive/10 p-4"
+            className="flex items-start gap-3 rounded-2xl border-2 border-warning/40 bg-warning-tint p-4 shadow-xs"
           >
-            <AlertTriangle className="size-7 shrink-0 text-destructive" />
-            <p className="text-base font-bold text-destructive leading-snug">
+            <AlertTriangle className="size-7 shrink-0 text-warning" />
+            <p className="text-base font-bold text-warning leading-snug">
               {t("scan.doctorWarning")}
             </p>
           </div>

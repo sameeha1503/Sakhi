@@ -104,11 +104,11 @@ function MedicinesPage() {
   return (
     <AppShell title={t("medicines.title")}>
       <div className="flex flex-col gap-5 pt-1">
-        {/* Refill Alerts Banner */}
+        {/* Refill Alerts Banner (Gentle Caution) */}
         {refillAlerts.length > 0 && (
-          <section className="rounded-2xl border-2 border-destructive bg-destructive/10 p-4">
-            <h2 className="flex items-center gap-2 text-lg font-bold text-destructive">
-              <AlertCircle className="size-6 shrink-0" />
+          <section className="rounded-2xl border-2 border-warning/40 bg-warning-tint p-4 shadow-xs">
+            <h2 className="flex items-center gap-2 text-lg font-bold text-warning">
+              <AlertCircle className="size-6 shrink-0 text-warning" />
               {t("medicines.refillTitle")}
             </h2>
             <ul className="mt-2 flex flex-col gap-1.5">
@@ -274,7 +274,7 @@ function MedicinesPage() {
                       ? "bg-success text-success-foreground"
                       : h.taken > 0
                         ? "bg-secondary text-primary font-bold"
-                        : "bg-destructive/20 text-destructive";
+                        : "bg-muted text-muted-foreground border border-border/80";
 
                 return (
                   <div key={h.date} className="flex flex-col items-center gap-1">

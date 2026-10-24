@@ -231,9 +231,9 @@ function CarePage() {
         {nearbyResult?.isFallbackSample && (
           <div
             role="status"
-            className="flex items-center gap-3 rounded-2xl border-2 border-amber-500/40 bg-amber-500/10 p-4 text-sm font-semibold text-amber-900 dark:text-amber-200 shadow-xs"
+            className="flex items-center gap-3 rounded-2xl border-2 border-warning/40 bg-warning-tint p-4 text-sm font-semibold text-warning shadow-xs"
           >
-            <AlertTriangle className="size-5 shrink-0 text-amber-600" />
+            <AlertTriangle className="size-5 shrink-0 text-warning" />
             <p className="flex-1">{t("care.sampleDataBanner")}</p>
           </div>
         )}

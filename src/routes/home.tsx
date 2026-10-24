@@ -96,26 +96,18 @@ function HomePage() {
 
       {/* Responsive Grid of Cards (2-3 columns on desktop) */}
       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {/* Daily Check-in Card */}
+        {/* Daily Check-in Card (Teal) */}
         <Link
           to="/log"
-          className={`tap card-soft flex flex-col justify-between p-6 border-2 transition-all hover:-translate-y-0.5 ${
-            done
-              ? "border-primary/40 bg-card hover:border-primary"
-              : "border-primary bg-primary text-primary-foreground shadow-md hover:bg-primary/95"
-          }`}
+          className="group tap card-soft flex flex-col justify-between p-6 border-2 border-module-teal/30 bg-card transition-all hover:-translate-y-0.5 hover:border-module-teal"
         >
           <div className="flex items-center justify-between">
-            <div
-              className={`grid size-14 place-items-center rounded-2xl ${
-                done ? "bg-primary/10 text-primary" : "bg-white/20 text-white"
-              }`}
-            >
+            <div className="grid size-14 place-items-center rounded-2xl bg-module-teal/15 text-module-teal">
               {done ? <CheckCircle2 className="size-8" /> : <PenLine className="size-8" />}
             </div>
             <span
               className={`rounded-full px-3 py-1 text-xs font-bold ${
-                done ? "bg-success/15 text-success" : "bg-white/25 text-white"
+                done ? "bg-success/15 text-success" : "bg-module-teal/15 text-module-teal"
               }`}
             >
               {done ? "Completed" : "Daily"}
@@ -123,34 +115,27 @@ function HomePage() {
           </div>
 
           <div className="mt-6">
-            <h2
-              className={`text-2xl font-bold ${
-                done ? "text-foreground" : "text-primary-foreground"
-              }`}
-            >
-              {t("home.checkin")}
-            </h2>
-            <p
-              className={`mt-1 text-sm ${
-                done ? "text-muted-foreground" : "text-primary-foreground/90"
-              }`}
-            >
+            <h2 className="text-2xl font-bold text-foreground">{t("home.checkin")}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
               {done ? t("log.already") : "Log symptoms, bleeding and mood in 30 seconds."}
             </p>
+            <span className="inline-flex items-center gap-1 text-sm font-bold text-module-teal mt-4 group-hover:translate-x-1 transition-transform">
+              Open &rarr;
+            </span>
           </div>
         </Link>
 
-        {/* Cycle Overview Card */}
+        {/* Cycle Overview Card (Berry) */}
         <Link
           to="/cycle"
-          className="tap card-soft flex flex-col justify-between p-6 border border-border/80 transition-all hover:-translate-y-0.5 hover:border-primary/50"
+          className="group tap card-soft flex flex-col justify-between p-6 border-2 border-module-berry/30 bg-card transition-all hover:-translate-y-0.5 hover:border-module-berry"
         >
           <div className="flex items-center justify-between">
-            <div className="grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary">
+            <div className="grid size-14 place-items-center rounded-2xl bg-module-berry/15 text-module-berry">
               <CalendarHeart className="size-8" />
             </div>
             {cycleDay && (
-              <span className="rounded-2xl bg-secondary px-3.5 py-1 text-lg font-bold text-foreground border border-border/50">
+              <span className="rounded-2xl bg-accent/15 px-3.5 py-1 text-lg font-bold text-accent border border-accent/30">
                 Day {cycleDay}
               </span>
             )}
@@ -159,19 +144,22 @@ function HomePage() {
           <div className="mt-6">
             <h2 className="text-2xl font-bold text-foreground">{t("cycle.see")}</h2>
             <p className="mt-1 text-sm text-muted-foreground">{t("cycle.title")}</p>
+            <span className="inline-flex items-center gap-1 text-sm font-bold text-module-berry mt-4 group-hover:translate-x-1 transition-transform">
+              Open &rarr;
+            </span>
           </div>
         </Link>
 
-        {/* Medicines & Reminders Card */}
+        {/* Medicines & Reminders Card (Violet) */}
         <Link
           to="/medicines"
-          className="tap card-soft flex flex-col justify-between p-6 border border-border/80 transition-all hover:-translate-y-0.5 hover:border-primary/50"
+          className="group tap card-soft flex flex-col justify-between p-6 border-2 border-module-violet/30 bg-card transition-all hover:-translate-y-0.5 hover:border-module-violet"
         >
           <div className="flex items-center justify-between">
-            <div className="grid size-14 place-items-center rounded-2xl bg-accent/15 text-accent">
+            <div className="grid size-14 place-items-center rounded-2xl bg-module-violet/15 text-module-violet">
               <Pill className="size-8" />
             </div>
-            <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
+            <span className="rounded-full bg-module-violet/15 px-3 py-1 text-xs font-bold text-module-violet">
               Doses
             </span>
           </div>
@@ -179,19 +167,22 @@ function HomePage() {
           <div className="mt-6">
             <h2 className="text-2xl font-bold text-foreground">{t("nav.medicines")}</h2>
             <p className="mt-1 text-sm text-muted-foreground">{t("medicines.todayDoses")}</p>
+            <span className="inline-flex items-center gap-1 text-sm font-bold text-module-violet mt-4 group-hover:translate-x-1 transition-transform">
+              Open &rarr;
+            </span>
           </div>
         </Link>
 
-        {/* Find Care Card */}
+        {/* Find Care Card (Green) */}
         <Link
           to="/care"
-          className="tap card-soft flex flex-col justify-between p-6 border border-border/80 transition-all hover:-translate-y-0.5 hover:border-primary/50"
+          className="group tap card-soft flex flex-col justify-between p-6 border-2 border-module-green/30 bg-card transition-all hover:-translate-y-0.5 hover:border-module-green"
         >
           <div className="flex items-center justify-between">
-            <div className="grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary">
+            <div className="grid size-14 place-items-center rounded-2xl bg-module-green/15 text-module-green">
               <HeartPulse className="size-8" />
             </div>
-            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+            <span className="rounded-full bg-module-green/15 px-3 py-1 text-xs font-bold text-module-green">
               Nearby
             </span>
           </div>
@@ -199,19 +190,22 @@ function HomePage() {
           <div className="mt-6">
             <h2 className="text-2xl font-bold text-foreground">{t("nav.care")}</h2>
             <p className="mt-1 text-sm text-muted-foreground">{t("care.hubTitle")}</p>
+            <span className="inline-flex items-center gap-1 text-sm font-bold text-module-green mt-4 group-hover:translate-x-1 transition-transform">
+              Open &rarr;
+            </span>
           </div>
         </Link>
 
-        {/* Learn Card */}
+        {/* Learn Card (Amber) */}
         <Link
           to="/learn"
-          className="tap card-soft flex flex-col justify-between p-6 border border-border/80 transition-all hover:-translate-y-0.5 hover:border-primary/50"
+          className="group tap card-soft flex flex-col justify-between p-6 border-2 border-module-amber/30 bg-card transition-all hover:-translate-y-0.5 hover:border-module-amber"
         >
           <div className="flex items-center justify-between">
-            <div className="grid size-14 place-items-center rounded-2xl bg-accent/15 text-accent">
+            <div className="grid size-14 place-items-center rounded-2xl bg-module-amber/15 text-module-amber">
               <BookOpen className="size-8" />
             </div>
-            <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
+            <span className="rounded-full bg-module-amber/15 px-3 py-1 text-xs font-bold text-module-amber">
               Guides
             </span>
           </div>
@@ -219,19 +213,22 @@ function HomePage() {
           <div className="mt-6">
             <h2 className="text-2xl font-bold text-foreground">{t("learn.title")}</h2>
             <p className="mt-1 text-sm text-muted-foreground">PCOS & endometriosis explainers</p>
+            <span className="inline-flex items-center gap-1 text-sm font-bold text-module-amber mt-4 group-hover:translate-x-1 transition-transform">
+              Open &rarr;
+            </span>
           </div>
         </Link>
 
-        {/* Private Vault Card */}
+        {/* Private Vault Card (Coral) */}
         <Link
           to="/vault"
-          className="tap card-soft flex flex-col justify-between p-6 border border-border/80 transition-all hover:-translate-y-0.5 hover:border-primary/50"
+          className="group tap card-soft flex flex-col justify-between p-6 border-2 border-module-coral/30 bg-card transition-all hover:-translate-y-0.5 hover:border-module-coral"
         >
           <div className="flex items-center justify-between">
-            <div className="grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary">
+            <div className="grid size-14 place-items-center rounded-2xl bg-module-coral/15 text-module-coral">
               <Lock className="size-8" />
             </div>
-            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+            <span className="rounded-full bg-module-coral/15 px-3 py-1 text-xs font-bold text-module-coral">
               Private
             </span>
           </div>
@@ -239,6 +236,9 @@ function HomePage() {
           <div className="mt-6">
             <h2 className="text-2xl font-bold text-foreground">{t("vault.lockedTitle")}</h2>
             <p className="mt-1 text-sm text-muted-foreground">Pin-protected medical documents</p>
+            <span className="inline-flex items-center gap-1 text-sm font-bold text-module-coral mt-4 group-hover:translate-x-1 transition-transform">
+              Open &rarr;
+            </span>
           </div>
         </Link>
       </div>

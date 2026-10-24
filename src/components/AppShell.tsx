@@ -65,7 +65,7 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
         <div
           role="status"
           aria-live="polite"
-          className="sticky top-0 z-50 flex items-center justify-center gap-2 bg-amber-600 px-4 py-2.5 text-center text-sm font-semibold text-white shadow-md transition-all"
+          className="sticky top-0 z-50 flex items-center justify-center gap-2 bg-warning px-4 py-2.5 text-center text-sm font-semibold text-warning-foreground shadow-md transition-all"
         >
           <WifiOff className="size-4 shrink-0" />
           <span>{t("offline.banner")}</span>
