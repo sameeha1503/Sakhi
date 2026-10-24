@@ -19,14 +19,12 @@ import { Route as LogRouteImport } from './routes/log'
 import { Route as MedicinesRouteImport } from './routes/medicines'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ScanRouteImport } from './routes/scan'
+import { Route as SchemesRouteImport } from './routes/schemes'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as UrgentRouteImport } from './routes/urgent'
 import { Route as VaultRouteImport } from './routes/vault'
-import { Route as CareQuestionsRouteImport } from './routes/care.questions'
-import { Route as CareSchemesRouteImport } from './routes/care.schemes'
-import { Route as CareSummaryRouteImport } from './routes/care.summary'
-import { Route as CareVisitsRouteImport } from './routes/care.visits'
+import { Route as VisitRouteImport } from './routes/visit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -78,6 +76,11 @@ const ScanRoute = ScanRouteImport.update({
   path: '/scan',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SchemesRoute = SchemesRouteImport.update({
+  id: '/schemes',
+  path: '/schemes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -98,30 +101,15 @@ const VaultRoute = VaultRouteImport.update({
   path: '/vault',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CareQuestionsRoute = CareQuestionsRouteImport.update({
-  id: '/questions',
-  path: '/questions',
-  getParentRoute: () => CareRoute,
-} as any)
-const CareSchemesRoute = CareSchemesRouteImport.update({
-  id: '/schemes',
-  path: '/schemes',
-  getParentRoute: () => CareRoute,
-} as any)
-const CareSummaryRoute = CareSummaryRouteImport.update({
-  id: '/summary',
-  path: '/summary',
-  getParentRoute: () => CareRoute,
-} as any)
-const CareVisitsRoute = CareVisitsRouteImport.update({
-  id: '/visits',
-  path: '/visits',
-  getParentRoute: () => CareRoute,
+const VisitRoute = VisitRouteImport.update({
+  id: '/visit',
+  path: '/visit',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/care': typeof CareRouteWithChildren
+  '/care': typeof CareRoute
   '/consent': typeof ConsentRoute
   '/cycle': typeof CycleRoute
   '/home': typeof HomeRoute
@@ -130,18 +118,16 @@ export interface FileRoutesByFullPath {
   '/medicines': typeof MedicinesRoute
   '/profile': typeof ProfileRoute
   '/scan': typeof ScanRoute
+  '/schemes': typeof SchemesRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/urgent': typeof UrgentRoute
   '/vault': typeof VaultRoute
-  '/care/questions': typeof CareQuestionsRoute
-  '/care/schemes': typeof CareSchemesRoute
-  '/care/summary': typeof CareSummaryRoute
-  '/care/visits': typeof CareVisitsRoute
+  '/visit': typeof VisitRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/care': typeof CareRouteWithChildren
+  '/care': typeof CareRoute
   '/consent': typeof ConsentRoute
   '/cycle': typeof CycleRoute
   '/home': typeof HomeRoute
@@ -150,19 +136,17 @@ export interface FileRoutesByTo {
   '/medicines': typeof MedicinesRoute
   '/profile': typeof ProfileRoute
   '/scan': typeof ScanRoute
+  '/schemes': typeof SchemesRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/urgent': typeof UrgentRoute
   '/vault': typeof VaultRoute
-  '/care/questions': typeof CareQuestionsRoute
-  '/care/schemes': typeof CareSchemesRoute
-  '/care/summary': typeof CareSummaryRoute
-  '/care/visits': typeof CareVisitsRoute
+  '/visit': typeof VisitRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/care': typeof CareRouteWithChildren
+  '/care': typeof CareRoute
   '/consent': typeof ConsentRoute
   '/cycle': typeof CycleRoute
   '/home': typeof HomeRoute
@@ -171,14 +155,12 @@ export interface FileRoutesById {
   '/medicines': typeof MedicinesRoute
   '/profile': typeof ProfileRoute
   '/scan': typeof ScanRoute
+  '/schemes': typeof SchemesRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/urgent': typeof UrgentRoute
   '/vault': typeof VaultRoute
-  '/care/questions': typeof CareQuestionsRoute
-  '/care/schemes': typeof CareSchemesRoute
-  '/care/summary': typeof CareSummaryRoute
-  '/care/visits': typeof CareVisitsRoute
+  '/visit': typeof VisitRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -193,14 +175,12 @@ export interface FileRouteTypes {
     | '/medicines'
     | '/profile'
     | '/scan'
+    | '/schemes'
     | '/settings'
     | '/signup'
     | '/urgent'
     | '/vault'
-    | '/care/questions'
-    | '/care/schemes'
-    | '/care/summary'
-    | '/care/visits'
+    | '/visit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -213,14 +193,12 @@ export interface FileRouteTypes {
     | '/medicines'
     | '/profile'
     | '/scan'
+    | '/schemes'
     | '/settings'
     | '/signup'
     | '/urgent'
     | '/vault'
-    | '/care/questions'
-    | '/care/schemes'
-    | '/care/summary'
-    | '/care/visits'
+    | '/visit'
   id:
     | '__root__'
     | '/'
@@ -233,19 +211,17 @@ export interface FileRouteTypes {
     | '/medicines'
     | '/profile'
     | '/scan'
+    | '/schemes'
     | '/settings'
     | '/signup'
     | '/urgent'
     | '/vault'
-    | '/care/questions'
-    | '/care/schemes'
-    | '/care/summary'
-    | '/care/visits'
+    | '/visit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  CareRoute: typeof CareRouteWithChildren
+  CareRoute: typeof CareRoute
   ConsentRoute: typeof ConsentRoute
   CycleRoute: typeof CycleRoute
   HomeRoute: typeof HomeRoute
@@ -254,10 +230,12 @@ export interface RootRouteChildren {
   MedicinesRoute: typeof MedicinesRoute
   ProfileRoute: typeof ProfileRoute
   ScanRoute: typeof ScanRoute
+  SchemesRoute: typeof SchemesRoute
   SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
   UrgentRoute: typeof UrgentRoute
   VaultRoute: typeof VaultRoute
+  VisitRoute: typeof VisitRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -332,6 +310,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ScanRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/schemes': {
+      id: '/schemes'
+      path: '/schemes'
+      fullPath: '/schemes'
+      preLoaderRoute: typeof SchemesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -360,56 +345,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VaultRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/care/questions': {
-      id: '/care/questions'
-      path: '/questions'
-      fullPath: '/care/questions'
-      preLoaderRoute: typeof CareQuestionsRouteImport
-      parentRoute: typeof CareRoute
-    }
-    '/care/schemes': {
-      id: '/care/schemes'
-      path: '/schemes'
-      fullPath: '/care/schemes'
-      preLoaderRoute: typeof CareSchemesRouteImport
-      parentRoute: typeof CareRoute
-    }
-    '/care/summary': {
-      id: '/care/summary'
-      path: '/summary'
-      fullPath: '/care/summary'
-      preLoaderRoute: typeof CareSummaryRouteImport
-      parentRoute: typeof CareRoute
-    }
-    '/care/visits': {
-      id: '/care/visits'
-      path: '/visits'
-      fullPath: '/care/visits'
-      preLoaderRoute: typeof CareVisitsRouteImport
-      parentRoute: typeof CareRoute
+    '/visit': {
+      id: '/visit'
+      path: '/visit'
+      fullPath: '/visit'
+      preLoaderRoute: typeof VisitRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
 
-interface CareRouteChildren {
-  CareQuestionsRoute: typeof CareQuestionsRoute
-  CareSchemesRoute: typeof CareSchemesRoute
-  CareSummaryRoute: typeof CareSummaryRoute
-  CareVisitsRoute: typeof CareVisitsRoute
-}
-
-const CareRouteChildren: CareRouteChildren = {
-  CareQuestionsRoute: CareQuestionsRoute,
-  CareSchemesRoute: CareSchemesRoute,
-  CareSummaryRoute: CareSummaryRoute,
-  CareVisitsRoute: CareVisitsRoute,
-}
-
-const CareRouteWithChildren = CareRoute._addFileChildren(CareRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  CareRoute: CareRouteWithChildren,
+  CareRoute: CareRoute,
   ConsentRoute: ConsentRoute,
   CycleRoute: CycleRoute,
   HomeRoute: HomeRoute,
@@ -418,10 +366,12 @@ const rootRouteChildren: RootRouteChildren = {
   MedicinesRoute: MedicinesRoute,
   ProfileRoute: ProfileRoute,
   ScanRoute: ScanRoute,
+  SchemesRoute: SchemesRoute,
   SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
   UrgentRoute: UrgentRoute,
   VaultRoute: VaultRoute,
+  VisitRoute: VisitRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

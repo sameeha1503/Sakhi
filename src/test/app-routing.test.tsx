@@ -14,4 +14,34 @@ describe("App routing", () => {
 
     expect(matches.at(-1)?.routeId).not.toBe(rootRouteId);
   });
+
+  it("asserts /visit matches its own route and not /care", () => {
+    const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
+
+    const matches = router.matchRoutes("/visit");
+    const matchedRouteId = matches.at(-1)?.routeId;
+
+    expect(matchedRouteId).toBe("/visit");
+    expect(matchedRouteId).not.toBe("/care");
+  });
+
+  it("asserts /visit?tab=summary matches /visit route and not /care", () => {
+    const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
+
+    const matches = router.matchRoutes("/visit", { tab: "summary" });
+    const matchedRouteId = matches.at(-1)?.routeId;
+
+    expect(matchedRouteId).toBe("/visit");
+    expect(matchedRouteId).not.toBe("/care");
+  });
+
+  it("asserts /schemes matches its own route and not /care", () => {
+    const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
+
+    const matches = router.matchRoutes("/schemes");
+    const matchedRouteId = matches.at(-1)?.routeId;
+
+    expect(matchedRouteId).toBe("/schemes");
+    expect(matchedRouteId).not.toBe("/care");
+  });
 });

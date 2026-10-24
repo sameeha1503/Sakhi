@@ -14,6 +14,8 @@ export type SuggestedQuestion = {
   category: QuestionCategory;
   i18nKey?: string;
   defaultText: string;
+  whyI18nKey?: string;
+  whyDefaultText?: string;
   isCustom?: boolean;
 };
 
@@ -74,6 +76,9 @@ export function generateSuggestedQuestions(logs: DailyLog[], today: string): Sug
       i18nKey: "questions.suggested.irregularPlus",
       defaultText:
         "Could my irregular periods alongside pimples, hair fall or weight changes be related to PCOS or thyroid?",
+      whyI18nKey: "questions.why.irregularPlus",
+      whyDefaultText:
+        "Suggested because your cycle length varies significantly and you noted acne or skin symptoms across multiple weeks.",
     });
   }
 
@@ -84,6 +89,9 @@ export function generateSuggestedQuestions(logs: DailyLog[], today: string): Sug
       i18nKey: "questions.suggested.painCycle",
       defaultText:
         "I have had severe period pain across multiple cycles. What could be causing it and what safe pain relief do you recommend?",
+      whyI18nKey: "questions.why.painCycle",
+      whyDefaultText:
+        "Suggested because severe period pain (level 3+) was logged across repeated cycles.",
     });
   }
 
@@ -94,6 +102,9 @@ export function generateSuggestedQuestions(logs: DailyLog[], today: string): Sug
       i18nKey: "questions.suggested.heavyRepeat",
       defaultText:
         "I have had frequent heavy bleeding. Could this be making me anaemic or low on iron, and do I need an ultrasound?",
+      whyI18nKey: "questions.why.heavyRepeat",
+      whyDefaultText:
+        "Suggested because heavy or prolonged flow was logged across repeated cycles.",
     });
   }
 
@@ -108,6 +119,8 @@ export function generateSuggestedQuestions(logs: DailyLog[], today: string): Sug
       i18nKey: "questions.suggested.irregularCycles",
       defaultText:
         "Could my irregular periods have an underlying cause that needs medical testing?",
+      whyI18nKey: "questions.why.irregular",
+      whyDefaultText: "Suggested because irregular cycle timing was recorded in recent logs.",
     });
   }
 
@@ -121,6 +134,9 @@ export function generateSuggestedQuestions(logs: DailyLog[], today: string): Sug
       i18nKey: "questions.suggested.pelvicPain",
       defaultText:
         "I have noticed persistent pelvic pain. Are there specific scans or checks we should do?",
+      whyI18nKey: "questions.why.pelvicPain",
+      whyDefaultText:
+        "Suggested because persistent pelvic pain or cramps were recorded in recent logs.",
     });
   }
 
@@ -134,10 +150,45 @@ export function generateSuggestedQuestions(logs: DailyLog[], today: string): Sug
       i18nKey: "questions.suggested.heavyBleeding",
       defaultText:
         "My bleeding has been heavy at times. Should we check my haemoglobin level for anaemia?",
+      whyI18nKey: "questions.why.heavyBleeding",
+      whyDefaultText: "Suggested because heavy flow days were recorded in recent logs.",
     });
   }
 
-  // 3. Medicine question if medicines are recorded
+  // 3. Mood or sleep patterns
+  const hasMoodPattern =
+    recent90.filter((l) => typeof l.mood === "number" && l.mood <= 1).length >= 3 ||
+    recent90.some((l) => l.symptoms.includes("anxiety") || l.symptoms.includes("moodSwings"));
+  if (hasMoodPattern) {
+    questions.push({
+      id: "q_symptom_mood",
+      category: "symptom",
+      i18nKey: "questions.suggested.moodPattern",
+      defaultText:
+        "I have noticed persistent low mood, mood swings, or anxiety around my cycle. Could this be related to hormonal changes or PMDD?",
+      whyI18nKey: "questions.why.mood",
+      whyDefaultText:
+        "Suggested because low mood or anxiety was logged on 3 or more days in recent weeks.",
+    });
+  }
+
+  const hasSleepPattern =
+    recent90.filter((l) => typeof l.sleep === "number" && l.sleep <= 1).length >= 3 ||
+    recent90.some((l) => l.symptoms.includes("insomnia") || l.symptoms.includes("fatigue"));
+  if (hasSleepPattern) {
+    questions.push({
+      id: "q_symptom_sleep",
+      category: "symptom",
+      i18nKey: "questions.suggested.sleepPattern",
+      defaultText:
+        "I have experienced frequent poor sleep, insomnia, or fatigue. Could this be linked to my hormones, iron levels, or thyroid?",
+      whyI18nKey: "questions.why.sleep",
+      whyDefaultText:
+        "Suggested because poor sleep or fatigue was logged on 3 or more days in recent weeks.",
+    });
+  }
+
+  // 4. Medicine question if medicines are recorded
   const medicines = medicineService.all();
   if (medicines.length > 0) {
     questions.push({
@@ -146,10 +197,12 @@ export function generateSuggestedQuestions(logs: DailyLog[], today: string): Sug
       i18nKey: "questions.suggested.medicineReview",
       defaultText:
         "Are all my current medications still needed, and are there any side effects or adjustments required?",
+      whyI18nKey: "questions.why.medicine",
+      whyDefaultText: "Suggested because active medicines are currently recorded in your schedule.",
     });
   }
 
-  // 4. Always add generic wellness questions
+  // 5. Always add generic wellness questions
   questions.push(...DEFAULT_GENERAL_QUESTIONS);
 
   return questions;

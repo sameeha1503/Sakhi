@@ -112,7 +112,7 @@ export function DoseReminders() {
           </div>
           <div className="flex items-center gap-1">
             <Link
-              to="/care/schemes"
+              to="/schemes"
               onClick={() => setDismissedUntil(Date.now() + SNOOZE_MS)}
               className="tap rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"
             >

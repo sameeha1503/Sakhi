@@ -10,6 +10,11 @@ import {
   CheckCircle2,
   Clock,
   Lock,
+  Stethoscope,
+  FileQuestion,
+  CalendarDays,
+  FileText,
+  ShieldAlert,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { FlagCards } from "@/components/FlagCards";
@@ -69,33 +74,96 @@ function HomePage() {
         )}
       </div>
 
-      {/* Upcoming Visit Banner */}
-      {upcomingFollowUps[0] && (
-        <Link
-          to="/care/visits"
-          className="tap card-soft mt-5 flex items-center gap-4 border-2 border-primary/40 bg-secondary/80 p-4 transition-transform hover:scale-[1.01]"
-        >
-          <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-xs">
-            <Clock className="size-6" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold uppercase tracking-wider text-primary">
-              {t("visits.upcomingBadge")}
-            </p>
-            <p className="font-bold text-foreground truncate text-base sm:text-lg">
-              {upcomingFollowUps[0].daysRemaining === 0
-                ? t("visits.homeBannerToday", { doctor: upcomingFollowUps[0].visit.doctorOrClinic })
-                : t("visits.homeBanner", {
-                    doctor: upcomingFollowUps[0].visit.doctorOrClinic,
-                    days: upcomingFollowUps[0].daysRemaining,
-                  })}
-            </p>
-          </div>
-        </Link>
-      )}
-
-      {/* Responsive Grid of Cards (2-3 columns on desktop) */}
+      {/* Responsive Grid of Cards */}
       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {/* Doctor Visit Wide Module Card (tag: RECORDS) */}
+        <div className="card-soft border-2 border-primary/30 bg-card p-6 transition-all hover:border-primary/60 shadow-xs flex flex-col justify-between md:col-span-2 lg:col-span-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <Link
+              to="/visit"
+              search={{ tab: "questions" }}
+              className="flex items-center gap-4 group flex-1"
+            >
+              <div className="grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary group-hover:scale-105 transition-transform shrink-0">
+                <Stethoscope className="size-8" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">
+                    {t("home.doctorVisitTitle", "Doctor visit")}
+                  </h2>
+                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+                    {t("home.tagRecords", "RECORDS")}
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {t(
+                    "home.doctorVisitDesc",
+                    "Prepare questions, log clinic visits, and print your doctor summary.",
+                  )}
+                </p>
+              </div>
+            </Link>
+
+            {/* Follow-up due badge if within 3 days */}
+            {upcomingFollowUps[0] && (
+              <Link
+                to="/visit"
+                search={{ tab: "visits" }}
+                className="inline-flex items-center gap-1.5 rounded-full bg-warning/15 px-3.5 py-1 text-xs font-bold text-warning border border-warning/30 hover:bg-warning/20 transition-all self-start sm:self-auto shrink-0"
+              >
+                <Clock className="size-3.5" />
+                <span>
+                  {upcomingFollowUps[0].daysRemaining === 0
+                    ? t("visits.followUpToday", "Follow-up is today!")
+                    : upcomingFollowUps[0].daysRemaining === 1
+                      ? t("home.followupDueTomorrow", "Follow-up in 1 day")
+                      : t("home.followupDueIn", { days: upcomingFollowUps[0].daysRemaining })}
+                </span>
+              </Link>
+            )}
+          </div>
+
+          {/* Three Short Steps as Buttons with Icons */}
+          <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Link
+              to="/visit"
+              search={{ tab: "questions" }}
+              className="tap flex items-center justify-between sm:justify-center gap-2.5 rounded-2xl border-2 border-border bg-card p-3.5 text-xs sm:text-sm font-bold text-foreground hover:border-primary/50 hover:bg-secondary/40 transition-all"
+            >
+              <div className="flex items-center gap-2">
+                <FileQuestion className="size-4 text-primary shrink-0" />
+                <span>{t("home.stepQuestions", "1 Prepare questions")}</span>
+              </div>
+              <span className="text-muted-foreground sm:hidden">&rarr;</span>
+            </Link>
+
+            <Link
+              to="/visit"
+              search={{ tab: "visits" }}
+              className="tap flex items-center justify-between sm:justify-center gap-2.5 rounded-2xl border-2 border-border bg-card p-3.5 text-xs sm:text-sm font-bold text-foreground hover:border-primary/50 hover:bg-secondary/40 transition-all"
+            >
+              <div className="flex items-center gap-2">
+                <CalendarDays className="size-4 text-primary shrink-0" />
+                <span>{t("home.stepVisits", "2 Log a visit")}</span>
+              </div>
+              <span className="text-muted-foreground sm:hidden">&rarr;</span>
+            </Link>
+
+            <Link
+              to="/visit"
+              search={{ tab: "summary" }}
+              className="tap flex items-center justify-between sm:justify-center gap-2.5 rounded-2xl border-2 border-border bg-card p-3.5 text-xs sm:text-sm font-bold text-foreground hover:border-primary/50 hover:bg-secondary/40 transition-all"
+            >
+              <div className="flex items-center gap-2">
+                <FileText className="size-4 text-primary shrink-0" />
+                <span>{t("home.stepSummary", "3 Doctor summary")}</span>
+              </div>
+              <span className="text-muted-foreground sm:hidden">&rarr;</span>
+            </Link>
+          </div>
+        </div>
+
         {/* Daily Check-in Card (Teal) */}
         <Link
           to="/log"
@@ -173,6 +241,36 @@ function HomePage() {
           </div>
         </Link>
 
+        {/* Government Schemes Card */}
+        <Link
+          to="/schemes"
+          className="group tap card-soft flex flex-col justify-between p-6 border-2 border-accent/30 bg-card transition-all hover:-translate-y-0.5 hover:border-accent"
+        >
+          <div className="flex items-center justify-between">
+            <div className="grid size-14 place-items-center rounded-2xl bg-accent/15 text-accent">
+              <ShieldAlert className="size-8" />
+            </div>
+            <span className="rounded-full bg-accent/15 px-3 py-1 text-xs font-bold text-accent">
+              {t("home.tagSchemes", "BENEFITS")}
+            </span>
+          </div>
+
+          <div className="mt-6">
+            <h2 className="text-2xl font-bold text-foreground">
+              {t("home.schemesCardTitle", "Government schemes")}
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {t(
+                "home.schemesCardDesc",
+                "Free hospital cover, screening & maternal cash benefits.",
+              )}
+            </p>
+            <span className="inline-flex items-center gap-1 text-sm font-bold text-accent mt-4 group-hover:translate-x-1 transition-transform">
+              Open &rarr;
+            </span>
+          </div>
+        </Link>
+
         {/* Find Care Card (Green) */}
         <Link
           to="/care"
@@ -189,7 +287,9 @@ function HomePage() {
 
           <div className="mt-6">
             <h2 className="text-2xl font-bold text-foreground">{t("nav.care")}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{t("care.hubTitle")}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {t("care.title", "Find hospitals & PHCs")}
+            </p>
             <span className="inline-flex items-center gap-1 text-sm font-bold text-module-green mt-4 group-hover:translate-x-1 transition-transform">
               Open &rarr;
             </span>

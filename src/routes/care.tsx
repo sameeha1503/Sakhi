@@ -617,59 +617,45 @@ function CarePage() {
           </div>
         </section>
 
-        {/* Doctor Visit Tools Hub */}
+        {/* Doctor Visit & Schemes Links */}
         <section className="mt-4 flex flex-col gap-3">
-          <h2 className="text-2xl font-bold">{t("care.hubTitle")}</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <h2 className="text-2xl font-bold">{t("care.hubTitle", "Health services & visits")}</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Link
-              to="/care/questions"
-              className="card-soft tap border border-border/80 flex flex-col justify-between p-5 transition-transform hover:-translate-y-0.5 hover:border-primary/50"
+              to="/visit"
+              search={{ tab: "questions" }}
+              className="card-soft tap border border-border/80 flex items-center gap-4 p-5 transition-transform hover:-translate-y-0.5 hover:border-primary/50"
             >
-              <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary mb-3">
-                <FileQuestion className="size-6" />
+              <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+                <Stethoscope className="size-6" />
               </div>
               <div className="min-w-0">
-                <p className="font-bold text-lg text-foreground">{t("care.hub.questionsTitle")}</p>
-                <p className="text-xs text-muted-foreground mt-1">{t("care.hub.questionsDesc")}</p>
+                <p className="font-bold text-lg text-foreground">
+                  {t("care.hub.doctorVisitTitle", "Doctor visit")}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t(
+                    "care.hub.doctorVisitDesc",
+                    "Prepare questions, log clinic visits, and print summary",
+                  )}
+                </p>
               </div>
             </Link>
 
             <Link
-              to="/care/visits"
-              className="card-soft tap border border-border/80 flex flex-col justify-between p-5 transition-transform hover:-translate-y-0.5 hover:border-primary/50"
+              to="/schemes"
+              className="card-soft tap border border-border/80 flex items-center gap-4 p-5 transition-transform hover:-translate-y-0.5 hover:border-accent/50"
             >
-              <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary mb-3">
-                <CalendarDays className="size-6" />
-              </div>
-              <div className="min-w-0">
-                <p className="font-bold text-lg text-foreground">{t("care.hub.visitsTitle")}</p>
-                <p className="text-xs text-muted-foreground mt-1">{t("care.hub.visitsDesc")}</p>
-              </div>
-            </Link>
-
-            <Link
-              to="/care/summary"
-              className="card-soft tap border border-border/80 flex flex-col justify-between p-5 transition-transform hover:-translate-y-0.5 hover:border-primary/50"
-            >
-              <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary mb-3">
-                <FileText className="size-6" />
-              </div>
-              <div className="min-w-0">
-                <p className="font-bold text-lg text-foreground">{t("care.hub.summaryTitle")}</p>
-                <p className="text-xs text-muted-foreground mt-1">{t("care.hub.summaryDesc")}</p>
-              </div>
-            </Link>
-
-            <Link
-              to="/care/schemes"
-              className="card-soft tap border border-border/80 flex flex-col justify-between p-5 transition-transform hover:-translate-y-0.5 hover:border-primary/50"
-            >
-              <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-accent/15 text-accent mb-3">
+              <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-accent/15 text-accent">
                 <ShieldAlert className="size-6" />
               </div>
               <div className="min-w-0">
-                <p className="font-bold text-lg text-foreground">{t("care.hub.schemesTitle")}</p>
-                <p className="text-xs text-muted-foreground mt-1">{t("care.hub.schemesDesc")}</p>
+                <p className="font-bold text-lg text-foreground">
+                  {t("care.hub.schemesTitle", "Government schemes")}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t("care.hub.schemesDesc", "Free hospital cover, screening & maternity benefits")}
+                </p>
               </div>
             </Link>
           </div>

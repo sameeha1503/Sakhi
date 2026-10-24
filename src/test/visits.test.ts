@@ -49,4 +49,18 @@ describe("Visits service", () => {
     expect(upcoming[0]?.visit.doctorOrClinic).toBe("CHC Shamshabad");
     expect(upcoming[0]?.daysRemaining).toBe(2);
   });
+
+  it("clears visits when storage.clearAll() is called (delete my data)", async () => {
+    visitService.add({
+      date: "2026-03-20",
+      doctorOrClinic: "CHC Shamshabad",
+      reason: "Follow-up",
+      notes: "",
+      linkedMedicines: [],
+    });
+    expect(visitService.all().length).toBe(1);
+
+    await storage.clearAll();
+    expect(visitService.all().length).toBe(0);
+  });
 });

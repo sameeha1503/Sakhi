@@ -100,6 +100,35 @@ describe("Question generation logic", () => {
     const medQ = questions.find((q) => q.id === "q_medicine_review");
     expect(medQ).toBeDefined();
     expect(medQ?.category).toBe("medicine");
+    expect(medQ?.whyI18nKey).toBe("questions.why.medicine");
+  });
+
+  it("suggests mood questions when persistent low mood is logged", () => {
+    const logs: DailyLog[] = [
+      makeLog("2026-03-01", { mood: 1 }),
+      makeLog("2026-03-05", { mood: 0 }),
+      makeLog("2026-03-10", { mood: 1 }),
+    ];
+
+    const questions = generateSuggestedQuestions(logs, "2026-03-15");
+    const moodQ = questions.find((q) => q.id === "q_symptom_mood");
+    expect(moodQ).toBeDefined();
+    expect(moodQ?.category).toBe("symptom");
+    expect(moodQ?.whyI18nKey).toBe("questions.why.mood");
+  });
+
+  it("suggests sleep questions when frequent poor sleep or insomnia is logged", () => {
+    const logs: DailyLog[] = [
+      makeLog("2026-03-01", { sleep: 1 }),
+      makeLog("2026-03-04", { sleep: 0 }),
+      makeLog("2026-03-08", { sleep: 1 }),
+    ];
+
+    const questions = generateSuggestedQuestions(logs, "2026-03-15");
+    const sleepQ = questions.find((q) => q.id === "q_symptom_sleep");
+    expect(sleepQ).toBeDefined();
+    expect(sleepQ?.category).toBe("symptom");
+    expect(sleepQ?.whyI18nKey).toBe("questions.why.sleep");
   });
 
   it("supports adding, ticking, unticking and deleting custom questions", () => {
@@ -125,5 +154,15 @@ describe("Question generation logic", () => {
     questionService.deleteCustomQuestion(custom.id);
     expect(questionService.getCustomQuestions().length).toBe(0);
     expect(questionService.getTickedIds()).not.toContain(custom.id);
+  });
+
+  it("clears custom questions and ticked state when storage.clearAll() is called", async () => {
+    questionService.addCustomQuestion("Test question?");
+    expect(questionService.getCustomQuestions().length).toBe(1);
+    expect(questionService.getTickedIds().length).toBeGreaterThan(0);
+
+    await storage.clearAll();
+    expect(questionService.getCustomQuestions().length).toBe(0);
+    expect(questionService.getTickedIds().length).toBe(0);
   });
 });

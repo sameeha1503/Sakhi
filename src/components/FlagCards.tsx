@@ -23,7 +23,8 @@ export function FlagCards({ flags }: { flags: FlagId[] }) {
         ))}
       </ul>
       <Link
-        to="/care/questions"
+        to="/visit"
+        search={{ tab: "questions" }}
         className="tap mt-3.5 flex items-center justify-center gap-2 rounded-2xl bg-primary py-3 text-sm font-bold text-primary-foreground shadow-xs transition-transform hover:scale-[1.01] active:scale-[0.98]"
       >
         <Stethoscope className="size-4" />

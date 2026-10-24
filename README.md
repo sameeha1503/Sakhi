@@ -88,18 +88,13 @@ The automated test suite `src/test/locales-parity.test.ts` validates:
   - **Privacy-First Location**: Geolocation coordinates and live results are cached in memory for the active session. Coordinates are only saved to persistent storage if the user explicitly turns on _"Remember my location"_.
   - **Urgent Red-Flag Screen (`/urgent`)**: Priority 108 ambulance calling is always displayed at the top, followed by live nearest hospital query prioritizing `amenity=hospital` and `emergency=yes` with sample fallback.
   - **Caller Advisory**: Always reminds rural women: _"Hours and services can change. Please call before you go."_
-- **Doctor Question Prep (`/care/questions`) (Phase 4)**:
-  - Generates suggested questions to ask the doctor based on logged symptoms and pattern flags (e.g. irregular cycles, severe pain, heavy bleeding, medicines).
-  - Pre-populated with generic wellness, nutrition, warning signs, and follow-up questions.
-  - Tick questions to bring to the appointment, or write and save custom questions.
-- **Doctor Visits Timeline (`/care/visits`) (Phase 4)**:
-  - Timeline of clinic visits with doctor/clinic name, reason, notes, and linked medicines.
-  - Next follow-up date tracking with an upcoming follow-up alert banner displayed on Home when a visit is within 3 days.
-- **One-Page Printable Doctor Summary (`/care/summary`) (Phase 4)**:
-  - 1-page printable view containing 90-day cycle statistics (lengths, flow highlights, severe pain days), pattern flags worded supportively as _"worth discussing with a doctor"_, active medicines, recent visits, and ticked questions.
-  - Tailored `@media print` A4 stylesheet and "Download / Print PDF" button using native browser print dialog for perfect Telugu and Hindi script rendering.
-- **Government Health Schemes Finder (`/care/schemes`) (Phase 5)**:
-  - Static curated directory of central and state health schemes: Ayushman Bharat PM-JAY, Ayushman Arogya Mandirs (women 30+ cancer screening & primary care), Janani Suraksha Yojana (JSY), Pradhan Mantri Matru Vandana Yojana (PMMVY), Pradhan Mantri Surakshit Matritva Abhiyan (PMSMA), and Janani Shishu Suraksha Karyakram (JSSK).
+- **Consolidated Doctor Visit Module (`/visit`)**:
+  - Accessible via a prominent wide module card on `/home` (tag: `RECORDS`) and direct links. Uses validated search parameter routing (`/visit?tab=questions|visits|summary`).
+  - **Questions tab (`/visit?tab=questions`)**: Generates suggested questions to ask the doctor based on logged symptoms, pattern flags (irregular cycles, severe pain, heavy flow), active medicines, and mood/sleep patterns, alongside universal wellness questions. Displays a clear _"Why this question"_ explanation under flag/symptom questions. Tick questions to bring to the appointment, or add and delete custom questions.
+  - **Visits Timeline tab (`/visit?tab=visits`)**: Timeline of clinic visits with doctor/clinic name, reason, clinical notes, linked medicines, and next follow-up date. Upcoming follow-up alert banner displays when a visit is within 3 days (e.g. _"Follow-up in 2 days"_). Includes quick add/edit/delete form with large inputs and date picker.
+  - **One-Page Printable Doctor Summary tab (`/visit?tab=summary`)**: 1-page printable view containing patient name, 90-day cycle statistics (lengths, flow highlights, severe pain days), pattern flags worded supportively as _"worth discussing with a doctor"_, active medicines, recent visits, and ticked questions. Tailored `@media print` A4 stylesheet and "Download / Print PDF" button using native browser print dialog for perfect Indic script rendering. Explicit non-diagnostic disclaimer: _"Sakhi shares patterns and questions only. It does not diagnose."_
+- **Government Health Schemes Finder (`/schemes`)**:
+  - Top-level route with a static curated directory in `src/data/schemes.ts`: Ayushman Bharat PM-JAY (free hospital cover up to ₹5 lakh/year), Ayushman Arogya Mandirs (free primary care and breast/cervical/oral cancer screening for women 30+), Janani Suraksha Yojana (JSY), Pradhan Mantri Matru Vandana Yojana (PMMVY), Pradhan Mantri Surakshit Matritva Abhiyan (PMSMA), and Janani Shishu Suraksha Karyakram (JSSK).
   - 3–4 simple questions with big buttons (age group, pregnancy status, ration card/household category, state).
   - Cards showing what the scheme offers, documents to carry, where to apply, and direct links to official government portals.
   - Opt-in monthly reminder for PMSMA on the 9th of every month for pregnant women.

@@ -35,7 +35,18 @@
   "home": {
     "hello": "Hello, {{name}}",
     "today": "How are you today?",
-    "checkin": "Daily check-in"
+    "checkin": "Daily check-in",
+    "doctorVisitTitle": "Doctor visit",
+    "doctorVisitDesc": "Prepare questions, log clinic visits, and print your doctor summary.",
+    "stepQuestions": "1 Prepare questions",
+    "stepVisits": "2 Log a visit",
+    "stepSummary": "3 Doctor summary",
+    "tagRecords": "RECORDS",
+    "schemesCardTitle": "Government schemes",
+    "schemesCardDesc": "Free hospital cover, screening & maternal cash benefits.",
+    "tagSchemes": "BENEFITS",
+    "followupDueIn": "Follow-up in {{days}} days",
+    "followupDueTomorrow": "Follow-up in 1 day"
   },
   "soon": "Coming in the next step",
   "profile": {
@@ -259,7 +270,9 @@
       "summaryTitle": "Doctor summary",
       "summaryDesc": "Summary of your cycle and symptoms",
       "schemesTitle": "Govt schemes",
-      "schemesDesc": "Free care & financial support"
+      "schemesDesc": "Free care & financial support",
+      "doctorVisitTitle": "Doctor visit",
+      "doctorVisitDesc": "Prepare questions, log clinic visits, and print summary"
     },
     "findingCare": "Finding care near you...",
     "geoDenied": "Location permission was denied. You can search by town, village, or PIN code below.",
@@ -317,7 +330,21 @@
       "generalTests": "Are there any routine blood tests, vitamin checks, or scans recommended for me?",
       "nutrition": "What dietary changes or daily habits can help support my health and energy?",
       "redFlags": "What warning signs should prompt me to come back or go to the hospital right away?",
-      "followUp": "When should I come in for my next check-up or follow-up visit?"
+      "followUp": "When should I come in for my next check-up or follow-up visit?",
+      "moodPattern": "I have had persistent low mood, mood swings, or anxiety around my cycle. Could this be related to hormonal changes or PMDD?",
+      "sleepPattern": "I have experienced frequent poor sleep, insomnia, or fatigue. Could this be linked to my hormones, iron levels, or thyroid?"
+    },
+    "whyLabel": "Why this question:",
+    "why": {
+      "irregularPlus": "Suggested because your cycle length varies and you recorded acne or skin symptoms across multiple weeks.",
+      "painCycle": "Suggested because severe period pain was logged across multiple consecutive cycles.",
+      "heavyRepeat": "Suggested because heavy flow was logged on multiple days in recent cycles.",
+      "irregular": "Suggested because irregular cycle timing was recorded in recent logs.",
+      "pelvicPain": "Suggested because persistent pelvic pain was recorded in recent logs.",
+      "heavyBleeding": "Suggested because heavy flow days were logged in recent cycles.",
+      "mood": "Suggested because low mood or anxiety was logged on 3 or more days in recent weeks.",
+      "sleep": "Suggested because poor sleep or fatigue was logged on 3 or more days in recent weeks.",
+      "medicine": "Suggested because active medications are currently recorded in your schedule."
     }
   },
   "visits": {
@@ -532,5 +559,15 @@
     "symptoms": "Reported symptoms",
     "notLogged": "Not logged yet",
     "none": "None"
+  },
+  "visit": {
+    "title": "Doctor visit",
+    "subtitle": "Prepare questions, record visits, and generate your medical summary.",
+    "tabs": {
+      "questions": "Prepare questions",
+      "visits": "Log a visit",
+      "summary": "Doctor summary"
+    },
+    "nonDiagnosticNotice": "Sakhi shares patterns and questions only. It does not diagnose."
   }
 }
