@@ -16,28 +16,40 @@ export function loadServerEnv(): void {
   try {
     // Only attempt filesystem loading if Node.js process and fs are available
     if (typeof process !== "undefined" && typeof process.cwd === "function") {
-      const fs =
-        (globalThis as unknown as { require?: (mod: string) => unknown }).require?.("node:fs") ||
-        (typeof window === "undefined" ? eval('require("node:fs")') : null);
-      const path =
-        (globalThis as unknown as { require?: (mod: string) => unknown }).require?.("node:path") ||
-        (typeof window === "undefined" ? eval('require("node:path")') : null);
+      // Use indirect eval to prevent static bundler warnings while safely loading .env if available
+      const req =
+        (globalThis as unknown as { require?: (mod: string) => unknown }).require ||
+        (typeof window === "undefined"
+          ? ((0, eval)('typeof require !== "undefined" ? require : null') as
+              ((mod: string) => Record<string, unknown>) | null)
+          : null);
+      const fs = req
+        ? (req("node:fs") as {
+            existsSync?: (p: string) => boolean;
+            readFileSync?: (p: string, enc: string) => string;
+          } | null)
+        : null;
+      const path = req
+        ? (req("node:path") as { resolve?: (...p: string[]) => string } | null)
+        : null;
 
-      if (fs && path) {
+      if (fs && path && typeof fs.existsSync === "function" && typeof path.resolve === "function") {
         const rootDir = process.cwd();
         const envFiles = [".env.local", ".env"];
 
         for (const file of envFiles) {
           const filePath = path.resolve(rootDir, file);
           if (fs.existsSync(filePath)) {
-            const content = fs.readFileSync(filePath, "utf-8");
-            parseAndApplyEnv(content);
+            const content = fs.readFileSync ? fs.readFileSync(filePath, "utf-8") : "";
+            if (content) {
+              parseAndApplyEnv(content);
+            }
           }
         }
       }
     }
   } catch {
-    // Graceful fallback for non-Node environments (Cloudflare Workers, edge runtimes)
+    // Graceful fallback for environments without filesystem access (Vercel edge, Workers) or when no .env files exist
   }
 
   logServerEnvStartup();

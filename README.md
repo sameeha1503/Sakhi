@@ -3,8 +3,8 @@
 > A private, multilingual women's healthcare companion for urban and rural India, built for PS1: Women's Healthcare.
 
 - **Team**: Sync Strikers (Sameeha Modak, Team Leader; Simra Faniband)
-- **Live Demo Link**: `https://<your-vercel-deployment-subdomain>.vercel.app` *(Fill in your deployed Vercel URL)*
-- **Demo Video Link**: `https://<your-demo-video-link>` *(Fill in your demo video URL)*
+- **Live Demo Link**: `https://<your-vercel-deployment-subdomain>.vercel.app` _(Fill in your deployed Vercel URL)_
+- **Demo Video Link**: `https://<your-demo-video-link>` _(Fill in your demo video URL)_
 
 ---
 
@@ -23,19 +23,19 @@ Women across India face persistent structural barriers when managing their healt
 
 ## What Sakhi Does
 
-| Feature | What It Does | Who It Helps |
-| :--- | :--- | :--- |
-| **Daily Check-in & Month Grid** | 30-second log for bleeding flow, pain areas, mood, energy, and symptoms. 24-month calendar shows flow strength, pain markers, and predicted next periods. | Women tracking irregular cycles, pain progression, and cycle patterns over time. |
-| **Clinical Pattern Flags & 108 Emergency** | Detects 5 patterns on-device: irregular cycles, cyclical pain, repeat heavy flow, late cycles, and ongoing pain. Severe red flags route directly to a same-day emergency screen with 1-tap 108 ambulance calling. | Women experiencing acute warning signs or chronic symptoms needing prompt medical care. |
-| **Nearby Healthcare Finder (Live)** | Finds nearby PHCs, CHCs, maternity hospitals, and dispensaries via live Geoapify Places API v2 with automatic radius expansion (5, 10, 25, 50 km) and OpenStreetMap fallback. | Rural and urban women looking for verified public and private health centres. |
-| **Doctor Visit Preparation & QR Share** | Generates tailored questions based on logged symptoms, maintains visit history, prints a 1-page A4 consultation summary, and generates a private on-device QR code (compressed via `lz-string` into URL fragment). | Women preparing for clinic consultations who want a structured, concise summary for their doctor. |
-| **Medicines & Dose Reminders** | Morning, afternoon, and evening dose schedule tracking, taken/skipped adherence records, refill alerts, and private prescription photo storage. | Women managing long-term prescriptions, iron/calcium supplements, or hormonal therapies. |
-| **Private PIN-Locked Vault** | Hardware-accelerated PBKDF2 Web Crypto PIN hashing (SHA-256, 100,000 iterations), brute-force lockout, and IndexedDB storage for sensitive prescriptions and lab reports. | Women sharing a family phone who need strict privacy for their medical documents. |
-| **Pan-India Government Schemes** | Comprehensive database covering all 36 States and Union Territories. Highlights "Made for Women" schemes (JSY, PMMVY, Arogya Mandirs, cancer screening) and personalizes recommendations from check-in logs. | Expectant mothers, adolescent girls, and women seeking financial aid or free public screenings. |
-| **Ask Sakhi AI & Awareness Cards** | Streaming conversational assistant with local emergency triage (108, Tele-MANAS 14416), automatic dosage sanitization, 16 offline intents, and 8 swipeable educational cards on PCOS, endometriosis, and anaemia. | Women seeking clear, stigma-free health explanations and clinical education in plain language. |
-| **11 Indian Languages** | Native translations for English, हिन्दी, తెలుగు, தமிழ், ಕನ್ನಡ, മലയാളം, मराठी, বাংলা, ગુજરાતી, ਪੰਜਾਬੀ, and ଓଡ଼ିଆ with 100% key parity verified by automated tests. | Non-English speakers across urban and rural India. |
-| **Offline-First PWA** | App shell caching, service worker offline fallback, and local storage keep daily logging, calendar views, medicines, and offline health answers accessible without internet. | Women in low-connectivity rural areas or with intermittent mobile data. |
-| **Phone + 6-Digit PIN Cloud Sync** | Simple phone number and 6-digit PIN login using Supabase Auth (synthetic email mapping; no email required). Automatically merges multi-device logs and supports offline queues. | Women who upgrade phones or access their records across multiple family devices. |
+| Feature                                    | What It Does                                                                                                                                                                                                       | Who It Helps                                                                                      |
+| :----------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------ |
+| **Daily Check-in & Month Grid**            | 30-second log for bleeding flow, pain areas, mood, energy, and symptoms. 24-month calendar shows flow strength, pain markers, and predicted next periods.                                                          | Women tracking irregular cycles, pain progression, and cycle patterns over time.                  |
+| **Clinical Pattern Flags & 108 Emergency** | Detects 5 patterns on-device: irregular cycles, cyclical pain, repeat heavy flow, late cycles, and ongoing pain. Severe red flags route directly to a same-day emergency screen with 1-tap 108 ambulance calling.  | Women experiencing acute warning signs or chronic symptoms needing prompt medical care.           |
+| **Nearby Healthcare Finder (Live)**        | Finds nearby PHCs, CHCs, maternity hospitals, and dispensaries via live Geoapify Places API v2 with automatic radius expansion (5, 10, 25, 50 km) and OpenStreetMap fallback.                                      | Rural and urban women looking for verified public and private health centres.                     |
+| **Doctor Visit Preparation & QR Share**    | Generates tailored questions based on logged symptoms, maintains visit history, prints a 1-page A4 consultation summary, and generates a private on-device QR code (compressed via `lz-string` into URL fragment). | Women preparing for clinic consultations who want a structured, concise summary for their doctor. |
+| **Medicines & Dose Reminders**             | Morning, afternoon, and evening dose schedule tracking, taken/skipped adherence records, refill alerts, and private prescription photo storage.                                                                    | Women managing long-term prescriptions, iron/calcium supplements, or hormonal therapies.          |
+| **Private PIN-Locked Vault**               | Hardware-accelerated PBKDF2 Web Crypto PIN hashing (SHA-256, 100,000 iterations), brute-force lockout, and IndexedDB storage for sensitive prescriptions and lab reports.                                          | Women sharing a family phone who need strict privacy for their medical documents.                 |
+| **Pan-India Government Schemes**           | Comprehensive database covering all 36 States and Union Territories. Highlights "Made for Women" schemes (JSY, PMMVY, Arogya Mandirs, cancer screening) and personalizes recommendations from check-in logs.       | Expectant mothers, adolescent girls, and women seeking financial aid or free public screenings.   |
+| **Ask Sakhi AI & Awareness Cards**         | Streaming conversational assistant with local emergency triage (108, Tele-MANAS 14416), automatic dosage sanitization, 16 offline intents, and 8 swipeable educational cards on PCOS, endometriosis, and anaemia.  | Women seeking clear, stigma-free health explanations and clinical education in plain language.    |
+| **11 Indian Languages**                    | Native translations for English, हिन्दी, తెలుగు, தமிழ், ಕನ್ನಡ, മലയാളം, मराठी, বাংলা, ગુજરાતી, ਪੰਜਾਬੀ, and ଓଡ଼ିଆ with 100% key parity verified by automated tests.                                                  | Non-English speakers across urban and rural India.                                                |
+| **Offline-First PWA**                      | App shell caching, service worker offline fallback, and local storage keep daily logging, calendar views, medicines, and offline health answers accessible without internet.                                       | Women in low-connectivity rural areas or with intermittent mobile data.                           |
+| **Phone + 6-Digit PIN Cloud Sync**         | Simple phone number and 6-digit PIN login using Supabase Auth (synthetic email mapping; no email required). Automatically merges multi-device logs and supports offline queues.                                    | Women who upgrade phones or access their records across multiple family devices.                  |
 
 ---
 
@@ -43,19 +43,19 @@ Women across India face persistent structural barriers when managing their healt
 
 Sakhi clearly separates live network services from deterministic, on-device clinical rules and curated databases:
 
-| Category | Component | Mechanism | Source & Freshness |
-| :--- | :--- | :--- | :--- |
-| **Live / Real-Time** | Nearby Health Facilities | Live Geoapify Places API v2 with 5–50 km radius expansion and Nominatim village geocoding. | Real-time external API; cached locally; OpenStreetMap fallback. |
-| **Live / Real-Time** | Ask Sakhi AI Chat | Streaming Server-Sent Events (SSE) via OpenAI-compatible endpoints (Groq / OpenAI). | Live LLM inference (`llama-3.3-70b-versatile` or `gpt-4o-mini`). |
-| **Live / Real-Time** | Account Cloud Sync | Supabase PostgreSQL REST / Realtime with client-side debounced sync (~800ms) and offline retry queue. | Live database sync with timestamp conflict resolution. |
-| **On-Device Rule-Based (No AI)** | Cycle & Pattern Flags | Deterministic clinical algorithms identifying 5 pattern flags (`irregularPlus`, `painCycle`, `heavyRepeat`, `lateCycle`, `ongoingPain`). | Pure client-side TypeScript logic (`src/services/cycle.ts`); executes instantly offline. |
-| **On-Device Rule-Based (No AI)** | Emergency Triage | Same-day red-flag detection routing to `/urgent` with direct `tel:108` ambulance dialer. | Deterministic severity rules (`src/services/logs.ts`); zero network dependency. |
-| **On-Device Rule-Based (No AI)** | Doctor Visit Questions | Generates targeted questions for doctors based on specific active symptom flags and medicines. | Deterministic rules engine (`src/services/questions.ts`); zero network dependency. |
-| **On-Device Rule-Based (No AI)** | Vault Encryption & Lockout | PBKDF2 Web Crypto PIN hashing (100k rounds) with 5-attempt brute-force lockout. | Browser Web Crypto API & IndexedDB (`src/services/vault.ts`); strictly on-device. |
-| **On-Device Rule-Based (No AI)** | Doctor QR Consultation Share | Compresses selected health record snapshot with `lz-string` directly into URL fragment (`#data=...`). | Browser memory only (`src/services/share.ts`); no server storage or tracking. |
-| **Curated & Dated** | Government Schemes | Database covering central programs and state-specific schemes across all 36 States & UTs. | Official portals (MoHFW, WCD, State Depts); verified on `2026-10-25`. |
-| **Curated & Dated** | Health Awareness Cards | 8 educational cards covering PCOS, endometriosis, normal cycles, anaemia, and red flags. | Curated clinical guidelines; reviewed against standard public health literature. |
-| **Curated & Dated** | Offline Chat Intents | 16 instant multilingual responses covering emergencies, missed periods, cramps, and nutrition. | Handcrafted, verified medical education fallback when offline or unconfigured. |
+| Category                         | Component                    | Mechanism                                                                                                                                | Source & Freshness                                                                       |
+| :------------------------------- | :--------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------- |
+| **Live / Real-Time**             | Nearby Health Facilities     | Live Geoapify Places API v2 with 5–50 km radius expansion and Nominatim village geocoding.                                               | Real-time external API; cached locally; OpenStreetMap fallback.                          |
+| **Live / Real-Time**             | Ask Sakhi AI Chat            | Streaming Server-Sent Events (SSE) via OpenAI-compatible endpoints (Groq / OpenAI).                                                      | Live LLM inference (`llama-3.3-70b-versatile` or `gpt-4o-mini`).                         |
+| **Live / Real-Time**             | Account Cloud Sync           | Supabase PostgreSQL REST / Realtime with client-side debounced sync (~800ms) and offline retry queue.                                    | Live database sync with timestamp conflict resolution.                                   |
+| **On-Device Rule-Based (No AI)** | Cycle & Pattern Flags        | Deterministic clinical algorithms identifying 5 pattern flags (`irregularPlus`, `painCycle`, `heavyRepeat`, `lateCycle`, `ongoingPain`). | Pure client-side TypeScript logic (`src/services/cycle.ts`); executes instantly offline. |
+| **On-Device Rule-Based (No AI)** | Emergency Triage             | Same-day red-flag detection routing to `/urgent` with direct `tel:108` ambulance dialer.                                                 | Deterministic severity rules (`src/services/logs.ts`); zero network dependency.          |
+| **On-Device Rule-Based (No AI)** | Doctor Visit Questions       | Generates targeted questions for doctors based on specific active symptom flags and medicines.                                           | Deterministic rules engine (`src/services/questions.ts`); zero network dependency.       |
+| **On-Device Rule-Based (No AI)** | Vault Encryption & Lockout   | PBKDF2 Web Crypto PIN hashing (100k rounds) with 5-attempt brute-force lockout.                                                          | Browser Web Crypto API & IndexedDB (`src/services/vault.ts`); strictly on-device.        |
+| **On-Device Rule-Based (No AI)** | Doctor QR Consultation Share | Compresses selected health record snapshot with `lz-string` directly into URL fragment (`#data=...`).                                    | Browser memory only (`src/services/share.ts`); no server storage or tracking.            |
+| **Curated & Dated**              | Government Schemes           | Database covering central programs and state-specific schemes across all 36 States & UTs.                                                | Official portals (MoHFW, WCD, State Depts); verified on `2026-10-25`.                    |
+| **Curated & Dated**              | Health Awareness Cards       | 8 educational cards covering PCOS, endometriosis, normal cycles, anaemia, and red flags.                                                 | Curated clinical guidelines; reviewed against standard public health literature.         |
+| **Curated & Dated**              | Offline Chat Intents         | 16 instant multilingual responses covering emergencies, missed periods, cramps, and nutrition.                                           | Handcrafted, verified medical education fallback when offline or unconfigured.           |
 
 ---
 
@@ -85,16 +85,16 @@ Sakhi was engineered under strict clinical safety and privacy constraints:
 
 ## Screenshots
 
-| Screen | Preview | Description |
-| :--- | :---: | :--- |
-| **Home Screen** | `docs/screenshots/home.png` | Today's check-in status, cycle forecast, nearest care card, and quick module navigation. |
-| **Daily Check-in** | `docs/screenshots/log.png` | Icon-driven flow, pain area body map, mood chips, and symptom tracker with 44px tap targets. |
-| **Cycle Calendar** | `docs/screenshots/calendar.png` | 24-month grid view with flow dots, pain markers, and predicted next period dates. |
-| **Healthcare Finder** | `docs/screenshots/care.png` | Live nearby PHCs and hospitals with distance badges, filters, and visit preparation links. |
-| **Government Schemes** | `docs/screenshots/schemes.png` | 36 States/UTs filter with "Made for Women" priority schemes and check-in personalization. |
-| **Ask Sakhi & Learn** | `docs/screenshots/ask-sakhi.png` | Streaming AI health assistant with safety guards, and swipeable educational cards. |
+| Screen                 |             Preview              | Description                                                                                  |
+| :--------------------- | :------------------------------: | :------------------------------------------------------------------------------------------- |
+| **Home Screen**        |   `docs/screenshots/home.png`    | Today's check-in status, cycle forecast, nearest care card, and quick module navigation.     |
+| **Daily Check-in**     |    `docs/screenshots/log.png`    | Icon-driven flow, pain area body map, mood chips, and symptom tracker with 44px tap targets. |
+| **Cycle Calendar**     | `docs/screenshots/calendar.png`  | 24-month grid view with flow dots, pain markers, and predicted next period dates.            |
+| **Healthcare Finder**  |   `docs/screenshots/care.png`    | Live nearby PHCs and hospitals with distance badges, filters, and visit preparation links.   |
+| **Government Schemes** |  `docs/screenshots/schemes.png`  | 36 States/UTs filter with "Made for Women" priority schemes and check-in personalization.    |
+| **Ask Sakhi & Learn**  | `docs/screenshots/ask-sakhi.png` | Streaming AI health assistant with safety guards, and swipeable educational cards.           |
 
-*(Note: Image files should be placed inside `docs/screenshots/` following the guidelines in [`docs/screenshots/README.md`](file:///c:/Users/HP/Downloads/screenshot-to-spark-0803-main/docs/screenshots/README.md).)*
+_(Note: Image files should be placed inside `docs/screenshots/` following the guidelines in [`docs/screenshots/README.md`](file:///c:/Users/HP/Downloads/screenshot-to-spark-0803-main/docs/screenshots/README.md).)_
 
 ---
 
@@ -143,27 +143,33 @@ Sakhi was engineered under strict clinical safety and privacy constraints:
 ### Step-by-Step Setup
 
 1. **Clone the repository**:
+
    ```bash
    git clone https://github.com/sameeha1503/Sakhi.git
    cd Sakhi
    ```
 
 2. **Install dependencies**:
+
    ```bash
    npm install
    ```
 
 3. **Configure environment variables**:
    Create `.env.local` in the project root:
+
    ```bash
    cp .env.example .env.local
    ```
+
    Edit `.env.local` with your API keys (see table below).
 
 4. **Start the local development server**:
+
    ```bash
    npm run dev
    ```
+
    Open [http://localhost:8080](http://localhost:8080) in your browser.
 
 5. **Run tests**:
@@ -173,18 +179,18 @@ Sakhi was engineered under strict clinical safety and privacy constraints:
 
 ### Environment Variables
 
-| Variable Name | Required / Optional | Where to Get It | Purpose |
-| :--- | :---: | :--- | :--- |
-| `GEOAPIFY_API_KEY` | **Required** for live care finder | [Geoapify MyProjects](https://myprojects.geoapify.com) (Free tier, no card required) | Live nearby healthcare facilities search and village geocoding. |
-| `LLM_API_URL` | **Required** for AI chat | [Groq Console](https://console.groq.com) or [OpenAI](https://platform.openai.com) | OpenAI-compatible chat completion endpoint URL (e.g. `https://api.groq.com/openai/v1/chat/completions`). |
-| `LLM_API_KEY` | **Required** for AI chat | [Groq Console](https://console.groq.com) or [OpenAI](https://platform.openai.com) | Secret API key for AI chat completions (server-side only, never leaked to browser). |
-| `LLM_MODEL` | **Required** for AI chat | Provider documentation | Model identifier (recommended: `llama-3.3-70b-versatile` on Groq, or `gpt-4o-mini` on OpenAI). |
-| `LLM_DAILY_LIMIT` | Optional | Custom integer | Daily request quota cap before falling back to offline answers (default: `400`). |
-| `LLM_FALLBACK_URL` | Optional | Secondary LLM provider | Backup provider URL if primary returns rate limits (429) or server errors. |
-| `LLM_FALLBACK_KEY` | Optional | Secondary LLM provider | Secret API key for backup LLM provider. |
-| `LLM_FALLBACK_MODEL` | Optional | Secondary LLM provider | Model name for backup provider. |
-| `VITE_SUPABASE_URL` | Optional (for cloud sync) | [Supabase Dashboard](https://supabase.com) | Supabase project URL (e.g. `https://xyzcompany.supabase.co`). |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Optional (for cloud sync) | [Supabase Dashboard](https://supabase.com) | Public `anon` publishable key (safe for browser client). |
+| Variable Name                   |        Required / Optional        | Where to Get It                                                                      | Purpose                                                                                                  |
+| :------------------------------ | :-------------------------------: | :----------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------- |
+| `GEOAPIFY_API_KEY`              | **Required** for live care finder | [Geoapify MyProjects](https://myprojects.geoapify.com) (Free tier, no card required) | Live nearby healthcare facilities search and village geocoding.                                          |
+| `LLM_API_URL`                   |     **Required** for AI chat      | [Groq Console](https://console.groq.com) or [OpenAI](https://platform.openai.com)    | OpenAI-compatible chat completion endpoint URL (e.g. `https://api.groq.com/openai/v1/chat/completions`). |
+| `LLM_API_KEY`                   |     **Required** for AI chat      | [Groq Console](https://console.groq.com) or [OpenAI](https://platform.openai.com)    | Secret API key for AI chat completions (server-side only, never leaked to browser).                      |
+| `LLM_MODEL`                     |     **Required** for AI chat      | Provider documentation                                                               | Model identifier (recommended: `llama-3.3-70b-versatile` on Groq, or `gpt-4o-mini` on OpenAI).           |
+| `LLM_DAILY_LIMIT`               |             Optional              | Custom integer                                                                       | Daily request quota cap before falling back to offline answers (default: `400`).                         |
+| `LLM_FALLBACK_URL`              |             Optional              | Secondary LLM provider                                                               | Backup provider URL if primary returns rate limits (429) or server errors.                               |
+| `LLM_FALLBACK_KEY`              |             Optional              | Secondary LLM provider                                                               | Secret API key for backup LLM provider.                                                                  |
+| `LLM_FALLBACK_MODEL`            |             Optional              | Secondary LLM provider                                                               | Model name for backup provider.                                                                          |
+| `VITE_SUPABASE_URL`             |     Optional (for cloud sync)     | [Supabase Dashboard](https://supabase.com)                                           | Supabase project URL (e.g. `https://xyzcompany.supabase.co`).                                            |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` |     Optional (for cloud sync)     | [Supabase Dashboard](https://supabase.com)                                           | Public `anon` publishable key (safe for browser client).                                                 |
 
 > [!IMPORTANT]
 > All keys (`GEOAPIFY_API_KEY`, `LLM_*`) run strictly on the server and are never exposed to the client bundle. Only the two public `VITE_SUPABASE_*` parameters are exposed client-side. Never commit `.env.local` to git.
