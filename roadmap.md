@@ -19,6 +19,7 @@
 - [x] **PHASE 4: Care journey and same-day safety (Completed)**
 - [x] **PHASE 5: Ask Sakhi chat (Completed)**
 - [x] **PHASE 6: Share with doctor (QR) (Completed)**
+- [x] **PHASE 7: Local-First Supabase Cloud Sync & Phone Auth (Completed)**
 
 - [x] Phase 2: symptom log, cycle tracker, pattern flags, red-flag screen (awareness cards migrated to Ask Sakhi knowledge base; verified with automated E2E & flow test suite across EN/HI/TE)
 - [x] Phase 3: manual medicine entry, private vault prescription photo storage (AI prescription reading planned), medicines CRUD, dose reminders (verified; honest manual entry on /scan starting with empty card, direct vault photo saving with PIN lock, dose schedule generation, adherence history, refill alerts, discreet reminders, and unit tests passed)

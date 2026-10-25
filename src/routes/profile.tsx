@@ -9,9 +9,10 @@ import {
   ShieldCheck,
   Languages,
   ArrowRight,
+  Cloud,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { authService, prefs, type User } from "@/services/auth";
+import { authService, type User } from "@/services/auth";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -29,11 +30,16 @@ function Profile() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
+  const [authMode, setAuthMode] = useState(authService.getAuthMode());
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  useEffect(() => setUser(authService.current()), []);
+  useEffect(() => {
+    setUser(authService.current());
+    setAuthMode(authService.getAuthMode());
+  }, []);
 
-  const handleLogout = () => {
-    prefs.setLoggedIn(false);
+  const handleLogout = async () => {
+    await authService.logOut();
     navigate({ to: "/signup" });
   };
 
@@ -47,10 +53,21 @@ function Profile() {
               <UserRound className="size-9" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-2xl font-bold text-foreground">{user?.name}</p>
-              <p className="text-sm text-muted-foreground">{user?.phone}</p>
-              <span className="mt-1 inline-block rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
-                Sakhi User
+              <p className="truncate text-2xl font-bold text-foreground">
+                {user?.name || t("profile.guest")}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {user?.phone ? user.phone : t("profile.guestPhoneNote")}
+              </p>
+              <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
+                {authMode === "account" ? (
+                  <>
+                    <Cloud className="size-3" />
+                    <span>{t("profile.accountBadge")}</span>
+                  </>
+                ) : (
+                  <span>{t("profile.guestBadge")}</span>
+                )}
               </span>
             </div>
           </div>
@@ -66,15 +83,39 @@ function Profile() {
             <ArrowRight className="size-5 text-muted-foreground" />
           </Link>
 
-          <button
-            onClick={handleLogout}
-            className="tap card-soft border border-border/80 flex w-full items-center justify-between p-5 text-xl font-bold text-muted-foreground hover:text-primary transition-colors hover:border-primary/50"
-          >
-            <div className="flex items-center gap-3.5">
-              <LogOut className="size-7" />
-              <span>{t("profile.logout")}</span>
+          {!showLogoutConfirm ? (
+            <button
+              onClick={() => setShowLogoutConfirm(true)}
+              className="tap card-soft border border-border/80 flex w-full items-center justify-between p-5 text-xl font-bold text-muted-foreground hover:text-primary transition-colors hover:border-primary/50"
+            >
+              <div className="flex items-center gap-3.5">
+                <LogOut className="size-7" />
+                <span>{t("profile.logout")}</span>
+              </div>
+            </button>
+          ) : (
+            <div className="card-soft border-2 border-primary/50 bg-secondary/80 p-5 rounded-3xl">
+              <p className="text-sm font-bold text-foreground leading-relaxed">
+                {t("profile.logoutConfirm")}
+              </p>
+              <div className="mt-4 grid grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="tap min-h-[44px] rounded-xl border border-border bg-card text-sm font-semibold text-foreground hover:bg-muted"
+                >
+                  {t("profile.cancel")}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="tap min-h-[44px] rounded-xl bg-destructive text-sm font-bold text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {t("profile.confirmLogout")}
+                </button>
+              </div>
             </div>
-          </button>
+          )}
         </div>
 
         {/* Right Column: Account & Security Features */}
@@ -89,7 +130,7 @@ function Profile() {
             <div className="min-w-0 flex-1">
               <h2 className="text-xl font-bold text-foreground">{t("vault.lockedTitle")}</h2>
               <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
-                Store prescriptions and lab reports in an encrypted private vault on this device.
+                {t("profile.vaultDesc")}
               </p>
             </div>
           </Link>
@@ -104,7 +145,7 @@ function Profile() {
             <div className="min-w-0 flex-1">
               <h2 className="text-xl font-bold text-foreground">{t("settings.language")}</h2>
               <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
-                Change your app display language between English, हिन्दी and తెలుగు anytime.
+                {t("profile.langDesc")}
               </p>
             </div>
           </Link>

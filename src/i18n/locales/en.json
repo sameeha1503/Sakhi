@@ -9,7 +9,7 @@
   },
   "consent": {
     "title": "Your privacy",
-    "p1": "Your health notes stay on this phone.",
+    "p1": "Your health notes are saved privately on this phone or in your account. Only you can read them.",
     "p2": "Sakhi gives information. It does not replace a doctor.",
     "p3": "You can delete everything any time.",
     "agree": "I agree"
@@ -23,7 +23,26 @@
     "login": "Log in",
     "haveAccount": "I already have an account",
     "newHere": "New here? Create account",
-    "notFound": "No account with this number"
+    "notFound": "No account with this number",
+    "nameRequired": "Please enter your name",
+    "invalidPhone": "Enter a valid 10-digit mobile number starting with 6, 7, 8, or 9",
+    "pin": "6-digit PIN",
+    "pinPlaceholder": "Enter 6-digit PIN",
+    "pinHelp": "Choose a 6-digit PIN. Remember it, we cannot reset it yet.",
+    "pinLength": "PIN must be exactly 6 digits",
+    "pinTooWeak": "This PIN is too easy to guess. Choose a less common 6-digit number.",
+    "invalidCredentials": "Number or PIN is not correct",
+    "alreadyRegistered": "This number is already registered",
+    "logInInstead": "Log in instead",
+    "rateLimit": "Please wait a minute before trying again",
+    "offline": "You are offline. Connect to internet or continue without an account.",
+    "orDivider": "or",
+    "continueWithoutAccount": "Continue without an account (data stays on this phone)",
+    "phonePlaceholder": "10-digit mobile number",
+    "showPin": "Show PIN",
+    "hidePin": "Hide PIN",
+    "firstLoginMerged": "Your existing health records have been saved to your account.",
+    "errorGeneric": "Unable to complete request. Please try again."
   },
   "nav": {
     "home": "Home",
@@ -54,14 +73,23 @@
   "soon": "Coming in the next step",
   "profile": {
     "settings": "Settings",
-    "logout": "Log out"
+    "logout": "Log out",
+    "guest": "Sakhi Guest",
+    "guestPhoneNote": "Data stays on this phone only",
+    "accountBadge": "Synced Account",
+    "guestBadge": "On-device only",
+    "logoutConfirm": "Log out? Your records will be cleared from this phone for your privacy. Your data remains safe in your Sakhi account. (Your private vault stays locked).",
+    "cancel": "Cancel",
+    "confirmLogout": "Log out",
+    "vaultDesc": "Prescription photos stay on this phone, locked with your PIN.",
+    "langDesc": "Change display language anytime."
   },
   "settings": {
     "title": "Settings",
     "language": "Language",
     "vault": "Private vault (PIN)",
     "delete": "Delete all my data",
-    "deleteConfirm": "This removes everything from this phone. Sure?",
+    "deleteConfirm": "This will delete all records from this phone and your cloud account. This cannot be undone. Sure?",
     "yes": "Yes, delete",
     "no": "Cancel",
     "back": "Back",
@@ -72,12 +100,19 @@
     "demoLoadedMsg": "Demo profile loaded successfully!",
     "demoClearedMsg": "Demo data cleared successfully!",
     "backupTitle": "Data backup & restore",
-    "backupNote": "Your entries are saved on this phone. Clearing browser data or using a private window removes them.",
+    "backupNote": "You can download a backup of your check-in records to save on your device.",
     "downloadBackup": "Download my data (JSON)",
     "restoreBackup": "Restore from backup",
     "restoreConfirm": "Restore {{count}} entries from this backup file? Existing entries for the same dates will be updated.",
     "restoreSuccess": "Successfully restored {{count}} check-in entries.",
-    "restoreInvalid": "Invalid backup file. Please select a valid Sakhi backup JSON file."
+    "restoreInvalid": "Invalid backup file. Please select a valid Sakhi backup JSON file.",
+    "syncTitle": "Cloud sync & account",
+    "syncNotConfigured": "Cloud sync is not set up",
+    "syncNotConfiguredDesc": "The app works fully locally. Data stays on this phone.",
+    "signedInAs": "Signed in as {{phone}}",
+    "syncAccountNote": "Saved to your private Sakhi account so you can open it on any phone. Only you can read it.",
+    "syncGuestNote": "Not signed in. Your data stays on this phone only.",
+    "createAccountBtn": "Sign in or create account"
   },
   "log": {
     "title": "Daily check-in",
@@ -618,12 +653,12 @@
     "feature2Desc": "Scan doctor slips, get discreet tablet reminders, and prepare questions for your next clinic visit.",
     "feature3Title": "Find care & schemes",
     "feature3Desc": "Locate nearby government hospitals and check eligibility for free care schemes like PM-JAY and PMSMA.",
-    "privacyBadge": "100% on this phone",
-    "privacyTitle": "Your data never leaves this device",
-    "privacyDesc": "Sakhi stores all health notes locally. No tracking, no mandatory cloud sync, and you can delete everything in one tap."
+    "privacyBadge": "Private & secure",
+    "privacyTitle": "Your health records belong to you",
+    "privacyDesc": "Works offline and syncs safely to your private Sakhi account when signed in. Only you can read your notes."
   },
   "footer": {
-    "privacyNotice": "Your health notes stay on this phone. Sakhi provides educational guidance and never replaces a doctor.",
+    "privacyNotice": "Your health records are private to you. Sakhi provides educational guidance and never replaces a doctor.",
     "allRights": "Sakhi — Women's Healthcare Companion for rural & semi-urban India."
   },
   "logSummary": {
@@ -648,7 +683,7 @@
   "chat": {
     "title": "Ask Sakhi",
     "subtitle": "Health information assistant",
-    "disclaimer": "Sakhi shares general information, not medical advice.",
+    "disclaimer": "Sakhi shares general information, not medical advice. Ask Sakhi never receives your personal health logs.",
     "tooltip": "Ask Sakhi",
     "clear": "Clear chat",
     "close": "Close",
@@ -741,7 +776,7 @@
       },
       "privacyVault": {
         "keywords": "is my data private, privacy, vault, pin, confidential, data safety, secure, who sees my data",
-        "answer": "All your personal health logs, cycle dates, and notes are saved strictly on your own device and are never sent to external servers without your permission. You can also lock your sensitive notes with a private 4-digit PIN in the Vault under Settings."
+        "answer": "Your health notes are saved to your private Sakhi account so you can access them on any phone. If you are not signed in, data stays on this phone only. Prescription photos always stay on this phone in your private PIN-locked Vault. Ask Sakhi never receives your health logs."
       },
       "missedDose": {
         "keywords": "missed dose, forgot medicine, skipped pill, miss medicine, what if i forget tablet, missed tablet",
@@ -849,5 +884,14 @@
     "errorTitle": "Unable to open medical record",
     "errorCorrupted": "This consultation record is corrupted or incomplete. Please ask the patient to regenerate the QR code.",
     "errorInvalid": "No valid patient record found in this link."
+  },
+  "sync": {
+    "synced": "Synced",
+    "saving": "Saving...",
+    "offline": "Offline, will sync later",
+    "notSignedIn": "Not signed in",
+    "syncedDesc": "Saved to your private Sakhi account",
+    "offlineDesc": "Offline — changes will sync when connected",
+    "notSignedInDesc": "Data stays on this phone only"
   }
 }

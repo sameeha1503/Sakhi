@@ -15,10 +15,12 @@ import {
   FileText,
   ShieldAlert,
   QrCode,
+  X,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { FlagCards } from "@/components/FlagCards";
 import { authService } from "@/services/auth";
+import { storage } from "@/services/storage";
 import { logService, todayISO } from "@/services/logs";
 import { cycleSummary, patternFlags, type FlagId } from "@/services/cycle";
 import { visitService, type Visit } from "@/services/visits";
@@ -47,9 +49,14 @@ function HomePage() {
   >([]);
   const [womenSchemesCount, setWomenSchemesCount] = useState<number>(0);
   const [isSchemesNew, setIsSchemesNew] = useState<boolean>(false);
+  const [showMergedBanner, setShowMergedBanner] = useState<boolean>(false);
 
   useEffect(() => {
     setName(authService.current()?.name ?? "");
+    if (storage.isFirstLoginMerged()) {
+      setShowMergedBanner(true);
+      storage.clearFirstLoginMerged();
+    }
     const logs = logService.all(),
       today = todayISO();
     setCycleDay(cycleSummary(logs, today).cycleDay);
@@ -62,6 +69,23 @@ function HomePage() {
 
   return (
     <AppShell>
+      {/* First-Login Records Merged Confirmation Banner */}
+      {showMergedBanner && (
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-success/30 bg-success/15 p-3.5 text-xs sm:text-sm font-semibold text-success shadow-xs">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="size-4 shrink-0" />
+            <span>{t("auth.firstLoginMerged")}</span>
+          </div>
+          <button
+            onClick={() => setShowMergedBanner(false)}
+            className="tap rounded-md p-1 hover:bg-success/20 text-success"
+            aria-label="Dismiss banner"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+      )}
+
       {/* Greeting Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-border/50 pb-5">
         <div>

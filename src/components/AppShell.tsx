@@ -11,9 +11,12 @@ import {
   AlertTriangle,
   X,
   Flower2,
+  CheckCircle2,
+  RefreshCw,
+  CloudOff,
 } from "lucide-react";
-import { prefs } from "@/services/auth";
-import { storage } from "@/services/storage";
+import { authService, prefs } from "@/services/auth";
+import { storage, type SyncStatus } from "@/services/storage";
 import { LanguageSelect } from "@/components/LanguageSelect";
 import { AskSakhiWidget } from "@/components/AskSakhiWidget";
 
@@ -32,6 +35,7 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
   const [ok, setOk] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const [storageError, setStorageError] = useState<string | null>(null);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>(storage.getSyncStatus());
 
   const pathname = routerState.location.pathname;
   const isWidgetHidden =
@@ -42,6 +46,9 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
     pathname.startsWith("/share");
 
   useEffect(() => {
+    // Restore Supabase session on app startup if present
+    authService.initSession();
+
     if (pathname.startsWith("/share")) {
       setOk(true);
       return;
@@ -63,10 +70,15 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
       setStorageError(msg);
     });
 
+    const unbindSync = storage.onSyncStatusChange((st) => {
+      setSyncStatus(st);
+    });
+
     return () => {
       window.removeEventListener("online", onOnline);
       window.removeEventListener("offline", onOffline);
       unbindStorage();
+      unbindSync();
     };
   }, [navigate, pathname]);
 
@@ -107,7 +119,7 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
         </div>
       )}
 
-      {/* Slim Top Bar with App Name on all screen sizes */}
+      {/* Slim Top Bar with App Name and Sync Status */}
       <header className="sticky top-0 z-40 border-b border-border/70 bg-card/95 backdrop-blur-md">
         <div className="mx-auto flex h-14 sm:h-16 max-w-5xl items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Logo / Name */}
@@ -128,8 +140,47 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
             </div>
           </Link>
 
-          {/* Right: Language Selector Dropdown */}
-          <div className="flex items-center gap-2">
+          {/* Right: Sync Status & Language Selector */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Sync Status Badge */}
+            {syncStatus === "synced" && (
+              <div
+                className="flex items-center gap-1.5 rounded-full bg-success/15 px-2.5 py-1 text-xs font-semibold text-success transition-all"
+                title={t("sync.syncedDesc")}
+              >
+                <CheckCircle2 className="size-3.5" />
+                <span className="hidden sm:inline">{t("sync.synced")}</span>
+              </div>
+            )}
+            {syncStatus === "saving" && (
+              <div
+                className="flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary transition-all"
+                title={t("sync.saving")}
+              >
+                <RefreshCw className="size-3.5 animate-spin" />
+                <span className="hidden sm:inline">{t("sync.saving")}</span>
+              </div>
+            )}
+            {syncStatus === "offline" && (
+              <div
+                className="flex items-center gap-1.5 rounded-full bg-warning/20 px-2.5 py-1 text-xs font-semibold text-warning-foreground transition-all"
+                title={t("sync.offlineDesc")}
+              >
+                <CloudOff className="size-3.5" />
+                <span className="hidden sm:inline">{t("sync.offline")}</span>
+              </div>
+            )}
+            {syncStatus === "not_signed_in" && (
+              <Link
+                to="/signup"
+                className="hidden sm:flex items-center gap-1.5 rounded-full border border-border/70 bg-muted/50 px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
+                title={t("sync.notSignedInDesc")}
+              >
+                <CloudOff className="size-3.5" />
+                <span>{t("sync.notSignedIn")}</span>
+              </Link>
+            )}
+
             <LanguageSelect variant="header" />
           </div>
         </div>
@@ -152,7 +203,7 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
         </div>
       </footer>
 
-      {/* Floating Pill Bottom Navigation (Home, Log, Medicines, Care, Profile) on all screen sizes */}
+      {/* Floating Pill Bottom Navigation */}
       <nav
         aria-label="Navigation"
         className="fixed bottom-3 sm:bottom-4 inset-x-0 z-30 flex justify-center px-3 sm:px-4 pointer-events-none"

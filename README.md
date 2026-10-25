@@ -22,22 +22,29 @@ All data operations are encapsulated cleanly behind `src/services/*`. The UI lay
 
 | Service | Source File | Current State | Architecture & Future Evolution |
 | :--- | :--- | :--- | :--- |
-| **Medicines & Doses** | `src/services/medicines.ts` | Complete local-first CRUD, dose schedule generation, taken/skipped adherence tracking, refill alerts, and timing reminders. | Local storage adapter; supports multi-dose regimens. |
-| **Prescription Scanner** | `/scan` (`src/routes/scan.tsx`) | **Manual entry plus private photo storage; AI prescription reading is planned.** Does not simulate reading photos or use mock OCR delays. Users add medicines by hand, and can optionally save prescription photos to their private vault. | Automated vision AI prescription extraction will be added in a future update with human-in-the-loop confirmation. |
-| **Private Vault** | `src/services/vault.ts` | PBKDF2 Web Crypto PIN hashing (SHA-256, 100,000 iterations), brute-force lockout protection, and IndexedDB storage for prescriptions and reports. Client-side privacy lock for shared family phones. | Biometric WebAuthn unlock; client-side encrypted export. |
-| **Cycle & Symptoms** | `src/services/cycle.ts`, `src/services/logs.ts` | Same-day safety tiers (urgent $\rightarrow$ `/urgent`, soon $\rightarrow$ calm care card with direct action buttons, none), month-by-month calendar grid, flow/pain/symptom tracking, and 5 clinical pattern flags (`irregularPlus`, `painCycle`, `heavyRepeat`, `lateCycle`, `ongoingPain`). | Longitudinal health trends and exportable doctor reports. |
-| **Doctor Visits & Questions** | `src/services/visits.ts`, `src/services/questions.ts` | Rule-based question preparation from flagged symptoms and medicines, visit consultation timeline, and 1-page printable A4 doctor summary. | FHIR / ABHA digital health record integration. |
+| **Authentication** | `src/services/auth.ts`, `/signup` | Phone number + 6-digit PIN login via Supabase Auth (synthetic email `<phone>@phone.sakhi.app`, zero email in UI), weak PIN rejection, session persistence, and guest mode ("Continue without an account"). | SMS OTP verification and recovery email (roadmap items; PIN reset not yet supported). |
+| **Medicines & Doses** | `src/services/medicines.ts` | Complete local-first CRUD, dose schedule generation, taken/skipped adherence tracking, refill alerts, and timing reminders. Automatically syncs to private account. | Multi-dose regimens and pharmacy refills. |
+| **Prescription Scanner** | `/scan` (`src/routes/scan.tsx`) | **Manual entry plus private photo storage; AI prescription reading is planned.** Does not simulate reading photos or use mock OCR delays. Users add medicines by hand, and can optionally save prescription photos to their private vault. | Automated vision AI prescription extraction with human-in-the-loop confirmation. |
+| **Private Vault** | `src/services/vault.ts` | PBKDF2 Web Crypto PIN hashing (SHA-256, 100,000 iterations), brute-force lockout protection, and IndexedDB storage for prescriptions and reports. **Strictly on-device; never synced to cloud.** | Biometric WebAuthn unlock; client-side encrypted export. |
+| **Cycle & Symptoms** | `src/services/cycle.ts`, `src/services/logs.ts` | Same-day safety tiers (urgent $\rightarrow$ `/urgent`, soon $\rightarrow$ calm care card with direct action buttons, none), month-by-month calendar grid, flow/pain/symptom tracking, and 5 clinical pattern flags (`irregularPlus`, `painCycle`, `heavyRepeat`, `lateCycle`, `ongoingPain`). Automatically syncs to private account with per-date conflict-free merge. | Longitudinal health trends and exportable doctor reports. |
+| **Doctor Visits & Questions** | `src/services/visits.ts`, `src/services/questions.ts` | Rule-based question preparation from flagged symptoms and medicines, visit consultation timeline, and 1-page printable A4 doctor summary. Automatically syncs to private account. | FHIR / ABHA digital health record integration. |
 | **Doctor QR Share** | `src/services/share.ts`, `/share` | Private, on-device consultation snapshot compressed with `lz-string` into URL fragment (< 1,200 chars). QR code generator with privacy toggles (cycle, flags, meds, visits, questions, optional name) and advisory expiry (24h, 7d). Read-only doctor view without login or server storage. | Server-enforced revocation backend. |
 | **Healthcare Facilities** | `src/services/places.ts` | Live Geoapify Places API v2 searching 5, 10, 25, 50 km and merging all nearby facilities (capped at 50 km, true count), "Recommended for you" strip (prioritizing women's health for pain/heavy flags & government facilities for ration cards), "Prepare for this visit" button on every facility, Nominatim village geocoding, and 4-tier fallback cascade. | Real-time facility availability and verified contact hotlines. |
-| **Government Schemes** | `src/data/schemes.ts`, `src/services/schemes.ts` | 36 States & Union Territories coverage across 3 categorized tiers with check-in pattern personalization. | State portal application handoff and eligibility calculators. |
-| **Ask Sakhi AI Chat** | `src/services/chat.ts`, `/api/chat` | Server-sent events (SSE) streaming chat assistant with strict local safety guards (108, Tele-MANAS), dosage output sanitizer, and 16 curated offline intents. | Regional voice-to-text input and audio read-aloud. |
-| **Storage Adapter** | `src/services/storage.ts` | Centralized typed localStorage adapter with JSON backup/restore and one-tap total data wiping. | Encrypted local SQLite/OPFS storage. |
+| **Government Schemes** | `src/data/schemes.ts`, `src/services/schemes.ts` | 36 States & Union Territories coverage across 3 categorized tiers with check-in pattern personalization. Tracker status syncs to private account. | State portal application handoff and eligibility calculators. |
+| **Ask Sakhi AI Chat** | `src/services/chat.ts`, `/api/chat` | Server-sent events (SSE) streaming chat assistant with strict local safety guards (108, Tele-MANAS), dosage output sanitizer, and 16 curated offline intents. History stays on-device; never receives health logs or personal data. | Regional voice-to-text input and audio read-aloud. |
+| **Storage & Cloud Sync Adapter** | `src/services/storage.ts`, `src/lib/supabase.ts` | Local-first fast localStorage adapter with Supabase background sync (~800ms debounce), offline retry queue, date-based multi-phone logs merge, real-time sync status ("Synced", "Saving...", "Offline, will sync later", "Not signed in"), and one-tap total local + cloud data wiping. Vault keys strictly excluded from sync. | Conflict-free replicated data types (CRDTs). |
 
 ## Environment Variables
 
 Create `.env.local` in the project root (never committed, ignored by git):
 
 ```env
+# Supabase Cloud Sync (client-side anon key, row-level security enabled)
+# Base project URL only (e.g. https://your-project.supabase.co, no trailing slash, no /rest/v1/)
+VITE_SUPABASE_URL=
+# Supabase anon / publishable key (never use or provide a service-role key)
+VITE_SUPABASE_PUBLISHABLE_KEY=
+
 # Geoapify API key for healthcare facility locator & geocoding (myprojects.geoapify.com, free, no card)
 GEOAPIFY_API_KEY=
 

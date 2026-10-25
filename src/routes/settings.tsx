@@ -13,10 +13,13 @@ import {
   Upload,
   CheckCircle2,
   AlertCircle,
+  Cloud,
+  CloudOff,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { LanguageSelect } from "@/components/LanguageSelect";
-import { storage } from "@/services/storage";
+import { storage, type SyncStatus } from "@/services/storage";
+import { authService, type User } from "@/services/auth";
 import { vaultService } from "@/services/vault";
 import { demoService } from "@/services/demo";
 import { logService, todayISO, backupPayloadSchema } from "@/services/logs";
@@ -27,12 +30,14 @@ export const Route = createFileRoute("/settings")({
       { title: "Settings — Sakhi" },
       {
         name: "description",
-        content: "Change language, set a PIN, backup data or delete your records.",
+        content:
+          "Change language, manage cloud sync, set a PIN, backup data or delete your records.",
       },
       { property: "og:title", content: "Settings — Sakhi" },
       {
         property: "og:description",
-        content: "Change language, set a PIN, backup data or delete your records.",
+        content:
+          "Change language, manage cloud sync, set a PIN, backup data or delete your records.",
       },
     ],
   }),
@@ -46,6 +51,11 @@ function SettingsPage() {
   const [demoLoaded, setDemoLoaded] = useState(false);
   const [demoMsg, setDemoMsg] = useState<string | null>(null);
 
+  // Sync state
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>(storage.getSyncStatus());
+  const [currentUser, setCurrentUser] = useState<User | null>(authService.current());
+  const [authMode, setAuthMode] = useState(authService.getAuthMode());
+
   // Backup & Restore State
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [backupMsg, setBackupMsg] = useState<{ type: "success" | "error"; text: string } | null>(
@@ -57,6 +67,21 @@ function SettingsPage() {
 
   useEffect(() => {
     setDemoLoaded(demoService.isDemoLoaded());
+    setCurrentUser(authService.current());
+    setAuthMode(authService.getAuthMode());
+
+    const unbindSync = storage.onSyncStatusChange((st) => {
+      setSyncStatus(st);
+    });
+    const unbindAuth = authService.onAuthChange((u) => {
+      setCurrentUser(u);
+      setAuthMode(authService.getAuthMode());
+    });
+
+    return () => {
+      unbindSync();
+      unbindAuth();
+    };
   }, []);
 
   const handleLoadDemo = async () => {
@@ -159,6 +184,13 @@ function SettingsPage() {
         <aside className="md:col-span-4 lg:col-span-4 sticky top-24">
           <nav className="card-soft border border-border/80 p-3 sm:p-4 flex flex-col gap-1.5 shadow-xs">
             <a
+              href="#sync-section"
+              className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-base font-semibold text-foreground hover:bg-muted transition-colors"
+            >
+              <Cloud className="size-5 text-primary shrink-0" />
+              <span>{t("settings.syncTitle")}</span>
+            </a>
+            <a
               href="#demo-section"
               className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-base font-semibold text-foreground hover:bg-muted transition-colors"
             >
@@ -198,6 +230,74 @@ function SettingsPage() {
 
         {/* Right Column: Setting Sections */}
         <div className="md:col-span-8 lg:col-span-8 flex flex-col gap-6 mt-6 md:mt-0">
+          {/* Cloud Sync Section */}
+          <section id="sync-section" className="card-soft border border-border/80 p-6 scroll-mt-24">
+            <h2 className="flex items-center gap-3 text-xl font-bold text-foreground">
+              <Cloud className="size-6 text-primary" />
+              <span>{t("settings.syncTitle")}</span>
+            </h2>
+
+            {syncStatus === "not_configured" ? (
+              <div className="mt-3 rounded-2xl border border-border/70 bg-muted/40 p-4">
+                <p className="text-sm font-semibold text-foreground">
+                  {t("settings.syncNotConfigured")}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                  {t("settings.syncNotConfiguredDesc")}
+                </p>
+              </div>
+            ) : authMode === "account" && currentUser ? (
+              <div className="mt-3 flex flex-col gap-3">
+                <div className="flex items-center justify-between rounded-2xl border border-border/70 bg-secondary/30 p-4">
+                  <div>
+                    <p className="text-sm font-bold text-foreground">
+                      {t("settings.signedInAs", { phone: currentUser.phone || currentUser.name })}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {t("settings.syncAccountNote")}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 rounded-full bg-background px-3 py-1.5 text-xs font-semibold shadow-2xs">
+                    {syncStatus === "synced" && (
+                      <>
+                        <CheckCircle2 className="size-4 text-success" />
+                        <span className="text-success">{t("sync.synced")}</span>
+                      </>
+                    )}
+                    {syncStatus === "saving" && (
+                      <>
+                        <RefreshCw className="size-4 text-primary animate-spin" />
+                        <span className="text-primary">{t("sync.saving")}</span>
+                      </>
+                    )}
+                    {syncStatus === "offline" && (
+                      <>
+                        <CloudOff className="size-4 text-warning" />
+                        <span className="text-warning-foreground">{t("sync.offline")}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-3 flex flex-col gap-3">
+                <div className="rounded-2xl border border-border/70 bg-muted/30 p-4">
+                  <p className="text-sm font-bold text-foreground">{t("sync.notSignedIn")}</p>
+                  <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                    {t("settings.syncGuestNote")}
+                  </p>
+                </div>
+                <Link
+                  to="/signup"
+                  className="tap flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground shadow-xs hover:bg-primary/95 self-start"
+                >
+                  <Cloud className="size-4" />
+                  <span>{t("settings.createAccountBtn")}</span>
+                </Link>
+              </div>
+            )}
+          </section>
+
           {/* Demo Profile Section */}
           <section id="demo-section" className="card-soft border border-border/80 p-6 scroll-mt-24">
             <h2 className="flex items-center gap-3 text-xl font-bold text-foreground">
