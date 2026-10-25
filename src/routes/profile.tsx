@@ -132,9 +132,9 @@ function Profile() {
               <ShieldCheck className="size-6" />
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-xl font-bold text-foreground">{t("landing.privacyHighlight")}</h2>
+              <h2 className="text-xl font-bold text-foreground">{t("landing.privacyTitle")}</h2>
               <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
-                {t("footer.privacyNotice")}
+                {t("footer.notice")}
               </p>
             </div>
           </div>

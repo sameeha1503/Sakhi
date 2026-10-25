@@ -223,9 +223,9 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-2 px-4 sm:flex-row sm:px-6">
           <div className="flex items-center gap-2">
             <Flower2 className="size-3.5 text-primary" />
-            <span className="font-semibold text-foreground">{t("footer.allRights")}</span>
+            <span className="font-semibold text-foreground">{t("app.name")}</span>
           </div>
-          <p>{t("footer.privacyNotice")}</p>
+          <p>{t("footer.notice")}</p>
         </div>
       </footer>
 

@@ -26,6 +26,14 @@
   - "Sign in to sync" button when in guest mode or signed out; hidden on chrome-free routes.
   - Safe log out confirmation dialog with up to 3s queue flush, offline unsynced warning, local device synced data cleanup (preserving private vault and language preference), redirect to `/signup`, and toast notification.
   - Reusable flow at bottom of `/settings` and `/profile`. 100% parity across all 11 Indic locales.
+- [x] **PHASE 9: Landing Page Overhaul & Honest Privacy (Completed)**
+  - Benefit-focused headline ("Understand your body. Get care sooner.") with no repetition of app name in hero.
+  - Friendly illustrative UI preview card (mock Today check-in, mini month strip with next period prediction, nearest health centre).
+  - 11 Indian language chips with instant switching, header language dropdown.
+  - 4 outcome-focused help cards + 5th Ask Sakhi assistant strip with module accent tokens.
+  - Honest privacy section ("Your health, your control") removing all obsolete device-only/e2e claims.
+  - Always-visible emergency 108 strip with direct `tel:108` dialer button above footer.
+  - SEO `<title>` and description head meta tags. 13 unit tests in `src/test/landing.test.tsx` and 100% locale parity.
 
 - [x] Phase 2: symptom log, cycle tracker, pattern flags, red-flag screen (awareness cards migrated to Ask Sakhi knowledge base; verified with automated E2E & flow test suite across EN/HI/TE)
 - [x] Phase 3: manual medicine entry, private vault prescription photo storage (AI prescription reading planned), medicines CRUD, dose reminders (verified; honest manual entry on /scan starting with empty card, direct vault photo saving with PIN lock, dose schedule generation, adherence history, refill alerts, discreet reminders, and unit tests passed)
@@ -262,3 +270,25 @@
      - When unsynced changes exist and offline: warns _"You have changes that have not synced. Log out anyway?"_ with an option to stay.
      - On confirmation: flushes pending sync writes (max 3s), clears synced data from local storage on this phone, preserves private vault (PIN & lockout) and language preference, and redirects to `/signup` with toast _"You have been logged out"_.
    - **Consistent Entry Points**: Verified identical "Log out" button at bottom of `/settings` and `/profile`.
+ 
+10. **Landing Page Overhaul & Honest Privacy (`/`)**:
+   - **Header & Hero Repetition**:
+     - Header shows logo + "Sakhi" + tagline "Your health friend" with language dropdown on the right.
+     - Benefit headline appears in serif `h1`: *"Understand your body. Get care sooner."* (app name is not repeated).
+     - Subtitle describes 30-second tracking, finding care, and discovering government schemes.
+     - Small line under "Get started": *"Takes 1 minute. No email needed."*
+     - Secondary link: *"I already have an account"* routes directly to `/signup` in login mode.
+   - **Language Chips**:
+     - Row of 11 native language chips (English, हिन्दी, తెలుగు, தமிழ், ಕನ್ನಡ, മലയാളം, मराठी, বাংলা, ગુજરાતી, ਪੰਜਾਬੀ, ଓଡ଼ିଆ).
+     - Tapping any chip immediately switches the entire page language and updates the active chip highlight without reloading.
+   - **UI Showcase Preview Card**:
+     - Clearly illustrative preview card with an uppercase "Example" tag.
+     - Displays mock Today check-in (Medium flow, Calm mood, Mild cramps), mini calendar strip with Next period indicator, and nearest health centre row.
+   - **How Sakhi Helps (4 Cards + 5th Strip)**:
+     - 4 cards using module accent tokens (teal, berry, violet, green) with outcome-focused headlines and descriptions: *"Notice patterns early"*, *"Be ready for the doctor"*, *"Find care near you"*, and *"Never miss a scheme"*.
+     - 5th strip highlighting *"Ask Sakhi"* with clear non-diagnostic and no-prescribing disclaimer.
+   - **Honest Privacy Section**:
+     - Section titled *"Your health, your control"*, explicitly noting number + 6-digit PIN login, guest mode on-device storage, PIN-locked prescription vault photos, 1-tap complete data deletion, and non-diagnostic guidance (zero claims of "never leaves device" or "end-to-end encrypted").
+   - **Emergency Strip & Footer**:
+     - Calm emergency strip above footer: *"In an emergency call 108"* with a direct `tel:108` dial button.
+     - Clean footer with *"Made for women across India. Sakhi shares information, not medical advice."* and link to Privacy & Consent.

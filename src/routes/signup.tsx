@@ -19,7 +19,18 @@ export const Route = createFileRoute("/signup")({
 function Signup() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signup" | "login">("signup");
+  const [mode, setMode] = useState<"signup" | "login">(() => {
+    if (typeof window !== "undefined") {
+      const stored = sessionStorage.getItem("sakhi:auth_mode");
+      if (stored === "login") {
+        sessionStorage.removeItem("sakhi:auth_mode");
+        return "login";
+      }
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("mode") === "login") return "login";
+    }
+    return "signup";
+  });
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [pin, setPin] = useState("");
@@ -27,6 +38,18 @@ function Signup() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const [alreadyRegistered, setAlreadyRegistered] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = sessionStorage.getItem("sakhi:auth_mode");
+      if (stored === "login") {
+        sessionStorage.removeItem("sakhi:auth_mode");
+        setMode("login");
+      }
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("mode") === "login") setMode("login");
+    }
+  }, []);
 
   useEffect(() => {
     if (!prefs.language()) navigate({ to: "/" });
