@@ -245,16 +245,15 @@ describe("Geoapify Places & Fallback Chain Integration", () => {
   });
 
   // 2. Empty result with radius expansion
-  describe("2. Empty Result with Progressive Radius Expansion", () => {
-    it("expands radius progressively (5km -> 10km -> 25km) one request at a time until at least 8 results", async () => {
+  describe("2. Merged Healthcare Search Across 5, 10, 25, and 50 km", () => {
+    it("searches 5km, 10km, 25km, and 50km and merges everything found, sorted by distance with true count", async () => {
       const calls: string[] = [];
 
       vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
         const urlStr = String(url);
         calls.push(urlStr);
 
-        if (urlStr.includes("radius=5000")) {
-          // 5 km returns only 2 places (< 8)
+        if (urlStr.includes("radius=5000&") || urlStr.endsWith("radius=5000")) {
           return {
             ok: true,
             json: async () => ({
@@ -268,34 +267,37 @@ describe("Geoapify Places & Fallback Chain Integration", () => {
         }
 
         if (urlStr.includes("radius=10000")) {
-          // 10 km returns 9 places (>= 8)
-          const places: Place[] = Array.from({ length: 9 }, (_, i) => ({
-            id: `p_${i + 1}`,
-            name: `Facility ${i + 1}`,
-            lat: 17.4,
-            lng: 78.5,
-            type: "hospital",
-            phone: null,
-            address: null,
-            town: "Hyderabad",
-            district: "Hyderabad",
-            state: "Telangana",
-            operator: null,
-            isGovernment: true,
-            emergency: true,
-            hasWomenHealth: false,
-            hasGynaecology: false,
-            opening_hours: null,
-            km: i + 1,
-            isApproxDistance: true,
-          }));
-
+          // Returns p2 (duplicate) and p3
           return {
             ok: true,
             json: async () => ({
               configured: true,
-              places,
-              radiusUsedKm: 10,
+              places: [
+                { id: "p2", name: "Facility 2", lat: 17.4, lng: 78.5, type: "clinic", km: 3 },
+                { id: "p3", name: "Facility 3", lat: 17.4, lng: 78.5, type: "hospital", km: 7 },
+              ],
+            }),
+          } as Response;
+        }
+
+        if (urlStr.includes("radius=25000")) {
+          return {
+            ok: true,
+            json: async () => ({
+              configured: true,
+              places: [{ id: "p4", name: "Facility 4", lat: 17.4, lng: 78.5, type: "phc", km: 15 }],
+            }),
+          } as Response;
+        }
+
+        if (urlStr.includes("radius=50000")) {
+          return {
+            ok: true,
+            json: async () => ({
+              configured: true,
+              places: [
+                { id: "p5", name: "Facility 5", lat: 17.4, lng: 78.5, type: "hospital", km: 35 },
+              ],
             }),
           } as Response;
         }
@@ -309,15 +311,26 @@ describe("Geoapify Places & Fallback Chain Integration", () => {
       const res = await findNearby(17.42, 78.5, 50);
 
       expect(res.source).toBe("geoapify");
-      expect(res.places.length).toBe(9);
-      expect(res.radiusUsedKm).toBe(10);
+      // Merged deduplicated total: p1, p2, p3, p4, p5 = 5 facilities
+      expect(res.places.length).toBe(5);
+      expect(res.totalFound).toBe(5);
+      expect(res.radiusUsedKm).toBe(50);
       expect(res.isFallbackSample).toBe(false);
 
-      // Verify requests were made in order: first 5 km, then 10 km, and stopped (no 25km or 50km request)
+      // Verify sorted by distance
+      expect(res.places[0]!.id).toBe("p1");
+      expect(res.places[1]!.id).toBe("p2");
+      expect(res.places[2]!.id).toBe("p3");
+      expect(res.places[3]!.id).toBe("p4");
+      expect(res.places[4]!.id).toBe("p5");
+
+      // Verify all 4 radius requests (5km, 10km, 25km, 50km) were executed without stopping at 8
       const nearbyCalls = calls.filter((c) => c.includes("/api/nearby"));
-      expect(nearbyCalls.length).toBe(2);
+      expect(nearbyCalls.length).toBe(4);
       expect(nearbyCalls[0]).toContain("radius=5000");
       expect(nearbyCalls[1]).toContain("radius=10000");
+      expect(nearbyCalls[2]).toContain("radius=25000");
+      expect(nearbyCalls[3]).toContain("radius=50000");
     });
   });
 

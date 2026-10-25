@@ -48,7 +48,7 @@ export function cycleSummary(logs: DailyLog[], today: string) {
   };
 }
 
-export type FlagId = "irregularPlus" | "painCycle" | "heavyRepeat";
+export type FlagId = "irregularPlus" | "painCycle" | "heavyRepeat" | "lateCycle" | "ongoingPain";
 
 export function patternFlags(logs: DailyLog[], today: string): FlagId[] {
   const recent = (days: number) =>
@@ -85,6 +85,19 @@ export function patternFlags(logs: DailyLog[], today: string): FlagId[] {
   )
     flags.push("heavyRepeat");
 
+  // lateCycle: 45+ days since last period start
+  const lastStart = starts.at(-1);
+  if (lastStart && diffDays(lastStart, today) >= 45) {
+    flags.push("lateCycle");
+  }
+
+  // ongoingPain: pain 3+ on 5 of the last 7 days (including today)
+  const r7 = recent(7);
+  const painDaysCount = r7.filter((l) => l.painLevel >= 3).length;
+  if (painDaysCount >= 5) {
+    flags.push("ongoingPain");
+  }
+
   return flags;
 }
 
@@ -97,17 +110,75 @@ export function isRedFlag(l: DailyLog): boolean {
   );
 }
 
+export type SafetyTier = "urgent" | "soon" | "none";
+
+/**
+ * Evaluates same-day safety tier:
+ * - urgent: red flag symptoms (veryHeavy flow, pain 5, or pelvic pain with pain 4+)
+ * - soon: see a doctor in the next day or two (pain 3-4 for 3 consecutive days, or flow heavy twice in 3 days)
+ * - none: normal variations
+ */
+export function evaluateSafetyTier(
+  todayLog: DailyLog,
+  allLogs: DailyLog[] = [],
+): { tier: SafetyTier; reason?: string } {
+  if (isRedFlag(todayLog)) {
+    return { tier: "urgent", reason: "redFlag" };
+  }
+
+  const targetDate = todayLog.date;
+  const logMap = new Map<string, DailyLog>();
+  for (const l of allLogs) {
+    logMap.set(l.date, l);
+  }
+  logMap.set(targetDate, todayLog); // Ensure today's unsaved log is present
+
+  const d0 = targetDate;
+  const d1 = new Date(toMs(targetDate) - DAY).toISOString().slice(0, 10);
+  const d2 = new Date(toMs(targetDate) - 2 * DAY).toISOString().slice(0, 10);
+
+  const l0 = logMap.get(d0);
+  const l1 = logMap.get(d1);
+  const l2 = logMap.get(d2);
+
+  // Rule 1: Pain 3-4 for 3 days in a row (today and previous 2 consecutive days)
+  const pain3DaysInRow =
+    (l0?.painLevel ?? 0) >= 3 && (l1?.painLevel ?? 0) >= 3 && (l2?.painLevel ?? 0) >= 3;
+
+  // Rule 2: Flow heavy or veryHeavy on 2 or more days in the last 3 days
+  const isHeavy = (l?: DailyLog) => l?.flow === "heavy" || l?.flow === "veryHeavy";
+  const heavyCount = [l0, l1, l2].filter(isHeavy).length;
+  const heavyTwiceIn3Days = heavyCount >= 2;
+
+  if (pain3DaysInRow || heavyTwiceIn3Days) {
+    return {
+      tier: "soon",
+      reason: pain3DaysInRow ? "consecutivePain" : "repeatedHeavyFlow",
+    };
+  }
+
+  return { tier: "none" };
+}
+
 /**
  * Determines redirect destination after saving an entry:
- * Urgent screen redirect ONLY applies when saving today's entry.
- * When backfilling or editing an older day, always returns to calendar.
+ * - Urgent screen redirect ONLY applies when saving today's entry.
+ * - Soon card search param ONLY applies when saving today's entry with tier === "soon".
+ * - When backfilling or editing an older day, always returns to calendar with no alarm tier.
  */
 export function determinePostSaveRedirect(
   log: DailyLog,
   isToday: boolean,
-): { to: "/urgent" } | { to: "/cycle"; targetDate: string } {
-  if (isRedFlag(log) && isToday) {
-    return { to: "/urgent" };
+  allLogs: DailyLog[] = [],
+): { to: "/urgent" } | { to: "/cycle"; targetDate: string; tier?: SafetyTier } {
+  if (isToday) {
+    const safety = evaluateSafetyTier(log, allLogs);
+    if (safety.tier === "urgent") {
+      return { to: "/urgent" };
+    }
+    if (safety.tier === "soon") {
+      return { to: "/cycle", targetDate: log.date, tier: "soon" };
+    }
   }
   return { to: "/cycle", targetDate: log.date };
 }

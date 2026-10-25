@@ -24,6 +24,7 @@ import {
   Stethoscope,
   ShieldAlert,
   Info,
+  QrCode,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { authService, type User } from "@/services/auth";
@@ -970,23 +971,32 @@ function VisitPage() {
         {currentTab === "summary" && (
           <div className="flex flex-col gap-4">
             {/* Action Bar for Summary */}
-            <div className="no-print card-soft flex items-center justify-between p-4 border border-border/80">
+            <div className="no-print card-soft flex flex-wrap items-center justify-between gap-3 p-4 border border-border/80">
               <div>
                 <p className="font-bold text-foreground text-sm">
                   {t("summary.title", "Doctor summary")}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Ready to print or save as PDF for your consultation.
+                  Ready to print, save as PDF, or share via private QR code.
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => window.print()}
-                className="tap flex items-center gap-2 rounded-2xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-sm hover:bg-primary/90"
-              >
-                <Printer className="size-4" />
-                <span>{t("summary.downloadPdf", "Download / Print PDF")}</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/share"
+                  className="tap flex items-center gap-1.5 rounded-2xl border-2 border-primary bg-secondary px-3.5 py-2 text-xs font-bold text-primary shadow-xs hover:bg-secondary/80"
+                >
+                  <QrCode className="size-4" />
+                  <span>{t("share.shareWithDoctor", "Share with QR")}</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="tap flex items-center gap-2 rounded-2xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-sm hover:bg-primary/90"
+                >
+                  <Printer className="size-4" />
+                  <span>{t("summary.downloadPdf", "Download / Print PDF")}</span>
+                </button>
+              </div>
             </div>
 
             {/* Printable Container (One-Page A4) */}

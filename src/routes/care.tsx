@@ -31,6 +31,9 @@ import {
   type FindNearbyResult,
   type GeocodingResult,
 } from "@/services/places";
+import { patternFlags } from "@/services/cycle";
+import { logService, todayISO } from "@/services/logs";
+import { schemeService } from "@/services/schemes";
 import type { HospitalMapProps } from "@/components/HospitalMap";
 
 export const Route = createFileRoute("/care")({
@@ -228,6 +231,70 @@ function CarePage() {
       return true;
     });
   }, [nearbyResult, activeFilter]);
+
+  // Pattern flags & scheme hint for personalized care recommendations
+  const activeFlags = useMemo(() => {
+    try {
+      return patternFlags(logService.all(), todayISO());
+    } catch {
+      return [];
+    }
+  }, []);
+
+  const hasPainOrHeavyFlag = useMemo(() => {
+    return activeFlags.some((f) => f === "painCycle" || f === "heavyRepeat" || f === "ongoingPain");
+  }, [activeFlags]);
+
+  const schemeAnswers = useMemo(() => {
+    try {
+      return schemeService.getSavedAnswers();
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const hasSchemeHint = schemeAnswers?.household === "bpl_ration";
+
+  // Top Recommended facilities (prioritize women's health for pain/heavy flags, and govt for scheme hints)
+  const recommendedFacilities = useMemo(() => {
+    if (!nearbyResult?.places || nearbyResult.places.length === 0) return [];
+
+    const scored = nearbyResult.places.map((place) => {
+      let score = 0;
+      const reasons: string[] = [];
+
+      const isWomenHealth = place.hasWomenHealth || place.hasGynaecology;
+      if (hasPainOrHeavyFlag && isWomenHealth) {
+        score += 15;
+        reasons.push(
+          t("care.recommendedReasonWomen", "Specialized care for cycle pain & bleeding"),
+        );
+      }
+
+      if (hasSchemeHint && place.isGovernment) {
+        score += 10;
+        reasons.push(
+          t(
+            "care.recommendedReasonGovt",
+            "Government centre: free/subsidised care with ration card",
+          ),
+        );
+      } else if (place.isGovernment) {
+        score += 2;
+      }
+
+      if (isWomenHealth) {
+        score += 3;
+      }
+
+      return { place, score, reasons };
+    });
+
+    return scored
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score || (a.place.km ?? 0) - (b.place.km ?? 0))
+      .slice(0, 3);
+  }, [nearbyResult?.places, hasPainOrHeavyFlag, hasSchemeHint, t]);
 
   const nearestPlace = filteredFacilities.length > 0 ? filteredFacilities[0] : null;
 
@@ -582,6 +649,84 @@ function CarePage() {
           </div>
         </section>
 
+        {/* "Recommended for you" Strip */}
+        {recommendedFacilities.length > 0 && (
+          <section aria-labelledby="recommended-strip-heading" className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="size-5 text-accent" />
+              <h2 id="recommended-strip-heading" className="text-lg font-bold text-foreground">
+                {t("care.recommendedTitle", "Recommended for you")}
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              {recommendedFacilities.map(({ place, reasons }) => (
+                <article
+                  key={`rec-${place.id}`}
+                  className="card-soft relative flex flex-col justify-between gap-3 border-2 border-accent/40 bg-accent-tint/30 p-4 shadow-xs"
+                >
+                  <div>
+                    <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+                      {reasons.map((r, idx) => (
+                        <span
+                          key={idx}
+                          className="rounded-md bg-accent/20 px-2 py-0.5 text-[11px] font-bold text-accent"
+                        >
+                          ★ {r}
+                        </span>
+                      ))}
+                    </div>
+                    <h3 className="font-bold text-base text-foreground leading-snug">
+                      {place.name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {place.address || `${place.town}, ${place.district}`}
+                    </p>
+                    {place.km != null && (
+                      <p className="mt-1 text-xs font-bold text-primary">
+                        {place.km} km {place.isApproxDistance ? t("care.approx") : t("care.drive")}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-2 pt-2 border-t border-accent/20">
+                    <Link
+                      to="/visit"
+                      search={{ tab: "questions" }}
+                      className="tap flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground shadow-xs hover:bg-primary/90"
+                    >
+                      <FileQuestion className="size-4" />
+                      <span>{t("care.prepareVisit", "Prepare for this visit")}</span>
+                    </Link>
+                    <div className="grid grid-cols-2 gap-2">
+                      {place.phone ? (
+                        <a
+                          href={`tel:${place.phone}`}
+                          className="tap flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-card border border-border py-2 text-xs font-bold text-foreground hover:bg-muted/30"
+                        >
+                          <Phone className="size-3.5" /> {t("care.call")}
+                        </a>
+                      ) : (
+                        <span className="flex min-h-[44px] items-center justify-center rounded-xl bg-muted/40 py-2 text-[11px] text-muted-foreground">
+                          {t("care.phoneNotListed")}
+                        </span>
+                      )}
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="tap flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-card border border-border py-2 text-xs font-bold text-foreground hover:bg-muted/30"
+                      >
+                        <Navigation className="size-3.5" /> {t("care.directions")}
+                      </a>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Facilities List */}
         <section className="flex flex-col gap-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -607,6 +752,11 @@ function CarePage() {
                             {t("care.govtBadge")}
                           </span>
                         )}
+                        {hasSchemeHint && place.isGovernment && (
+                          <span className="rounded-md bg-success/15 px-2 py-0.5 text-xs font-bold text-success">
+                            {t("care.schemeCoverageBadge", "Ration card eligible")}
+                          </span>
+                        )}
                         {(place.hasWomenHealth || place.hasGynaecology) && (
                           <span className="rounded-md bg-accent/15 px-2 py-0.5 text-xs font-bold text-accent">
                             {t("care.womenDoctorBadge")}
@@ -629,28 +779,39 @@ function CarePage() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/40">
-                    {place.phone ? (
-                      <a
-                        href={`tel:${place.phone}`}
-                        className="tap flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-primary/10 py-2.5 text-sm font-bold text-primary hover:bg-primary/20 active:scale-95 transition-all"
-                      >
-                        <Phone className="size-4" /> {t("care.call")}
-                      </a>
-                    ) : (
-                      <span className="flex min-h-[44px] items-center justify-center rounded-xl bg-muted/40 py-2.5 text-xs font-semibold text-muted-foreground">
-                        {t("care.phoneNotListed")}
-                      </span>
-                    )}
-
-                    <a
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="tap flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-primary/30 py-2.5 text-sm font-bold text-primary hover:bg-primary/5 active:scale-95 transition-all"
+                  <div className="flex flex-col gap-2 pt-2 border-t border-border/40">
+                    <Link
+                      to="/visit"
+                      search={{ tab: "questions" }}
+                      className="tap flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-primary bg-primary/10 py-2.5 text-xs font-bold text-primary hover:bg-primary/20 active:scale-95 transition-all"
                     >
-                      <Navigation className="size-4" /> {t("care.directions")}
-                    </a>
+                      <FileQuestion className="size-4" />
+                      <span>{t("care.prepareVisit", "Prepare for this visit")}</span>
+                    </Link>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      {place.phone ? (
+                        <a
+                          href={`tel:${place.phone}`}
+                          className="tap flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-primary/10 py-2.5 text-sm font-bold text-primary hover:bg-primary/20 active:scale-95 transition-all"
+                        >
+                          <Phone className="size-4" /> {t("care.call")}
+                        </a>
+                      ) : (
+                        <span className="flex min-h-[44px] items-center justify-center rounded-xl bg-muted/40 py-2.5 text-xs font-semibold text-muted-foreground">
+                          {t("care.phoneNotListed")}
+                        </span>
+                      )}
+
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="tap flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-primary/30 py-2.5 text-sm font-bold text-primary hover:bg-primary/5 active:scale-95 transition-all"
+                      >
+                        <Navigation className="size-4" /> {t("care.directions")}
+                      </a>
+                    </div>
                   </div>
                 </article>
               ))

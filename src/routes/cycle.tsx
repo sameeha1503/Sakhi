@@ -37,6 +37,8 @@ import {
   CheckCircle2,
   FileText,
   X,
+  MapPin,
+  Stethoscope,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { FlagCards } from "@/components/FlagCards";
@@ -56,6 +58,7 @@ const cycleSearchSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
   saved: z.string().optional(),
+  tier: z.enum(["soon"]).optional(),
 });
 
 export const Route = createFileRoute("/cycle")({
@@ -115,6 +118,7 @@ function CyclePage() {
   const [selectedDate, setSelectedDate] = useState<string>(initialDate);
   const [isDayPanelOpen, setIsDayPanelOpen] = useState<boolean>(true);
   const [showSavedNotice, setShowSavedNotice] = useState<boolean>(search.saved === "true");
+  const [showSoonCard, setShowSoonCard] = useState<boolean>(search.tier === "soon");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState<boolean>(false);
 
   const [logs, setLogs] = useState<DailyLog[]>([]);
@@ -295,6 +299,55 @@ function CyclePage() {
             >
               <X className="size-4" />
             </button>
+          </div>
+        )}
+
+        {/* Calm "Soon" Safety Card */}
+        {showSoonCard && (
+          <div className="rounded-3xl border-2 border-warning/50 bg-warning-tint/60 p-5 text-foreground shadow-xs animate-in fade-in">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="grid size-10 place-items-center rounded-2xl bg-warning/20 text-warning shrink-0 mt-0.5">
+                  <AlertTriangle className="size-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-foreground">
+                    {t("cycle.soonTitle", "See a doctor in the next day or two")}
+                  </h2>
+                  <p className="mt-1 text-sm text-foreground/80 leading-relaxed">
+                    {t(
+                      "cycle.soonBody",
+                      "Your recent symptoms (persistent pain or repeated heavy bleeding) are worth getting checked soon by a doctor.",
+                    )}
+                  </p>
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <Link
+                      to="/care"
+                      className="tap inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-xs hover:bg-primary/90"
+                    >
+                      <MapPin className="size-4" />
+                      <span>{t("cycle.findCare", "Find care near me")}</span>
+                    </Link>
+                    <Link
+                      to="/visit"
+                      search={{ tab: "questions" }}
+                      className="tap inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl border-2 border-primary/40 bg-card px-5 py-2.5 text-sm font-bold text-primary hover:bg-primary/5"
+                    >
+                      <Stethoscope className="size-4" />
+                      <span>{t("cycle.prepareQuestions", "Prepare doctor questions")}</span>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSoonCard(false)}
+                className="tap rounded-full p-1.5 text-muted-foreground hover:bg-muted/40"
+                aria-label="Dismiss"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
           </div>
         )}
 

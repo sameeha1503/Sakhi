@@ -48,7 +48,8 @@
     "followupDueIn": "Follow-up in {{days}} days",
     "followupDueTomorrow": "Follow-up in 1 day",
     "newForYou": "New for you",
-    "schemesCardWomenCount": "{{count}} schemes made for women you may qualify for"
+    "schemesCardWomenCount": "{{count}} schemes made for women you may qualify for",
+    "stepShare": "4 Share with QR"
   },
   "soon": "Coming in the next step",
   "profile": {
@@ -158,7 +159,11 @@
     "deleteConfirm": "Are you sure you want to delete the entry for this date? This cannot be undone.",
     "notes": "Personal note",
     "futureDateNotice": "Cannot log entries for future dates.",
-    "savedNotice": "Entry saved successfully!"
+    "savedNotice": "Entry saved successfully!",
+    "soonTitle": "See a doctor in the next day or two",
+    "soonBody": "Your recent symptoms (persistent pain or repeated heavy bleeding) are worth getting checked soon by a doctor.",
+    "findCare": "Find care near me",
+    "prepareQuestions": "Prepare doctor questions"
   },
   "flags": {
     "title": "Worth a doctor visit",
@@ -167,7 +172,9 @@
     "painCycle": "Strong pain during your periods, more than once.",
     "heavyRepeat": "Heavy bleeding on many days.",
     "disclaimer": "Sakhi does not diagnose. Only a doctor can tell what is happening.",
-    "prep": "Talk to a doctor"
+    "prep": "Talk to a doctor",
+    "lateCycle": "45+ days since last period start — worth discussing with a doctor.",
+    "ongoingPain": "Pain level 3+ on 5 of the last 7 days — worth discussing with a doctor."
   },
   "urgent": {
     "title": "Please go to a hospital now",
@@ -323,7 +330,12 @@
     "sourceSample": "Sample data",
     "geoapifyAttribution": "Powered by Geoapify",
     "sampleDataBanner": "Showing sample data — no internet or service unavailable",
-    "cachedDataBanner": "Showing cached results (last updated: {{time}})"
+    "cachedDataBanner": "Showing cached results (last updated: {{time}})",
+    "recommendedTitle": "Recommended for you",
+    "recommendedReasonWomen": "Specialized care for cycle pain & bleeding",
+    "recommendedReasonGovt": "Government centre: free/subsidised care with ration card",
+    "prepareVisit": "Prepare for this visit",
+    "schemeCoverageBadge": "Ration card eligible"
   },
   "questions": {
     "title": "Doctor question prep",
@@ -359,7 +371,9 @@
       "redFlags": "What warning signs should prompt me to come back or go to the hospital right away?",
       "followUp": "When should I come in for my next check-up or follow-up visit?",
       "moodPattern": "I have had persistent low mood, mood swings, or anxiety around my cycle. Could this be related to hormonal changes or PMDD?",
-      "sleepPattern": "I have experienced frequent poor sleep, insomnia, or fatigue. Could this be linked to my hormones, iron levels, or thyroid?"
+      "sleepPattern": "I have experienced frequent poor sleep, insomnia, or fatigue. Could this be linked to my hormones, iron levels, or thyroid?",
+      "lateCycle": "My period has not arrived for over 45 days. What hormone checks, thyroid tests or ultrasound should we consider?",
+      "ongoingPain": "I have experienced pain on most days recently. Could this be investigated for pelvic inflammation or cysts?"
     },
     "whyLabel": "Why this question:",
     "why": {
@@ -371,7 +385,9 @@
       "heavyBleeding": "Suggested because heavy flow days were logged in recent cycles.",
       "mood": "Suggested because low mood or anxiety was logged on 3 or more days in recent weeks.",
       "sleep": "Suggested because poor sleep or fatigue was logged on 3 or more days in recent weeks.",
-      "medicine": "Suggested because active medications are currently recorded in your schedule."
+      "medicine": "Suggested because active medications are currently recorded in your schedule.",
+      "lateCycle": "Suggested because 45 or more days have elapsed since your last period start.",
+      "ongoingPain": "Suggested because pain level 3 or higher was logged on 5 of the last 7 days."
     }
   },
   "visits": {
@@ -790,5 +806,48 @@
         "body": "Heavy monthly bleeding can lead to lower iron levels, causing fatigue and dizziness. Eating leafy greens, jaggery, and lentils can help. A simple blood test is worth discussing with a doctor."
       }
     }
+  },
+  "share": {
+    "title": "Share with my doctor",
+    "subtitle": "Generate a private QR code for your consultation. Your doctor scans it with their phone camera to view your summary — no app installation needed.",
+    "pageTitle": "Share with Doctor",
+    "shareWithDoctor": "Share with QR",
+    "zeroCloudTitle": "Zero Cloud Storage",
+    "zeroCloudBody": "All chosen data is compressed directly into the QR code and URL fragment. Nothing is sent to or stored on any server. Anyone who scans this QR code can read the included details.",
+    "chooseWhatToInclude": "Choose what to include",
+    "toggleName": "Include my name",
+    "toggleNameDesc": "Turn off to share anonymously as 'Patient Consultation Summary'",
+    "toggleCycle": "90-day cycle summary",
+    "toggleCycleDesc": "Average cycle length, bleeding days, and pain",
+    "toggleFlags": "Pattern flags",
+    "toggleFlagsDesc": "Identified patterns worth discussing with a doctor",
+    "toggleMeds": "Active medicines",
+    "toggleMedsDesc": "Current tablets, doses and timings",
+    "toggleVisits": "Recent clinic visits",
+    "toggleVisitsDesc": "Dates, reasons and follow-up advice",
+    "toggleQuestions": "My questions for the doctor",
+    "toggleQuestionsDesc": "Questions you prepared or ticked for this visit",
+    "advisoryExpiry": "Advisory Expiry Date",
+    "expiry24h": "24 hours",
+    "expiry7d": "7 days",
+    "advisoryExpiryNote": "Note: Advisory expiry warns the doctor when reviewing older links. Real server-side instant revocation requires an optional backend.",
+    "qrTitle": "Scan for Consultation",
+    "generatingQr": "Generating QR code...",
+    "payloadSize": "QR payload",
+    "truncatedNotice": "Older visit notes were trimmed to ensure the QR code scans easily on all cameras.",
+    "copyLink": "Copy consultation link",
+    "linkCopied": "Link copied!",
+    "previewDoctorView": "Preview doctor view",
+    "doctorViewBadge": "Doctor Consultation Record",
+    "expiredNoticeTitle": "This record has passed its advisory expiration date",
+    "expiredNoticeBody": "The patient set an advisory expiry of {{date}}. Please confirm current symptoms with the patient.",
+    "activeNoticeTitle": "Confidential Consultation Record",
+    "activeNoticeBody": "This snapshot was decrypted directly from the patient's phone QR code. Valid for ~{{days}} more days. No patient data is sent to or stored on external servers.",
+    "anonymousPatient": "Patient Consultation Summary",
+    "generatedOn": "Generated on",
+    "onDeviceVerified": "On-device snapshot",
+    "errorTitle": "Unable to open medical record",
+    "errorCorrupted": "This consultation record is corrupted or incomplete. Please ask the patient to regenerate the QR code.",
+    "errorInvalid": "No valid patient record found in this link."
   }
 }

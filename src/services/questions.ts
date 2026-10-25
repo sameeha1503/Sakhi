@@ -108,6 +108,32 @@ export function generateSuggestedQuestions(logs: DailyLog[], today: string): Sug
     });
   }
 
+  if (flags.includes("lateCycle")) {
+    questions.push({
+      id: "q_flag_late_cycle",
+      category: "flag",
+      i18nKey: "questions.suggested.lateCycle",
+      defaultText:
+        "My period has not arrived for over 45 days. What hormone checks, thyroid tests or ultrasound should we consider?",
+      whyI18nKey: "questions.why.lateCycle",
+      whyDefaultText:
+        "Suggested because 45 or more days have elapsed since your last period start.",
+    });
+  }
+
+  if (flags.includes("ongoingPain")) {
+    questions.push({
+      id: "q_flag_ongoing_pain",
+      category: "flag",
+      i18nKey: "questions.suggested.ongoingPain",
+      defaultText:
+        "I have experienced pain on most days recently. Could this be investigated for pelvic inflammation or cysts?",
+      whyI18nKey: "questions.why.ongoingPain",
+      whyDefaultText:
+        "Suggested because pain level 3 or higher was logged on 5 of the last 7 days.",
+    });
+  }
+
   // 2. Specific logged symptoms not already covered by flags
   const hasIrregular =
     !flags.includes("irregularPlus") &&

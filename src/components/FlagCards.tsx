@@ -38,6 +38,9 @@ export function FlagCards({ flags }: { flags: FlagId[] }) {
             let query = "What is PCOS?";
             if (firstFlag === "painCycle") query = "What are signs of endometriosis?";
             else if (firstFlag === "heavyRepeat") query = "Is my cycle normal?";
+            else if (firstFlag === "lateCycle") query = "Why is my period late?";
+            else if (firstFlag === "ongoingPain")
+              query = "When should I see a doctor for ongoing pelvic or cycle pain?";
             window.dispatchEvent(new CustomEvent("ask-sakhi", { detail: { query } }));
           }}
           className="tap flex flex-1 items-center justify-center gap-2 rounded-2xl border border-primary/30 bg-secondary/80 py-3 text-sm font-bold text-secondary-foreground hover:bg-secondary active:scale-[0.98] transition-all"

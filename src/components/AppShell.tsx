@@ -42,6 +42,10 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
     pathname.startsWith("/share");
 
   useEffect(() => {
+    if (pathname.startsWith("/share")) {
+      setOk(true);
+      return;
+    }
     if (!prefs.language()) navigate({ to: "/" });
     else if (!prefs.consented()) navigate({ to: "/consent" });
     else if (!prefs.loggedIn()) navigate({ to: "/signup" });
@@ -64,7 +68,7 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
       window.removeEventListener("offline", onOffline);
       unbindStorage();
     };
-  }, [navigate]);
+  }, [navigate, pathname]);
 
   if (!ok) return <div className="min-h-screen" />;
 

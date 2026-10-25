@@ -177,14 +177,19 @@ function LogPage() {
       return;
     }
 
-    // Urgent screen redirect ONLY applies when saving today's entry
-    const redirect = determinePostSaveRedirect(final, isToday);
+    // Safety tiers evaluation for today's entry
+    const allLogs = logService.all();
+    const redirect = determinePostSaveRedirect(final, isToday, allLogs);
     if (redirect.to === "/urgent") {
       navigate({ to: "/urgent" });
     } else {
       navigate({
         to: "/cycle",
-        search: { date: redirect.targetDate, saved: "true" },
+        search: {
+          date: redirect.targetDate,
+          saved: "true",
+          tier: redirect.tier === "soon" ? "soon" : undefined,
+        },
       });
     }
   };

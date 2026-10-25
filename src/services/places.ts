@@ -379,24 +379,10 @@ async function queryOverpass(
       return data.elements as never;
     }
   } catch (primaryErr) {
-    console.warn("[places] Primary Overpass failed, trying mirror:", primaryErr);
+    console.warn("[places] Primary Overpass failed or timed out:", primaryErr);
   }
 
-  // 2. Fallback mirror: overpass.kumi.systems
-  try {
-    const mirrorData = await fetchOverpassEndpoint(
-      "https://overpass.kumi.systems/api/interpreter",
-      query,
-      10000,
-    );
-    if (Array.isArray(mirrorData?.elements)) {
-      return mirrorData.elements as never;
-    }
-  } catch (mirrorErr) {
-    console.warn("[places] Fallback Overpass mirror failed:", mirrorErr);
-  }
-
-  throw new Error("All Overpass endpoints failed or timed out");
+  throw new Error("Primary Overpass endpoint failed or timed out");
 }
 
 /**
@@ -477,13 +463,13 @@ export async function findNearby(
   }
 
   // 1. Try server-side live healthcare search (/api/nearby powered by Geoapify)
-  // Progressive radius (5, 10, 25, 50 km) until at least 8 results; one request at a time
-  const radiiKm = [5, 10, 25, 50].filter((r) => r <= maxRadiusLimitKm);
-  if (radiiKm.length === 0) radiiKm.push(maxRadiusLimitKm);
+  // Search radii 5, 10, 25, and 50 km and merge everything found (capped at 50 km, true count)
+  const radiiKm = [5, 10, 25, 50].filter((r) => r <= Math.min(maxRadiusLimitKm, 50));
+  if (radiiKm.length === 0) radiiKm.push(Math.min(maxRadiusLimitKm, 50));
 
   let geoapifyFailureReason: PlaceFailureReason | null = null;
-  let geoapifyPlaces: Place[] = [];
-  let geoapifyRadiusUsed = radiiKm[0]!;
+  const placesMap = new Map<string, Place>();
+  let maxRadiusQueried = radiiKm[0]!;
 
   for (const radiusKm of radiiKm) {
     try {
@@ -529,18 +515,23 @@ export async function findNearby(
       }
 
       const found = Array.isArray(data?.places) ? data.places : [];
-      geoapifyPlaces = found;
-      geoapifyRadiusUsed = data.radiusUsedKm || radiusKm;
-
-      // Stop once we find at least 8 results
-      if (geoapifyPlaces.length >= 8) {
-        break;
+      for (const p of found) {
+        const key = p.id || `${p.name}-${p.lat}-${p.lng}`;
+        if (!placesMap.has(key)) {
+          placesMap.set(key, p);
+        }
       }
+      maxRadiusQueried = radiusKm;
+      // Do NOT stop at 8! We search through all radii up to 50 km and merge all found facilities.
     } catch {
       geoapifyFailureReason = "unreachable";
       break;
     }
   }
+
+  const geoapifyPlaces = Array.from(placesMap.values()).sort(
+    (a, b) => (a.km ?? Infinity) - (b.km ?? Infinity),
+  );
 
   // If Geoapify succeeded and found facilities
   if (geoapifyPlaces.length > 0) {
@@ -548,7 +539,7 @@ export async function findNearby(
 
     const result: FindNearbyResult = {
       places: geoapifyPlaces,
-      radiusUsedKm: geoapifyRadiusUsed,
+      radiusUsedKm: maxRadiusQueried,
       totalFound: geoapifyPlaces.length,
       source: "geoapify",
       isCached: false,

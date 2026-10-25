@@ -14,6 +14,7 @@ import {
   CalendarDays,
   FileText,
   ShieldAlert,
+  QrCode,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { FlagCards } from "@/components/FlagCards";
@@ -128,8 +129,8 @@ function HomePage() {
             )}
           </div>
 
-          {/* Three Short Steps as Buttons with Icons */}
-          <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Four Short Steps as Buttons with Icons */}
+          <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <Link
               to="/visit"
               search={{ tab: "questions" }}
@@ -162,6 +163,17 @@ function HomePage() {
               <div className="flex items-center gap-2">
                 <FileText className="size-4 text-primary shrink-0" />
                 <span>{t("home.stepSummary", "3 Doctor summary")}</span>
+              </div>
+              <span className="text-muted-foreground sm:hidden">&rarr;</span>
+            </Link>
+
+            <Link
+              to="/share"
+              className="tap flex items-center justify-between sm:justify-center gap-2.5 rounded-2xl border-2 border-border bg-card p-3.5 text-xs sm:text-sm font-bold text-foreground hover:border-primary/50 hover:bg-secondary/40 transition-all"
+            >
+              <div className="flex items-center gap-2">
+                <QrCode className="size-4 text-primary shrink-0" />
+                <span>{t("home.stepShare", "4 Share with QR")}</span>
               </div>
               <span className="text-muted-foreground sm:hidden">&rarr;</span>
             </Link>

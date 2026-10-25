@@ -20,6 +20,7 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ScanRouteImport } from './routes/scan'
 import { Route as SchemesRouteImport } from './routes/schemes'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ShareRouteImport } from './routes/share'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as UrgentRouteImport } from './routes/urgent'
 import { Route as VaultRouteImport } from './routes/vault'
@@ -83,6 +84,11 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShareRoute = ShareRouteImport.update({
+  id: '/share',
+  path: '/share',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -131,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/scan': typeof ScanRoute
   '/schemes': typeof SchemesRoute
   '/settings': typeof SettingsRoute
+  '/share': typeof ShareRoute
   '/signup': typeof SignupRoute
   '/urgent': typeof UrgentRoute
   '/vault': typeof VaultRoute
@@ -151,6 +158,7 @@ export interface FileRoutesByTo {
   '/scan': typeof ScanRoute
   '/schemes': typeof SchemesRoute
   '/settings': typeof SettingsRoute
+  '/share': typeof ShareRoute
   '/signup': typeof SignupRoute
   '/urgent': typeof UrgentRoute
   '/vault': typeof VaultRoute
@@ -172,6 +180,7 @@ export interface FileRoutesById {
   '/scan': typeof ScanRoute
   '/schemes': typeof SchemesRoute
   '/settings': typeof SettingsRoute
+  '/share': typeof ShareRoute
   '/signup': typeof SignupRoute
   '/urgent': typeof UrgentRoute
   '/vault': typeof VaultRoute
@@ -194,6 +203,7 @@ export interface FileRouteTypes {
     | '/scan'
     | '/schemes'
     | '/settings'
+    | '/share'
     | '/signup'
     | '/urgent'
     | '/vault'
@@ -214,6 +224,7 @@ export interface FileRouteTypes {
     | '/scan'
     | '/schemes'
     | '/settings'
+    | '/share'
     | '/signup'
     | '/urgent'
     | '/vault'
@@ -234,6 +245,7 @@ export interface FileRouteTypes {
     | '/scan'
     | '/schemes'
     | '/settings'
+    | '/share'
     | '/signup'
     | '/urgent'
     | '/vault'
@@ -255,6 +267,7 @@ export interface RootRouteChildren {
   ScanRoute: typeof ScanRoute
   SchemesRoute: typeof SchemesRoute
   SettingsRoute: typeof SettingsRoute
+  ShareRoute: typeof ShareRoute
   SignupRoute: typeof SignupRoute
   UrgentRoute: typeof UrgentRoute
   VaultRoute: typeof VaultRoute
@@ -343,6 +356,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/share': {
+      id: '/share'
+      path: '/share'
+      fullPath: '/share'
+      preLoaderRoute: typeof ShareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -407,6 +427,7 @@ const rootRouteChildren: RootRouteChildren = {
   ScanRoute: ScanRoute,
   SchemesRoute: SchemesRoute,
   SettingsRoute: SettingsRoute,
+  ShareRoute: ShareRoute,
   SignupRoute: SignupRoute,
   UrgentRoute: UrgentRoute,
   VaultRoute: VaultRoute,
