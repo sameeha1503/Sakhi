@@ -124,8 +124,12 @@ export function makeCacheKey(lang: string, query: string): string {
 }
 
 /**
- * Common upstream fetch helper for OpenAI-compatible streaming endpoints.
+ * Detects whether a model identifier refers to a reasoning model.
  */
+export function isReasoningModel(model: string): boolean {
+  return /gpt-oss|deepseek-r1|qwq|o1|o3/i.test(model);
+}
+
 async function callUpstreamLlm(
   url: string,
   key: string,
@@ -133,9 +137,38 @@ async function callUpstreamLlm(
   systemPrompt: string,
   messages: Array<{ role: "user" | "assistant"; content: string }>,
   timeoutMs = 20000,
-): Promise<Response> {
+  clientSignal?: AbortSignal,
+): Promise<{ response: Response; reqStart: number; ttfbMs: number }> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  const onClientAbort = () => controller.abort();
+  if (clientSignal) {
+    if (clientSignal.aborted) {
+      controller.abort();
+    } else {
+      clientSignal.addEventListener("abort", onClientAbort, { once: true });
+    }
+  }
+
+  const reqStart = Date.now();
+  console.log(
+    `[chat-diag] Calling provider: model="${model}", isReasoning=${isReasoningModel(model)}`,
+  );
+
+  const isReasoning = isReasoningModel(model);
+  const requestBody: Record<string, unknown> = {
+    model,
+    messages: [{ role: "system", content: systemPrompt }, ...messages],
+    temperature: 0.3,
+    max_tokens: isReasoning ? 800 : 400,
+    stream: true,
+  };
+
+  if (isReasoning) {
+    requestBody["reasoning_effort"] = "low";
+    requestBody["reasoning_format"] = "hidden";
+  }
 
   try {
     const res = await fetch(url, {
@@ -144,18 +177,20 @@ async function callUpstreamLlm(
         "Content-Type": "application/json",
         Authorization: `Bearer ${key}`,
       },
-      body: JSON.stringify({
-        model,
-        messages: [{ role: "system", content: systemPrompt }, ...messages],
-        temperature: 0.3,
-        max_tokens: 400,
-        stream: true,
-      }),
+      body: JSON.stringify(requestBody),
       signal: controller.signal,
     });
-    return res;
+    const ttfbMs = Date.now() - reqStart;
+    const isStream = res.headers.get("content-type")?.includes("text/event-stream") ?? false;
+    console.log(
+      `[chat-diag] Provider response: HTTP ${res.status}, TTFB: ${ttfbMs}ms, isStreaming: ${isStream}`,
+    );
+    return { response: res, reqStart, ttfbMs };
   } finally {
     clearTimeout(timeoutId);
+    if (clientSignal) {
+      clientSignal.removeEventListener("abort", onClientAbort);
+    }
   }
 }
 
@@ -213,6 +248,8 @@ export const Route = createFileRoute("/api/chat")({
         const releaseClient = () => {
           activeClients.delete(clientIp);
         };
+
+        request.signal.addEventListener("abort", releaseClient, { once: true });
 
         try {
           // Parse request body
@@ -298,17 +335,21 @@ export const Route = createFileRoute("/api/chat")({
 
           // Attempt primary LLM call with 20s timeout
           let upstreamResponse: Response | null = null;
+          let upstreamReqStart = Date.now();
           let isFallbackUsed = false;
 
           try {
-            upstreamResponse = await callUpstreamLlm(
+            const result = await callUpstreamLlm(
               config.apiUrl,
               config.apiKey,
               config.model,
               systemPrompt,
               sanitizedMessages,
               20000,
+              request.signal,
             );
+            upstreamResponse = result.response;
+            upstreamReqStart = result.reqStart;
           } catch (err: unknown) {
             const isTimeout =
               err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError");
@@ -340,15 +381,18 @@ export const Route = createFileRoute("/api/chat")({
                 `[chat-api] Primary provider returned ${upstreamResponse?.status ?? "failure"}. Attempting fallback provider...`,
               );
               try {
-                upstreamResponse = await callUpstreamLlm(
+                const fbResult = await callUpstreamLlm(
                   config.fallbackUrl,
                   config.fallbackKey,
                   config.fallbackModel,
                   systemPrompt,
                   sanitizedMessages,
                   20000,
+                  request.signal,
                 );
-                if (upstreamResponse.ok) {
+                if (fbResult.response.ok) {
+                  upstreamResponse = fbResult.response;
+                  upstreamReqStart = fbResult.reqStart;
                   isFallbackUsed = true;
                 }
               } catch (fallbackErr) {
@@ -392,6 +436,47 @@ export const Route = createFileRoute("/api/chat")({
 
           let accumulatedText = "";
           let buffer = "";
+          let firstContentTime: number | null = null;
+          let firstReasoningTime: number | null = null;
+          let reasoningChunksCount = 0;
+          let contentChunksCount = 0;
+
+          let hasFinished = false;
+          const finishStream = (
+            controller: ReadableStreamDefaultController<Uint8Array>,
+            reason: string,
+          ) => {
+            if (hasFinished) return;
+            hasFinished = true;
+
+            const totalTime = Date.now() - upstreamReqStart;
+            console.log(
+              `[chat-diag] Stream completed (${reason}): totalTime=${totalTime}ms, contentTokens=${contentChunksCount}, reasoningTokens=${reasoningChunksCount}`,
+            );
+
+            // Apply output guard to accumulated text before closing
+            const guarded = applyDosageGuard(accumulatedText);
+            if (guarded !== accumulatedText) {
+              accumulatedText = guarded;
+            }
+
+            // Increment daily budget counter upon successful completion
+            incrementDailyBudget();
+
+            // If suggestion chip question, cache the result for 30 minutes
+            if (isChip && accumulatedText) {
+              setCachedReply(cacheKey, accumulatedText);
+            }
+
+            try {
+              controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+              controller.close();
+            } catch {
+              // controller might already be closed
+            }
+            reader.cancel().catch(() => {});
+            releaseClient();
+          };
 
           const stream = new ReadableStream({
             async pull(controller) {
@@ -399,24 +484,7 @@ export const Route = createFileRoute("/api/chat")({
                 const { done, value } = await reader.read();
 
                 if (done) {
-                  // Apply output guard to accumulated text before closing
-                  const guarded = applyDosageGuard(accumulatedText);
-                  if (guarded !== accumulatedText) {
-                    // Output guard caught dosage in completion
-                    accumulatedText = guarded;
-                  }
-
-                  // Increment daily budget counter upon successful completion
-                  incrementDailyBudget();
-
-                  // If suggestion chip question, cache the result for 30 minutes
-                  if (isChip && accumulatedText) {
-                    setCachedReply(cacheKey, accumulatedText);
-                  }
-
-                  controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-                  controller.close();
-                  releaseClient();
+                  finishStream(controller, "reader_done");
                   return;
                 }
 
@@ -429,7 +497,8 @@ export const Route = createFileRoute("/api/chat")({
                   if (!trimmed || trimmed.startsWith(":")) continue;
 
                   if (trimmed === "data: [DONE]") {
-                    continue;
+                    finishStream(controller, "done_marker");
+                    return;
                   }
 
                   if (trimmed.startsWith("data:")) {
@@ -437,14 +506,32 @@ export const Route = createFileRoute("/api/chat")({
                     try {
                       const parsed = JSON.parse(jsonStr) as {
                         choices?: Array<{
-                          delta?: { content?: string };
+                          delta?: { content?: string; reasoning?: string };
                           text?: string;
                         }>;
                       };
-                      const delta =
-                        parsed.choices?.[0]?.delta?.content ?? parsed.choices?.[0]?.text ?? "";
+                      const deltaObj = parsed.choices?.[0]?.delta;
+                      const reasoning = deltaObj?.reasoning ?? "";
+                      const delta = deltaObj?.content ?? parsed.choices?.[0]?.text ?? "";
+
+                      if (reasoning) {
+                        reasoningChunksCount++;
+                        if (firstReasoningTime === null) {
+                          firstReasoningTime = Date.now() - upstreamReqStart;
+                          console.log(
+                            `[chat-diag] First reasoning token received at: ${firstReasoningTime}ms`,
+                          );
+                        }
+                      }
 
                       if (delta) {
+                        contentChunksCount++;
+                        if (firstContentTime === null) {
+                          firstContentTime = Date.now() - upstreamReqStart;
+                          console.log(
+                            `[chat-diag] Time to first content token: ${firstContentTime}ms`,
+                          );
+                        }
                         accumulatedText += delta;
                         controller.enqueue(
                           encoder.encode(`data: ${JSON.stringify({ token: delta })}\n\n`),
@@ -471,8 +558,9 @@ export const Route = createFileRoute("/api/chat")({
           return new Response(stream, {
             headers: {
               "Content-Type": "text/event-stream; charset=utf-8",
-              "Cache-Control": "no-cache",
+              "Cache-Control": "no-cache, no-transform",
               Connection: "keep-alive",
+              "X-Accel-Buffering": "no",
               "X-Sakhi-Source": isFallbackUsed ? "llm_fallback" : "llm",
             },
           });

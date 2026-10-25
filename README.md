@@ -41,25 +41,41 @@ LLM_FALLBACK_KEY=
 LLM_FALLBACK_MODEL=
 ```
 
-### How to Get an AI Key
-1. **OpenAI**: Visit [platform.openai.com](https://platform.openai.com), create an API key, set `LLM_API_URL=https://api.openai.com/v1/chat/completions`, and `LLM_MODEL=gpt-4o-mini`.
-2. **Groq (Fast / Free tier)**: Visit [console.groq.com](https://console.groq.com), create a free API key, set `LLM_API_URL=https://api.groq.com/openai/v1/chat/completions`, and `LLM_MODEL=llama-3.3-70b-versatile`.
+### How to Get an AI Key & Model Recommendations
+
+1. **Groq (Recommended — Ultra-fast inference with free tier)**:
+   - Visit [console.groq.com](https://console.groq.com) and create a free API key.
+   - Set `LLM_API_URL=https://api.groq.com/openai/v1/chat/completions`.
+   - **Recommended Fast Non-Reasoning Model**: `LLM_MODEL=llama-3.3-70b-versatile` (ultra-low latency, high clinical accuracy, 128k context) or `llama-3.1-8b-instant`.
+   - **Reasoning Models Supported**: `openai/gpt-oss-120b`, `openai/gpt-oss-20b`, or `qwen/qwen3.8-27b`. Sakhi automatically sets `reasoning_effort: "low"`, `reasoning_format: "hidden"`, and raises max tokens to 800 so reasoning never exhausts the response budget or delays content delivery.
+2. **OpenAI**: Visit [platform.openai.com](https://platform.openai.com), set `LLM_API_URL=https://api.openai.com/v1/chat/completions`, and `LLM_MODEL=gpt-4o-mini`.
 3. **OpenRouter**: Visit [openrouter.ai](https://openrouter.ai), create a key, and set `LLM_API_URL=https://openrouter.ai/api/v1/chat/completions`.
 
+### Streaming & Resilient Fallbacks
+
+- **Live SSE Streaming**: Chunks stream token-by-token with `text/event-stream`, `Cache-Control: no-cache, no-transform`, and `X-Accel-Buffering: no`.
+- **First-Token Timeout (8s)**: If no visible content token arrives within 8 seconds, Sakhi aborts and falls back to offline answers.
+- **Total Cap (25s)**: Maximum streaming duration cap preventing indefinite hangs.
+- **Active Stop Cancellation**: Clicking **Stop** aborts the client stream and immediately cancels the upstream provider call on the server.
+- **Concurrency & Anti-Queue Lock**: Blocks secondary message submissions while generation is in progress, restoring immediate input access upon completion, stop, or error.
+
 ### Privacy Safeguards
+
 - **Zero Personal Data**: Sakhi **never** sends your cycle logs, symptom check-ins, medicine lists, documents, or GPS coordinates to the LLM endpoint. Only the conversation context (up to the last 6 messages) is sent.
 - **Local Safety Interception**: Emergency queries (108, chest pain, heavy bleeding), emotional distress (Tele-MANAS 14416, 112), and refused medical requests (dosages, diagnoses, home abortions) are intercepted locally with **zero** external AI calls.
 - **Clinical Output Guard**: If an AI reply mentions medicine dosages (e.g., 500mg, 10 ml, 2 tablets), the text is automatically sanitized to direct you to your doctor or pharmacist.
 - **Offline Fallback**: When offline or unconfigured, Sakhi seamlessly falls back to 16 curated offline health intents in your chosen language.
 
 ### Deploying to Production
+
 When deploying to Cloudflare Workers / Pages, Vercel, or Node.js hosts, define the server environment variables in your provider's dashboard without the `VITE_` prefix:
+
 - `GEOAPIFY_API_KEY`
 - `LLM_API_URL`
 - `LLM_API_KEY`
 - `LLM_MODEL`
 - (Optional) `LLM_DAILY_LIMIT`, `LLM_FALLBACK_URL`, `LLM_FALLBACK_KEY`, `LLM_FALLBACK_MODEL`
-The runtime server reads these securely at runtime and logs only presence (`set`/`missing`), keeping secrets safe.
+  The runtime server reads these securely at runtime and logs only presence (`set`/`missing`), keeping secrets safe.
 
 > **Note on Reminders**: In-app reminders trigger toasts and notification banners while the app is open. Reliable background reminders will require Twilio SMS/WhatsApp integration.
 

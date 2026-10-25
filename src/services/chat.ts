@@ -212,6 +212,49 @@ export async function askSakhiStream(
 
   // 2. Call server /api/chat with streaming
   if (typeof window !== "undefined") {
+    const internalAbort = new AbortController();
+    let firstTokenTimer: ReturnType<typeof setTimeout> | null = null;
+    let totalTimer: ReturnType<typeof setTimeout> | null = null;
+    let abortReason: "first_token_timeout" | "total_timeout" | "user_stop" | null = null;
+
+    const onUserAbort = () => {
+      abortReason = "user_stop";
+      internalAbort.abort();
+    };
+
+    if (options?.signal) {
+      if (options.signal.aborted) {
+        return;
+      }
+      options.signal.addEventListener("abort", onUserAbort, { once: true });
+    }
+
+    // 8-second time to first visible token timeout
+    firstTokenTimer = setTimeout(() => {
+      abortReason = "first_token_timeout";
+      internalAbort.abort();
+    }, 8000);
+
+    // 25-second total cap timeout
+    totalTimer = setTimeout(() => {
+      abortReason = "total_timeout";
+      internalAbort.abort();
+    }, 25000);
+
+    const cleanupTimers = () => {
+      if (firstTokenTimer) {
+        clearTimeout(firstTokenTimer);
+        firstTokenTimer = null;
+      }
+      if (totalTimer) {
+        clearTimeout(totalTimer);
+        totalTimer = null;
+      }
+      if (options?.signal) {
+        options.signal.removeEventListener("abort", onUserAbort);
+      }
+    };
+
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -224,7 +267,7 @@ export async function askSakhiStream(
           lang,
           isSuggestionChip: Boolean(options?.isSuggestionChip),
         }),
-        ...(options?.signal ? { signal: options.signal } : {}),
+        signal: internalAbort.signal,
       });
 
       const contentType = res.headers.get("content-type") ?? "";
@@ -237,8 +280,19 @@ export async function askSakhiStream(
         let accumulated = "";
         let buffer = "";
 
-        while (true) {
-          const { done, value } = await reader.read();
+        const onAbort = () => {
+          reader.cancel().catch(() => {});
+        };
+        internalAbort.signal.addEventListener("abort", onAbort, { once: true });
+
+        streamLoop: while (true) {
+          if (internalAbort.signal.aborted) {
+            break;
+          }
+
+          const { done, value } = await reader
+            .read()
+            .catch(() => ({ done: true, value: undefined }));
           if (done) break;
 
           buffer += decoder.decode(value, { stream: true });
@@ -250,36 +304,70 @@ export async function askSakhiStream(
             if (!trimmed || trimmed.startsWith(":")) continue;
 
             if (trimmed === "data: [DONE]") {
-              const guarded = applyDosageGuard(accumulated);
-              callbacks.onDone?.(guarded, "llm");
-              return;
+              cleanupTimers();
+              internalAbort.signal.removeEventListener("abort", onAbort);
+              if (accumulated.trim()) {
+                const guarded = applyDosageGuard(accumulated);
+                callbacks.onDone?.(guarded, "llm");
+                return;
+              }
+              // If empty, break out of stream loop to trigger fallback
+              break streamLoop;
             }
 
             if (trimmed.startsWith("data:")) {
               try {
-                const parsed = JSON.parse(trimmed.slice(5).trim()) as { token?: string };
+                const parsed = JSON.parse(trimmed.slice(5).trim()) as {
+                  token?: string;
+                  error?: string;
+                };
+                if (parsed.error) {
+                  throw new Error(parsed.error);
+                }
                 if (parsed.token) {
+                  // Clear 8s first-token timeout on arrival of first content token
+                  if (firstTokenTimer) {
+                    clearTimeout(firstTokenTimer);
+                    firstTokenTimer = null;
+                  }
                   accumulated += parsed.token;
                   callbacks.onToken?.(parsed.token, accumulated);
                 }
-              } catch {
-                // Ignore malformed SSE lines
+              } catch (parseErr) {
+                if (
+                  parseErr instanceof Error &&
+                  parseErr.message !== "Unexpected end of JSON input"
+                ) {
+                  throw parseErr;
+                }
               }
             }
           }
         }
 
-        const guarded = applyDosageGuard(accumulated);
-        callbacks.onDone?.(guarded, "llm");
-        return;
+        cleanupTimers();
+        internalAbort.signal.removeEventListener("abort", onAbort);
+        if (abortReason === "user_stop" || options?.signal?.aborted) {
+          return;
+        }
+        if (accumulated.trim()) {
+          const guarded = applyDosageGuard(accumulated);
+          callbacks.onDone?.(guarded, "llm");
+          return;
+        }
+        // If stream finished with empty content, proceed to fallback below
       }
 
       // If non-streaming response (e.g. rate-limited 429, daily budget reached, 401 auth, or error JSON)
-      const data = (await res.json().catch(() => null)) as {
-        error?: string;
-        fallback?: boolean;
-        message?: string;
-      } | null;
+      cleanupTimers();
+      const data =
+        typeof res.json === "function"
+          ? ((await res.json().catch(() => null)) as {
+              error?: string;
+              fallback?: boolean;
+              message?: string;
+            } | null)
+          : null;
 
       const isBusy = res.status === 429 || data?.error === "busy";
       const fallbackResp = matchKnowledgeBase(lastUserMessage, lang);
@@ -289,12 +377,20 @@ export async function askSakhiStream(
       callbacks.onDone?.(fallbackResp.text, "kb", isBusy);
       return;
     } catch (err: unknown) {
-      if (options?.signal?.aborted) {
+      cleanupTimers();
+      if (abortReason === "user_stop" || options?.signal?.aborted) {
         // User deliberately clicked Stop
         return;
       }
-      // On network failure or timeout, fall back to offline Knowledge Base
-      console.warn("[chat-service] AI assistant failed, falling back to offline KB:", err);
+      if (abortReason === "first_token_timeout") {
+        console.warn(
+          "[chat-service] First token timeout (8s) exceeded. Falling back to offline KB.",
+        );
+      } else if (abortReason === "total_timeout") {
+        console.warn("[chat-service] Total timeout (25s) exceeded. Falling back to offline KB.");
+      } else {
+        console.warn("[chat-service] AI assistant failed, falling back to offline KB:", err);
+      }
     }
   }
 

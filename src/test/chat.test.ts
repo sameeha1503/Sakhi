@@ -22,6 +22,7 @@ import {
   getCachedReply,
   clearSuggestionCacheForTests,
   isRateLimited,
+  isReasoningModel,
 } from "../routes/api.chat";
 import { storage } from "../services/storage";
 import { loadLanguageResources } from "../i18n";
@@ -48,6 +49,23 @@ describe("Ask Sakhi Chat Service & AI Architecture", () => {
       expect(EMERGENCY_NUMBERS.AMBULANCE_108).toBe("108");
       expect(EMERGENCY_NUMBERS.TELE_MANAS).toBe("14416");
       expect(EMERGENCY_NUMBERS.EMERGENCY_112).toBe("112");
+    });
+  });
+
+  describe("Reasoning vs Fast Non-Reasoning Models Detection", () => {
+    it("correctly identifies reasoning models", () => {
+      expect(isReasoningModel("openai/gpt-oss-120b")).toBe(true);
+      expect(isReasoningModel("openai/gpt-oss-20b")).toBe(true);
+      expect(isReasoningModel("deepseek-r1-distill-llama-70b")).toBe(true);
+      expect(isReasoningModel("o1-mini")).toBe(true);
+      expect(isReasoningModel("o3-mini")).toBe(true);
+    });
+
+    it("correctly identifies fast non-reasoning chat models", () => {
+      expect(isReasoningModel("llama-3.3-70b-versatile")).toBe(false);
+      expect(isReasoningModel("llama-3.1-8b-instant")).toBe(false);
+      expect(isReasoningModel("mixtral-8x7b-32768")).toBe(false);
+      expect(isReasoningModel("gpt-4o-mini")).toBe(false);
     });
   });
 
@@ -308,6 +326,140 @@ describe("Ask Sakhi Chat Service & AI Architecture", () => {
       });
 
       expect(returnedSource).toBe("kb");
+    });
+
+    it("triggers fallback when first visible token exceeds 8 seconds", async () => {
+      // Stream that never emits content tokens
+      const neverEndingStream = new ReadableStream({
+        start() {
+          // Do nothing, never emit tokens
+        },
+      });
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: new Headers({ "content-type": "text/event-stream" }),
+        body: neverEndingStream,
+      });
+
+      vi.useFakeTimers();
+
+      let returnedSource = "";
+      const streamPromise = askSakhiStream([{ sender: "user", text: "What is PCOS?" }], "en", {
+        onDone: (_text, source) => {
+          returnedSource = source;
+        },
+      });
+
+      // Advance clock past 8s first-token timeout
+      await vi.advanceTimersByTimeAsync(8100);
+      await streamPromise;
+
+      expect(returnedSource).toBe("kb");
+      vi.useRealTimers();
+    });
+
+    it("ignores reasoning-only chunks and falls back if no visible content arrives", async () => {
+      const encoder = new TextEncoder();
+      const reasoningStream = new ReadableStream({
+        start(controller) {
+          // Send reasoning-only chunk without delta.content
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({ choices: [{ delta: { reasoning: "Thinking deeply about medicine..." } }] })}\n\n`,
+            ),
+          );
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          controller.close();
+        },
+      });
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: new Headers({ "content-type": "text/event-stream" }),
+        body: reasoningStream,
+      });
+
+      const tokensReceived: string[] = [];
+      let finalSource = "";
+
+      await askSakhiStream([{ sender: "user", text: "What is PCOS?" }], "en", {
+        onToken: (tok) => tokensReceived.push(tok),
+        onDone: (_text, source) => {
+          finalSource = source;
+        },
+      });
+
+      // Reasoning must NOT be emitted to the client
+      expect(tokensReceived.some((t) => t.includes("Thinking"))).toBe(false);
+      // Empty content stream triggers fallback to offline KB
+      expect(finalSource).toBe("kb");
+    });
+
+    it("falls back to offline knowledge base when stream is empty", async () => {
+      const encoder = new TextEncoder();
+      const emptyStream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          controller.close();
+        },
+      });
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: new Headers({ "content-type": "text/event-stream" }),
+        body: emptyStream,
+      });
+
+      let finalSource = "";
+      await askSakhiStream([{ sender: "user", text: "What is PCOS?" }], "en", {
+        onDone: (_text, source) => {
+          finalSource = source;
+        },
+      });
+
+      expect(finalSource).toBe("kb");
+    });
+
+    it("cancels streaming immediately when user clicks Stop", async () => {
+      const abortController = new AbortController();
+      const encoder = new TextEncoder();
+
+      const infiniteStream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ token: "First token " })}\n\n`),
+          );
+        },
+      });
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: new Headers({ "content-type": "text/event-stream" }),
+        body: infiniteStream,
+      });
+
+      const tokensReceived: string[] = [];
+      let doneCalled = false;
+
+      const promise = askSakhiStream(
+        [{ sender: "user", text: "What is PCOS?" }],
+        "en",
+        {
+          onToken: (tok) => {
+            tokensReceived.push(tok);
+            abortController.abort(); // User clicks Stop
+          },
+          onDone: () => {
+            doneCalled = true;
+          },
+        },
+        { signal: abortController.signal },
+      );
+
+      await promise;
+      expect(tokensReceived).toEqual(["First token "]);
+      expect(doneCalled).toBe(false); // Canceled by user, no onDone
     });
   });
 

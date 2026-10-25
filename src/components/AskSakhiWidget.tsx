@@ -256,6 +256,11 @@ export function AskSakhiWidget() {
     } catch {
       setIsTyping(false);
       setIsGenerating(false);
+    } finally {
+      setIsTyping(false);
+      setIsGenerating(false);
+      abortControllerRef.current = null;
+      setTimeout(() => inputRef.current?.focus(), 50);
     }
   };
   handleSendRef.current = handleSend;
@@ -389,7 +394,8 @@ export function AskSakhiWidget() {
                       <button
                         key={chip.key}
                         onClick={() => handleSend(t(chip.textKey), true)}
-                        className="tap flex min-h-11 items-center gap-1.5 rounded-xl border border-primary/20 bg-secondary/80 px-3 py-2 text-left text-xs font-semibold text-secondary-foreground hover:bg-secondary active:scale-95 transition-all"
+                        disabled={isGenerating}
+                        className="tap flex min-h-11 items-center gap-1.5 rounded-xl border border-primary/20 bg-secondary/80 px-3 py-2 text-left text-xs font-semibold text-secondary-foreground hover:bg-secondary active:scale-95 disabled:opacity-50 transition-all"
                       >
                         <Sparkles className="size-3 text-primary shrink-0" />
                         <span>{t(chip.textKey)}</span>
