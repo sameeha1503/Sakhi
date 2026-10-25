@@ -278,25 +278,64 @@
      - When unsynced changes exist and offline: warns _"You have changes that have not synced. Log out anyway?"_ with an option to stay.
      - On confirmation: flushes pending sync writes (max 3s), clears synced data from local storage on this phone, preserves private vault (PIN & lockout) and language preference, and redirects to `/signup` with toast _"You have been logged out"_.
    - **Consistent Entry Points**: Verified identical "Log out" button at bottom of `/settings` and `/profile`.
- 
+
 10. **Landing Page Overhaul & Honest Privacy (`/`)**:
-   - **Header & Hero Repetition**:
-     - Header shows logo + "Sakhi" + tagline "Your health friend" with language dropdown on the right.
-     - Benefit headline appears in serif `h1`: *"Understand your body. Get care sooner."* (app name is not repeated).
-     - Subtitle describes 30-second tracking, finding care, and discovering government schemes.
-     - Small line under "Get started": *"Takes 1 minute. No email needed."*
-     - Secondary link: *"I already have an account"* routes directly to `/signup` in login mode.
-   - **Language Chips**:
-     - Row of 11 native language chips (English, हिन्दी, తెలుగు, தமிழ், ಕನ್ನಡ, മലയാളം, मराठी, বাংলা, ગુજરાતી, ਪੰਜਾਬੀ, ଓଡ଼ିଆ).
-     - Tapping any chip immediately switches the entire page language and updates the active chip highlight without reloading.
-   - **UI Showcase Preview Card**:
-     - Clearly illustrative preview card with an uppercase "Example" tag.
-     - Displays mock Today check-in (Medium flow, Calm mood, Mild cramps), mini calendar strip with Next period indicator, and nearest health centre row.
-   - **How Sakhi Helps (4 Cards + 5th Strip)**:
-     - 4 cards using module accent tokens (teal, berry, violet, green) with outcome-focused headlines and descriptions: *"Notice patterns early"*, *"Be ready for the doctor"*, *"Find care near you"*, and *"Never miss a scheme"*.
-     - 5th strip highlighting *"Ask Sakhi"* with clear non-diagnostic and no-prescribing disclaimer.
-   - **Honest Privacy Section**:
-     - Section titled *"Your health, your control"*, explicitly noting number + 6-digit PIN login, guest mode on-device storage, PIN-locked prescription vault photos, 1-tap complete data deletion, and non-diagnostic guidance (zero claims of "never leaves device" or "end-to-end encrypted").
-   - **Emergency Strip & Footer**:
-     - Calm emergency strip above footer: *"In an emergency call 108"* with a direct `tel:108` dial button.
-     - Clean footer with *"Made for women across India. Sakhi shares information, not medical advice."* and link to Privacy & Consent.
+
+- **Header & Hero Repetition**:
+  - Header shows logo + "Sakhi" + tagline "Your health friend" with language dropdown on the right.
+  - Benefit headline appears in serif `h1`: _"Understand your body. Get care sooner."_ (app name is not repeated).
+  - Subtitle describes 30-second tracking, finding care, and discovering government schemes.
+  - Small line under "Get started": _"Takes 1 minute. No email needed."_
+  - Secondary link: _"I already have an account"_ routes directly to `/signup` in login mode.
+- **Language Chips**:
+  - Row of 11 native language chips (English, हिन्दी, తెలుగు, தமிழ், ಕನ್ನಡ, മലയാളം, मराठी, বাংলা, ગુજરાતી, ਪੰਜਾਬੀ, ଓଡ଼ିଆ).
+  - Tapping any chip immediately switches the entire page language and updates the active chip highlight without reloading.
+- **UI Showcase Preview Card**:
+  - Clearly illustrative preview card with an uppercase "Example" tag.
+  - Displays mock Today check-in (Medium flow, Calm mood, Mild cramps), mini calendar strip with Next period indicator, and nearest health centre row.
+- **How Sakhi Helps (4 Cards + 5th Strip)**:
+  - 4 cards using module accent tokens (teal, berry, violet, green) with outcome-focused headlines and descriptions: _"Notice patterns early"_, _"Be ready for the doctor"_, _"Find care near you"_, and _"Never miss a scheme"_.
+  - 5th strip highlighting _"Ask Sakhi"_ with clear non-diagnostic and no-prescribing disclaimer.
+- **Honest Privacy Section**:
+  - Section titled _"Your health, your control"_, explicitly noting number + 6-digit PIN login, guest mode on-device storage, PIN-locked prescription vault photos, 1-tap complete data deletion, and non-diagnostic guidance (zero claims of "never leaves device" or "end-to-end encrypted").
+- **Emergency Strip & Footer**:
+  - Calm emergency strip above footer: _"In an emergency call 108"_ with a direct `tel:108` dial button.
+  - Clean footer with _"Made for women across India. Sakhi shares information, not medical advice."_ and link to Privacy & Consent.
+
+11. **Emergency Urgent Screen Overhaul (`/urgent`)**:
+
+- **Immediate 108 Ambulance Priority**:
+  - "Call 108 ambulance" button rendered immediately on initial mount as the first, largest, and most prominent element.
+  - Never blocked or delayed by loading spinners or redirects.
+- **Strict Live-Only Nearest Hospital Card**:
+  - Hospital card shown strictly when sourced from live data (`geoapify` or locally saved live result).
+  - All sample data and sample warning banners completely removed from `/urgent`.
+  - While locating, a calm text line _"Finding the nearest hospital..."_ appears beneath the 108 button with an 8-second timeout.
+  - Fallback text when live data is unavailable: _"If you can, ask someone to take you to the nearest hospital now."_
+- **Care Integration**:
+  - Large secondary button _"Find hospitals near me"_ (MapPin icon) linking to `/care?locate=1`.
+  - Text link on live hospital card: _"See all hospitals near you"_ linking to `/care?locate=1`.
+  - `/care` automatically starts live location search flow on arrival when `locate=1` is present.
+- **Attribution & Back Navigation**:
+  - OSM / Geoapify attribution shown only when live hospital is rendered.
+  - Back link uses `goBack` helper with `/home` fallback.
+
+12. **Universal Consistent Back Button System**:
+
+- **Shared Reusable Component (`src/components/BackButton.tsx`)**:
+  - Accessible pill button with arrow-left icon and "Back" label (`aria-label="Go back"`).
+  - 44px+ tap targets (`min-h-[44px]`), RTL flipping support, and soft design tokens.
+  - Placed top-left of the content area in `AppShell` above page titles, ensuring it never overlaps titles at 360px or gets hidden behind bottom navigation.
+- **In-App History Navigation vs. Fallback Helper (`src/services/navigation.ts`)**:
+  - If browser history has a previous page within Sakhi (`canGoBackInApp()`), navigates back using `router.history.back()`.
+  - If opened directly, from QR share link, or after a refresh, navigates to `/home` (or `/` if logged out).
+- **Route Filtering**:
+  - Excluded routes: `/`, `/home`, `/consent`, `/signup`, `/urgent`, `/share*`.
+  - Included routes: `/log`, `/cycle`, `/medicines`, `/scan`, `/vault`, `/care`, `/visit`, `/schemes`, `/profile`, `/settings`.
+- **Special Cases**:
+  - `/log`: Intercepts unsaved changes using `BackHandlerContext` (`useBackHandler`) to display modal dialog _"Leave without saving?"_ with **Stay** and **Leave** buttons.
+  - `/visit`: Tab switches via `?tab=` search param use `replace: true` so going back returns to previous page rather than cycling through each tab.
+  - `/cycle`: Navigating to `/cycle` after saving check-in uses `replace: true` so back returns to page before check-in.
+  - `/vault`: Locks unlocked vault upon back navigation.
+- **11-Locale Parity**:
+  - Added `common.back`, `common.goBack`, `log.unsavedTitle`, `log.unsavedBody`, `log.stay`, `log.leave` across all 11 Indic locale files.

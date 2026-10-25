@@ -15,6 +15,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { LanguageSync } from "../components/LanguageSync";
 import { Toaster } from "../components/ui/sonner";
 import { DoseReminders } from "../components/DoseReminders";
+import { initNavigationTracker } from "../services/navigation";
 
 function NotFoundComponent() {
   return (
@@ -122,6 +123,11 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
+
+  useEffect(() => {
+    initNavigationTracker(router);
+  }, [router]);
 
   useEffect(() => {
     if (

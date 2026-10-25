@@ -15,6 +15,10 @@ vi.mock("@tanstack/react-router", async () => {
     useRouterState: () => ({
       location: { pathname: "/care", search: { locate: "1" } },
     }),
+    useRouter: () => ({
+      history: { length: 2, back: vi.fn() },
+      navigate: vi.fn(),
+    }),
     Link: ({
       children,
       to,

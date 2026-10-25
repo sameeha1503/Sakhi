@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Home,
@@ -18,10 +18,13 @@ import {
 } from "lucide-react";
 import { authService, prefs, type User as AuthUser, type AuthMode } from "@/services/auth";
 import { storage, type SyncStatus } from "@/services/storage";
+import { isBackButtonExcluded } from "@/services/navigation";
 import { LanguageSelect } from "@/components/LanguageSelect";
 import { AskSakhiWidget } from "@/components/AskSakhiWidget";
 import { AccountMenu } from "@/components/AccountMenu";
 import { LogoutConfirmationDialog } from "@/components/LogoutConfirmationDialog";
+import { BackButton } from "@/components/BackButton";
+import { BackHandlerContext } from "@/components/BackHandlerContext";
 
 const tabs = [
   { to: "/home", icon: Home, key: "home" },
@@ -31,7 +34,17 @@ const tabs = [
   { to: "/profile", icon: User, key: "profile" },
 ] as const;
 
-export function AppShell({ children, title }: { children: ReactNode; title?: string }) {
+export function AppShell({
+  children,
+  title,
+  hideBackButton = false,
+  backFallback,
+}: {
+  children: ReactNode;
+  title?: string | undefined;
+  hideBackButton?: boolean | undefined;
+  backFallback?: string | undefined;
+}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const routerState = useRouterState();
@@ -50,6 +63,17 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
     pathname === "/signup" ||
     pathname === "/urgent" ||
     pathname.startsWith("/share");
+
+  const [registeredHandler, setRegisteredHandler] = useState<(() => boolean | void) | null>(null);
+
+  const registerBackHandler = useCallback((handler: () => boolean | void) => {
+    setRegisteredHandler(() => handler);
+    return () => {
+      setRegisteredHandler((current) => (current === handler ? null : current));
+    };
+  }, []);
+
+  const shouldShowBack = !isBackButtonExcluded(pathname) && !hideBackButton;
 
   useEffect(() => {
     // Restore Supabase session on app startup if present
@@ -99,166 +123,173 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
   if (!ok) return <div className="min-h-screen" />;
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground antialiased">
-      {/* Offline banner */}
-      {isOffline && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="sticky top-0 z-50 flex items-center justify-center gap-2 bg-warning px-4 py-2.5 text-center text-sm font-semibold text-warning-foreground shadow-md transition-all"
-        >
-          <WifiOff className="size-4 shrink-0" />
-          <span>{t("offline.banner")}</span>
-        </div>
-      )}
-
-      {/* Storage quota or error banner */}
-      {storageError && (
-        <div
-          role="alert"
-          aria-live="assertive"
-          className="sticky top-0 z-50 flex items-center justify-between gap-2 bg-destructive px-4 py-2.5 text-sm font-semibold text-destructive-foreground shadow-md transition-all"
-        >
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="size-4 shrink-0" />
-            <span>{storageError}</span>
-          </div>
-          <button
-            onClick={() => setStorageError(null)}
-            className="tap rounded-md p-1 hover:bg-black/10 active:scale-95"
-            aria-label="Dismiss error"
+    <BackHandlerContext.Provider value={{ registeredHandler, registerBackHandler }}>
+      <div className="flex min-h-screen flex-col bg-background text-foreground antialiased">
+        {/* Offline banner */}
+        {isOffline && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="sticky top-0 z-50 flex items-center justify-center gap-2 bg-warning px-4 py-2.5 text-center text-sm font-semibold text-warning-foreground shadow-md transition-all"
           >
-            <X className="size-4" />
-          </button>
-        </div>
-      )}
+            <WifiOff className="size-4 shrink-0" />
+            <span>{t("offline.banner")}</span>
+          </div>
+        )}
 
-      {/* Slim Top Bar with App Name and Sync Status */}
-      <header className="sticky top-0 z-40 border-b border-border/70 bg-card/95 backdrop-blur-md">
-        <div className="mx-auto flex h-14 sm:h-16 max-w-5xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          {/* Logo / Name */}
-          <Link
-            to="/home"
-            className="group flex items-center gap-2.5 transition-transform hover:opacity-95"
+        {/* Storage quota or error banner */}
+        {storageError && (
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="sticky top-0 z-50 flex items-center justify-between gap-2 bg-destructive px-4 py-2.5 text-sm font-semibold text-destructive-foreground shadow-md transition-all"
           >
-            <div className="grid size-9 sm:size-10 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-xs transition-transform group-hover:scale-105">
-              <Flower2 className="size-5 sm:size-6" />
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="size-4 shrink-0" />
+              <span>{storageError}</span>
             </div>
-            <div className="flex flex-col">
-              <span className="text-xl sm:text-2xl font-bold tracking-tight text-primary leading-tight font-serif">
-                {t("app.name")}
-              </span>
-              <span className="text-[11px] font-semibold text-muted-foreground hidden sm:block leading-none">
-                {t("app.tagline")}
-              </span>
-            </div>
-          </Link>
-
-          {/* Right: Sync Status & Language Selector & Account Menu */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Sync Status Badge (when signed in) */}
-            {isAccountUser && syncStatus === "synced" && (
-              <div
-                className="flex items-center gap-1.5 rounded-full bg-success/15 px-2.5 py-1 text-xs font-semibold text-success transition-all"
-                title={t("sync.syncedDesc")}
-              >
-                <CheckCircle2 className="size-3.5" />
-                <span className="hidden sm:inline">{t("sync.synced")}</span>
-              </div>
-            )}
-            {isAccountUser && syncStatus === "saving" && (
-              <div
-                className="flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary transition-all"
-                title={t("sync.saving")}
-              >
-                <RefreshCw className="size-3.5 animate-spin" />
-                <span className="hidden sm:inline">{t("sync.saving")}</span>
-              </div>
-            )}
-            {isAccountUser && syncStatus === "offline" && (
-              <div
-                className="flex items-center gap-1.5 rounded-full bg-warning/20 px-2.5 py-1 text-xs font-semibold text-warning-foreground transition-all"
-                title={t("sync.offlineDesc")}
-              >
-                <CloudOff className="size-3.5" />
-                <span className="hidden sm:inline">{t("sync.offline")}</span>
-              </div>
-            )}
-
-            <LanguageSelect variant="header" />
-
-            {/* Account Menu (Signed-in) or Sign in to sync (Signed-out / Guest) */}
-            {!isWidgetHidden &&
-              (isAccountUser && currentUser ? (
-                <AccountMenu
-                  user={currentUser}
-                  syncStatus={syncStatus}
-                  onRequestLogout={() => setShowLogoutDialog(true)}
-                />
-              ) : (
-                <Link
-                  to="/signup"
-                  className="tap inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/20 transition-all min-h-[44px]"
-                  title={t("sync.notSignedInDesc")}
-                >
-                  <LogIn className="size-3.5 shrink-0" />
-                  <span className="hidden sm:inline">
-                    {t("auth.signInToSync", "Sign in to sync")}
-                  </span>
-                  <span className="sm:hidden">{t("auth.login", "Log in")}</span>
-                </Link>
-              ))}
-          </div>
-        </div>
-      </header>
-
-      {/* Main Container */}
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 sm:px-6 lg:px-8 pt-4 pb-28 md:pt-6 md:pb-28">
-        {title && <h1 className="mb-4 text-3xl font-bold md:text-4xl">{title}</h1>}
-        {children}
-      </main>
-
-      {/* Footer */}
-      <footer className="mt-auto border-t border-border/40 py-6 pb-24 text-center text-xs text-muted-foreground">
-        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-2 px-4 sm:flex-row sm:px-6">
-          <div className="flex items-center gap-2">
-            <Flower2 className="size-3.5 text-primary" />
-            <span className="font-semibold text-foreground">{t("app.name")}</span>
-          </div>
-          <p>{t("footer.notice")}</p>
-        </div>
-      </footer>
-
-      {/* Floating Pill Bottom Navigation */}
-      <nav
-        aria-label="Navigation"
-        className="fixed bottom-3 sm:bottom-4 inset-x-0 z-30 flex justify-center px-3 sm:px-4 pointer-events-none"
-      >
-        <div className="pointer-events-auto flex items-center justify-around sm:justify-center gap-1 sm:gap-2 rounded-full bg-card/95 border border-border shadow-lg backdrop-blur-md px-2.5 sm:px-4 py-1.5 max-w-md w-full">
-          {tabs.map(({ to, icon: Icon, key }) => (
-            <Link
-              key={to}
-              to={to}
-              className="flex min-h-[44px] min-w-[44px] flex-col items-center justify-center rounded-full px-2.5 sm:px-3 py-1 text-xs font-semibold text-muted-foreground transition-all hover:bg-muted hover:text-foreground active:scale-95"
-              activeProps={{
-                className: "bg-primary/10 text-primary font-bold shadow-2xs hover:bg-primary/15",
-              }}
+            <button
+              onClick={() => setStorageError(null)}
+              className="tap rounded-md p-1 hover:bg-black/10 active:scale-95"
+              aria-label="Dismiss error"
             >
-              <Icon className="size-5" />
-              <span className="leading-tight text-[11px] sm:text-xs truncate max-w-[58px] sm:max-w-none">
-                {t(`nav.${key}`)}
-              </span>
+              <X className="size-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Slim Top Bar with App Name and Sync Status */}
+        <header className="sticky top-0 z-40 border-b border-border/70 bg-card/95 backdrop-blur-md">
+          <div className="mx-auto flex h-14 sm:h-16 max-w-5xl items-center justify-between px-4 sm:px-6 lg:px-8">
+            {/* Logo / Name */}
+            <Link
+              to="/home"
+              className="group flex items-center gap-2.5 transition-transform hover:opacity-95"
+            >
+              <div className="grid size-9 sm:size-10 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-xs transition-transform group-hover:scale-105">
+                <Flower2 className="size-5 sm:size-6" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xl sm:text-2xl font-bold tracking-tight text-primary leading-tight font-serif">
+                  {t("app.name")}
+                </span>
+                <span className="text-[11px] font-semibold text-muted-foreground hidden sm:block leading-none">
+                  {t("app.tagline")}
+                </span>
+              </div>
             </Link>
-          ))}
-        </div>
-      </nav>
 
-      {/* Floating Ask Sakhi Widget */}
-      {!isWidgetHidden && <AskSakhiWidget />}
+            {/* Right: Sync Status & Language Selector & Account Menu */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              {/* Sync Status Badge (when signed in) */}
+              {isAccountUser && syncStatus === "synced" && (
+                <div
+                  className="flex items-center gap-1.5 rounded-full bg-success/15 px-2.5 py-1 text-xs font-semibold text-success transition-all"
+                  title={t("sync.syncedDesc")}
+                >
+                  <CheckCircle2 className="size-3.5" />
+                  <span className="hidden sm:inline">{t("sync.synced")}</span>
+                </div>
+              )}
+              {isAccountUser && syncStatus === "saving" && (
+                <div
+                  className="flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary transition-all"
+                  title={t("sync.saving")}
+                >
+                  <RefreshCw className="size-3.5 animate-spin" />
+                  <span className="hidden sm:inline">{t("sync.saving")}</span>
+                </div>
+              )}
+              {isAccountUser && syncStatus === "offline" && (
+                <div
+                  className="flex items-center gap-1.5 rounded-full bg-warning/20 px-2.5 py-1 text-xs font-semibold text-warning-foreground transition-all"
+                  title={t("sync.offlineDesc")}
+                >
+                  <CloudOff className="size-3.5" />
+                  <span className="hidden sm:inline">{t("sync.offline")}</span>
+                </div>
+              )}
 
-      {/* Shared Logout Confirmation Dialog */}
-      <LogoutConfirmationDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog} />
-    </div>
+              <LanguageSelect variant="header" />
+
+              {/* Account Menu (Signed-in) or Sign in to sync (Signed-out / Guest) */}
+              {!isWidgetHidden &&
+                (isAccountUser && currentUser ? (
+                  <AccountMenu
+                    user={currentUser}
+                    syncStatus={syncStatus}
+                    onRequestLogout={() => setShowLogoutDialog(true)}
+                  />
+                ) : (
+                  <Link
+                    to="/signup"
+                    className="tap inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/20 transition-all min-h-[44px]"
+                    title={t("sync.notSignedInDesc")}
+                  >
+                    <LogIn className="size-3.5 shrink-0" />
+                    <span className="hidden sm:inline">
+                      {t("auth.signInToSync", "Sign in to sync")}
+                    </span>
+                    <span className="sm:hidden">{t("auth.login", "Log in")}</span>
+                  </Link>
+                ))}
+            </div>
+          </div>
+        </header>
+
+        {/* Main Container */}
+        <main className="mx-auto w-full max-w-5xl flex-1 px-4 sm:px-6 lg:px-8 pt-4 pb-28 md:pt-6 md:pb-28">
+          {shouldShowBack && (
+            <div className="mb-4 flex items-center">
+              <BackButton fallback={backFallback} />
+            </div>
+          )}
+          {title && <h1 className="mb-4 text-3xl font-bold md:text-4xl">{title}</h1>}
+          {children}
+        </main>
+
+        {/* Footer */}
+        <footer className="mt-auto border-t border-border/40 py-6 pb-24 text-center text-xs text-muted-foreground">
+          <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-2 px-4 sm:flex-row sm:px-6">
+            <div className="flex items-center gap-2">
+              <Flower2 className="size-3.5 text-primary" />
+              <span className="font-semibold text-foreground">{t("app.name")}</span>
+            </div>
+            <p>{t("footer.notice")}</p>
+          </div>
+        </footer>
+
+        {/* Floating Pill Bottom Navigation */}
+        <nav
+          aria-label="Navigation"
+          className="fixed bottom-3 sm:bottom-4 inset-x-0 z-30 flex justify-center px-3 sm:px-4 pointer-events-none"
+        >
+          <div className="pointer-events-auto flex items-center justify-around sm:justify-center gap-1 sm:gap-2 rounded-full bg-card/95 border border-border shadow-lg backdrop-blur-md px-2.5 sm:px-4 py-1.5 max-w-md w-full">
+            {tabs.map(({ to, icon: Icon, key }) => (
+              <Link
+                key={to}
+                to={to}
+                className="flex min-h-[44px] min-w-[44px] flex-col items-center justify-center rounded-full px-2.5 sm:px-3 py-1 text-xs font-semibold text-muted-foreground transition-all hover:bg-muted hover:text-foreground active:scale-95"
+                activeProps={{
+                  className: "bg-primary/10 text-primary font-bold shadow-2xs hover:bg-primary/15",
+                }}
+              >
+                <Icon className="size-5" />
+                <span className="leading-tight text-[11px] sm:text-xs truncate max-w-[58px] sm:max-w-none">
+                  {t(`nav.${key}`)}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </nav>
+
+        {/* Floating Ask Sakhi Widget */}
+        {!isWidgetHidden && <AskSakhiWidget />}
+
+        {/* Shared Logout Confirmation Dialog */}
+        <LogoutConfirmationDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog} />
+      </div>
+    </BackHandlerContext.Provider>
   );
 }
 

@@ -279,14 +279,6 @@ function ScanPage() {
 
   return (
     <AppShell>
-      {/* Top back & title navigation */}
-      <div className="mb-4 flex items-center justify-between">
-        <Link to="/medicines" className="tap inline-flex items-center gap-2 text-lg text-primary">
-          <ArrowLeft className="size-6" /> {t("settings.back")}
-        </Link>
-        <span className="text-sm font-semibold text-muted-foreground">{t("scan.title")}</span>
-      </div>
-
       <div className="flex flex-col gap-5 pb-8">
         <div>
           <h1 className="text-3xl font-bold font-serif">{t("scan.title")}</h1>

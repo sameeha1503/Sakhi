@@ -1,8 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Siren, Phone, Navigation, Ambulance, MapPin } from "lucide-react";
 import { getNearestEmergencyHospital, locationPrefs, type Place } from "@/services/places";
+import { goBack } from "@/services/navigation";
 
 export const Route = createFileRoute("/urgent")({
   head: () => ({
@@ -25,6 +26,8 @@ const CareLink = Link as any;
 
 function UrgentPage() {
   const { t } = useTranslation();
+  const router = useRouter();
+  const navigate = useNavigate();
   const [place, setPlace] = useState<Place | null>(null);
   const [isLocating, setIsLocating] = useState(true);
 
@@ -212,12 +215,13 @@ function UrgentPage() {
 
         {/* Back Link & Attribution (attribution only when live place is shown) */}
         <div className="flex flex-col items-center gap-3 mt-2">
-          <Link
-            to="/home"
-            className="tap inline-flex min-h-[48px] items-center justify-center rounded-2xl bg-white/20 px-6 py-2.5 text-base font-bold text-white hover:bg-white/30"
+          <button
+            type="button"
+            onClick={() => goBack({ router, navigate, fallback: "/home" })}
+            className="tap inline-flex min-h-[48px] items-center justify-center rounded-2xl bg-white/20 px-6 py-2.5 text-base font-bold text-white hover:bg-white/30 cursor-pointer"
           >
             {t("urgent.ok")}
-          </Link>
+          </button>
           {place && <p className="text-xs text-white/70">{t("urgent.osmAttribution")}</p>}
         </div>
       </div>

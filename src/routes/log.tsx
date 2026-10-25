@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
+import { useEffect, useState, useRef, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import {
@@ -29,8 +29,10 @@ import {
   Check,
   Calendar,
   FileText,
+  AlertTriangle,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { useBackHandler } from "@/components/BackHandlerContext";
 import {
   emptyLog,
   logService,
@@ -41,6 +43,15 @@ import {
   type DailyLog,
 } from "@/services/logs";
 import { isRedFlag, determinePostSaveRedirect } from "@/services/cycle";
+import { goBack } from "@/services/navigation";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const logSearchSchema = z.object({
   date: z
@@ -134,6 +145,7 @@ function Tile({
 function LogPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const router = useRouter();
   const search = Route.useSearch();
   const today = todayISO();
 
@@ -146,17 +158,36 @@ function LogPage() {
   const [log, setLog] = useState<DailyLog>(emptyLog(targetDate));
   const [step, setStep] = useState(0);
   const [existing, setExisting] = useState(false);
+  const initialLogRef = useRef<string>("");
+  const isSavedRef = useRef<boolean>(false);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
 
   useEffect(() => {
     const prev = logService.get(targetDate);
+    const initial = prev || emptyLog(targetDate);
     if (prev) {
       setLog(prev);
       setExisting(true);
     } else {
-      setLog(emptyLog(targetDate));
+      setLog(initial);
       setExisting(false);
     }
+    initialLogRef.current = JSON.stringify(initial);
+    isSavedRef.current = false;
   }, [targetDate]);
+
+  const isDirty =
+    !isSavedRef.current &&
+    initialLogRef.current !== "" &&
+    JSON.stringify(log) !== initialLogRef.current;
+
+  useBackHandler(() => {
+    if (isDirty) {
+      setShowLeaveDialog(true);
+      return false;
+    }
+    return true;
+  });
 
   const set = (p: Partial<DailyLog>) => setLog((l) => ({ ...l, ...p }));
   const toggle = (k: "painAreas" | "symptoms", v: string) =>
@@ -177,11 +208,14 @@ function LogPage() {
       return;
     }
 
+    isSavedRef.current = true;
+    initialLogRef.current = JSON.stringify(final);
+
     // Safety tiers evaluation for today's entry
     const allLogs = logService.all();
     const redirect = determinePostSaveRedirect(final, isToday, allLogs);
     if (redirect.to === "/urgent") {
-      navigate({ to: "/urgent" });
+      navigate({ to: "/urgent", replace: true });
     } else {
       navigate({
         to: "/cycle",
@@ -190,6 +224,7 @@ function LogPage() {
           saved: "true",
           tier: redirect.tier === "soon" ? "soon" : undefined,
         },
+        replace: true,
       });
     }
   };
@@ -482,6 +517,47 @@ function LogPage() {
           </div>
         </aside>
       </div>
+
+      {/* Unsaved Changes Confirmation Dialog */}
+      <Dialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+        <DialogContent className="max-w-md rounded-3xl p-6 sm:p-7">
+          <DialogHeader className="text-left">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="grid size-11 place-items-center rounded-2xl bg-warning/20 text-warning">
+                <AlertTriangle className="size-6" />
+              </div>
+              <DialogTitle className="text-xl font-bold font-serif text-foreground">
+                {t("log.unsavedTitle", "Leave without saving?")}
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-sm text-muted-foreground leading-relaxed pt-1">
+              {t("log.unsavedBody", "Your check-in changes will not be saved.")}
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="mt-6 flex flex-col-reverse sm:flex-row gap-3">
+            <button
+              type="button"
+              onClick={() => setShowLeaveDialog(false)}
+              className="tap min-h-[44px] flex-1 rounded-2xl border-2 border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted/60 transition-colors"
+            >
+              {t("log.stay", "Stay")}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowLeaveDialog(false);
+                isSavedRef.current = true;
+                goBack({ router, navigate, fallback: "/home" });
+              }}
+              className="tap min-h-[44px] flex-1 rounded-2xl bg-destructive text-destructive-foreground px-4 py-2.5 text-sm font-bold hover:bg-destructive/90 transition-all"
+            >
+              {t("log.leave", "Leave")}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }

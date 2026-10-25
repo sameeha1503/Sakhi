@@ -171,7 +171,11 @@
     "backfillTitle": "Log for {{date}}",
     "notesTitle": "Personal note (optional)",
     "notesPlaceholder": "e.g., Felt tired, took rest, hot water bag helped...",
-    "notesCharLimit": "{{count}}/300"
+    "notesCharLimit": "{{count}}/300",
+    "unsavedTitle": "Leave without saving?",
+    "unsavedBody": "Your check-in changes will not be saved.",
+    "stay": "Stay",
+    "leave": "Leave"
   },
   "cycle": {
     "title": "My cycle",
@@ -925,5 +929,9 @@
     "syncedDesc": "Saved to your private Sakhi account",
     "offlineDesc": "Offline — changes will sync when connected",
     "notSignedInDesc": "Data stays on this phone only"
+  },
+  "common": {
+    "back": "Back",
+    "goBack": "Go back"
   }
 }
