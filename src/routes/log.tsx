@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { z } from "zod";
 import {
   Droplet,
   Droplets,
@@ -26,6 +27,8 @@ import {
   Scale,
   Zap,
   Check,
+  Calendar,
+  FileText,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import {
@@ -37,9 +40,17 @@ import {
   SYMPTOMS,
   type DailyLog,
 } from "@/services/logs";
-import { isRedFlag } from "@/services/cycle";
+import { isRedFlag, determinePostSaveRedirect } from "@/services/cycle";
+
+const logSearchSchema = z.object({
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+});
 
 export const Route = createFileRoute("/log")({
+  validateSearch: (search: Record<string, unknown>) => logSearchSchema.parse(search),
   head: () => ({
     meta: [
       { title: "Daily check-in — Sakhi" },
@@ -123,17 +134,29 @@ function Tile({
 function LogPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [log, setLog] = useState<DailyLog>(emptyLog());
+  const search = Route.useSearch();
+  const today = todayISO();
+
+  // Validate target date: cannot be future
+  const paramDate = search.date;
+  const targetDate =
+    paramDate && /^\d{4}-\d{2}-\d{2}$/.test(paramDate) && paramDate <= today ? paramDate : today;
+  const isToday = targetDate === today;
+
+  const [log, setLog] = useState<DailyLog>(emptyLog(targetDate));
   const [step, setStep] = useState(0);
   const [existing, setExisting] = useState(false);
 
   useEffect(() => {
-    const prev = logService.get(todayISO());
+    const prev = logService.get(targetDate);
     if (prev) {
       setLog(prev);
       setExisting(true);
+    } else {
+      setLog(emptyLog(targetDate));
+      setExisting(false);
     }
-  }, []);
+  }, [targetDate]);
 
   const set = (p: Partial<DailyLog>) => setLog((l) => ({ ...l, ...p }));
   const toggle = (k: "painAreas" | "symptoms", v: string) =>
@@ -141,9 +164,29 @@ function LogPage() {
 
   const total = 4;
   const save = () => {
-    const final = { ...log, painLevel: log.painAreas.length ? Math.max(1, log.painLevel) : 0 };
-    logService.save(final);
-    navigate({ to: isRedFlag(final) ? "/urgent" : "/cycle" });
+    const final: DailyLog = {
+      ...log,
+      date: targetDate,
+      painLevel: log.painAreas.length ? Math.max(1, log.painLevel) : 0,
+      notes: typeof log.notes === "string" ? log.notes.slice(0, 300) : "",
+    };
+
+    const res = logService.save(final);
+    if (!res.success) {
+      alert(res.error || "Phone storage is full or blocked.");
+      return;
+    }
+
+    // Urgent screen redirect ONLY applies when saving today's entry
+    const redirect = determinePostSaveRedirect(final, isToday);
+    if (redirect.to === "/urgent") {
+      navigate({ to: "/urgent" });
+    } else {
+      navigate({
+        to: "/cycle",
+        search: { date: redirect.targetDate, saved: "true" },
+      });
+    }
   };
 
   const faces = (key: "mood" | "energy" | "sleep", icons: (typeof Frown)[]) => (
@@ -166,6 +209,19 @@ function LogPage() {
         {/* Wizard Main Card (wider card max-w-3xl) */}
         <div className="lg:col-span-8">
           <div className="card-soft max-w-3xl border border-border/80 p-5 sm:p-8">
+            {/* Header with Date Notice */}
+            {!isToday && (
+              <div className="mb-4 rounded-2xl bg-secondary/80 border border-primary/30 p-3 text-xs sm:text-sm font-semibold text-primary flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Calendar className="size-4" />
+                  <span>{t("log.backfillTitle", { date: targetDate })}</span>
+                </div>
+                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-primary/10 px-2.5 py-0.5 rounded-full">
+                  {existing ? t("cycle.editEntry") : t("cycle.addEntry")}
+                </span>
+              </div>
+            )}
+
             <div className="flex items-center justify-between">
               <h1 className="text-2xl sm:text-3xl font-bold">{t("log.title")}</h1>
               <span className="text-sm font-semibold text-muted-foreground">
@@ -189,7 +245,7 @@ function LogPage() {
             )}
 
             <section className="mt-6">
-              {/* Step 0: Flow (Bleeding) - larger tiles in 3-4 columns */}
+              {/* Step 0: Flow (Bleeding) */}
               {step === 0 && (
                 <>
                   <h2 className="mb-4 text-xl sm:text-2xl font-bold">{t("log.flowQ")}</h2>
@@ -205,14 +261,14 @@ function LogPage() {
                         >
                           <Icon
                             className={`${flowSize[f]} ${
-                              f === "none"
-                                ? "text-muted-foreground"
-                                : f === "veryHeavy"
-                                  ? "text-destructive"
-                                  : "text-accent"
+                              f === "veryHeavy"
+                                ? "text-destructive"
+                                : f === "heavy"
+                                  ? "text-accent"
+                                  : "text-primary"
                             }`}
                           />
-                          <span className="text-center">{t(`log.flow.${f}`)}</span>
+                          <span className="text-sm sm:text-base">{t(`log.flow.${f}`)}</span>
                         </Tile>
                       );
                     })}
@@ -220,11 +276,11 @@ function LogPage() {
                 </>
               )}
 
-              {/* Step 1: Pain - larger tiles in 3 columns */}
+              {/* Step 1: Pain Areas & Level */}
               {step === 1 && (
                 <>
                   <h2 className="mb-4 text-xl sm:text-2xl font-bold">{t("log.painQ")}</h2>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-3.5 sm:gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5 sm:gap-4">
                     {PAIN_AREAS.map((a) => {
                       const Icon = areaIcon[a];
                       return (
@@ -234,7 +290,7 @@ function LogPage() {
                           onClick={() => toggle("painAreas", a)}
                         >
                           <Icon className="size-8 text-primary" />
-                          <span className="text-center">{t(`log.area.${a}`)}</span>
+                          <span className="text-sm sm:text-base">{t(`log.area.${a}`)}</span>
                         </Tile>
                       );
                     })}
@@ -286,7 +342,7 @@ function LogPage() {
                 </div>
               )}
 
-              {/* Step 3: Symptoms - larger tiles in 3 columns */}
+              {/* Step 3: Symptoms & Personal Note */}
               {step === 3 && (
                 <>
                   <h2 className="mb-4 text-xl sm:text-2xl font-bold">{t("log.symQ")}</h2>
@@ -306,6 +362,31 @@ function LogPage() {
                         </Tile>
                       );
                     })}
+                  </div>
+
+                  {/* Optional Free-Text Note (Max 300 characters) */}
+                  <div className="mt-6 border-t border-border/50 pt-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <label
+                        htmlFor="log-note"
+                        className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2"
+                      >
+                        <FileText className="size-4 text-primary" />
+                        <span>{t("log.notesTitle")}</span>
+                      </label>
+                      <span className="text-xs text-muted-foreground font-semibold">
+                        {t("log.notesCharLimit", { count: log.notes?.length || 0 })}
+                      </span>
+                    </div>
+                    <textarea
+                      id="log-note"
+                      rows={3}
+                      maxLength={300}
+                      value={log.notes || ""}
+                      onChange={(e) => set({ notes: e.target.value.slice(0, 300) })}
+                      placeholder={t("log.notesPlaceholder")}
+                      className="w-full rounded-2xl border border-border bg-card p-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary leading-relaxed resize-none"
+                    />
                   </div>
                 </>
               )}
@@ -333,7 +414,7 @@ function LogPage() {
           </div>
         </div>
 
-        {/* Desktop Side Panel: Progress Summary of Today's Answers */}
+        {/* Desktop Side Panel: Progress Summary */}
         <aside className="hidden lg:block lg:col-span-4 sticky top-24">
           <div className="card-soft border border-border/80 p-6 flex flex-col gap-4 shadow-xs">
             <h2 className="text-xl font-bold text-foreground border-b border-border/50 pb-3 flex items-center gap-2">
@@ -341,8 +422,16 @@ function LogPage() {
               <span>{t("logSummary.title")}</span>
             </h2>
 
-            {/* Bleeding Flow */}
+            {/* Target Date */}
             <div className="flex flex-col gap-1">
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                {t("log.day", "Date")}
+              </span>
+              <p className="text-base font-semibold text-primary">{targetDate}</p>
+            </div>
+
+            {/* Bleeding Flow */}
+            <div className="flex flex-col gap-1 border-t border-border/40 pt-3">
               <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 {t("logSummary.flow")}
               </span>
@@ -368,30 +457,23 @@ function LogPage() {
               <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 {t("logSummary.moodEnergy")}
               </span>
-              <div className="text-sm font-semibold text-foreground space-y-0.5">
-                <p>
-                  {t("log.mood")}: {t(`log.${["low", "ok", "good"][log.mood - 1]}`)}
-                </p>
-                <p>
-                  {t("log.energy")}: {t(`log.${["low", "ok", "good"][log.energy - 1]}`)}
-                </p>
-                <p>
-                  {t("log.sleep")}: {t(`log.${["low", "ok", "good"][log.sleep - 1]}`)}
-                </p>
-              </div>
-            </div>
-
-            {/* Symptoms */}
-            <div className="flex flex-col gap-1 border-t border-border/40 pt-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                {t("logSummary.symptoms")}
-              </span>
               <p className="text-base font-semibold text-foreground">
-                {log.symptoms.length > 0
-                  ? log.symptoms.map((s) => t(`log.sym.${s}`)).join(", ")
-                  : t("logSummary.notSelected")}
+                {t(`log.${["low", "ok", "good"][log.mood - 1]}`)} •{" "}
+                {t(`log.${["low", "ok", "good"][log.energy - 1]}`)}
               </p>
             </div>
+
+            {/* Logged Note preview if any */}
+            {log.notes && (
+              <div className="flex flex-col gap-1 border-t border-border/40 pt-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  {t("cycle.notes")}
+                </span>
+                <p className="text-xs text-muted-foreground italic line-clamp-3 bg-muted/40 p-2.5 rounded-xl border border-border/50">
+                  "{log.notes}"
+                </p>
+              </div>
+            )}
           </div>
         </aside>
       </div>

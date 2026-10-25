@@ -89,7 +89,23 @@ When deploying to Cloudflare Workers / Pages, Vercel, or Node.js hosts, define t
 - **My List Tracker**: Local tracker for "Saved", "Applied", and "Received" statuses, completely wiped by "Delete all my data".
 - **Reminders & Care Integration**: Monthly 9th PMSMA antenatal reminder, 30+ screening reminder, and direct links to `/care` for schemes delivered at primary health centres.
 
-> **Note on Reminders**: In-app reminders trigger toasts and notification banners while the app is open. Reliable background reminders will require Twilio SMS/WhatsApp integration.
+### Monthly Cycle Calendar & Data Backup
+
+- **Monthly Calendar Grid (`/cycle`)**:
+  - Full-month view with Monday-first week headers, 24-month historical navigation, and month/year jump selector.
+  - Multi-indicator date cells: flow dot strength, pain marker ($\ge 3$), symptom dot, today ring, selected day highlight, muted unselectable future dates, and dashed outlines for predicted next period dates.
+  - Accessibility: `role="grid"` table with rich accessible labels (e.g., _"12 October, period, pain level 3, 2 symptoms logged"_).
+  - Monthly summary statistics line (days logged, period days, highest pain level).
+- **Day Detail & Backfilling (`/log?date=YYYY-MM-DD`)**:
+  - Tapping any date opens a day detail sheet (bottom sheet on phones, side panel on desktop) with flow, pain areas, mood, energy, sleep, symptoms, cycle day number, and personal notes.
+  - Log past entries or edit existing ones at `/log?date=YYYY-MM-DD` (future dates rejected).
+  - Severe red-flag entries redirect to `/urgent` **only when logging today**; editing or backfilling past dates returns to the calendar with selected date and confirmation toast.
+  - Delete entries with confirmation dialog.
+- **On-Device Storage & JSON Backup/Restore (`/settings`)**:
+  - Schema-versioned local storage (`LOGS_SCHEMA_VERSION = 2`) with migration and sanitization.
+  - Date strings created via `formatLocalDate()` using local year, month, and day to prevent IST timezone day-shifting.
+  - "Download my data" exports full check-in history as formatted JSON.
+  - "Restore from backup" validates JSON via Zod and merges entries with confirmation prompt.
 
 ## Getting Started
 

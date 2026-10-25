@@ -96,3 +96,97 @@ export function isRedFlag(l: DailyLog): boolean {
     (l.symptoms.includes("pelvicPain") && l.painLevel >= 4)
   );
 }
+
+/**
+ * Determines redirect destination after saving an entry:
+ * Urgent screen redirect ONLY applies when saving today's entry.
+ * When backfilling or editing an older day, always returns to calendar.
+ */
+export function determinePostSaveRedirect(
+  log: DailyLog,
+  isToday: boolean,
+): { to: "/urgent" } | { to: "/cycle"; targetDate: string } {
+  if (isRedFlag(log) && isToday) {
+    return { to: "/urgent" };
+  }
+  return { to: "/cycle", targetDate: log.date };
+}
+
+export type CalendarCell =
+  | { type: "blank"; id: string }
+  | { type: "day"; day: number; date: string; isToday: boolean; isFuture: boolean };
+
+/**
+ * Generates a 7-column calendar month grid where weeks start on Monday (0).
+ * Accurately handles leap years (e.g. Feb 29).
+ */
+export function getMonthGrid(
+  year: number,
+  month: number, // 1-indexed (1-12)
+  todayStr: string,
+): CalendarCell[] {
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const firstDay = new Date(year, month - 1, 1);
+  const leadingBlanks = (firstDay.getDay() + 6) % 7; // Monday = 0, Sunday = 6
+
+  const cells: CalendarCell[] = [];
+
+  for (let i = 0; i < leadingBlanks; i++) {
+    cells.push({ type: "blank", id: `blank-${year}-${month}-${i}` });
+  }
+
+  const mStr = String(month).padStart(2, "0");
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dStr = String(day).padStart(2, "0");
+    const date = `${year}-${mStr}-${dStr}`;
+    cells.push({
+      type: "day",
+      day,
+      date,
+      isToday: date === todayStr,
+      isFuture: date > todayStr,
+    });
+  }
+
+  return cells;
+}
+
+export function canNavigatePrevMonth(
+  year: number,
+  month: number,
+  currentYear: number,
+  currentMonth: number,
+): boolean {
+  const nowMonths = currentYear * 12 + currentMonth;
+  const targetMonths = year * 12 + month;
+  return nowMonths - targetMonths < 24;
+}
+
+export function canNavigateNextMonth(
+  year: number,
+  month: number,
+  currentYear: number,
+  currentMonth: number,
+): boolean {
+  const nowMonths = currentYear * 12 + currentMonth;
+  const targetMonths = year * 12 + month;
+  return targetMonths < nowMonths;
+}
+
+export function getPredictedPeriodDates(nextPeriodDate: string | null, days = 5): Set<string> {
+  const set = new Set<string>();
+  if (!nextPeriodDate || !/^\d{4}-\d{2}-\d{2}$/.test(nextPeriodDate)) return set;
+
+  const [y, m, d] = nextPeriodDate.split("-").map(Number);
+  const base = new Date(y!, m! - 1, d!);
+
+  for (let i = 0; i < days; i++) {
+    const cur = new Date(base.getFullYear(), base.getMonth(), base.getDate() + i);
+    const yr = cur.getFullYear();
+    const mo = String(cur.getMonth() + 1).padStart(2, "0");
+    const da = String(cur.getDate()).padStart(2, "0");
+    set.add(`${yr}-${mo}-${da}`);
+  }
+
+  return set;
+}

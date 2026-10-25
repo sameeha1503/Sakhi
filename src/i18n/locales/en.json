@@ -69,7 +69,14 @@
     "loadDemo": "Load demo profile",
     "clearDemo": "Clear demo data",
     "demoLoadedMsg": "Demo profile loaded successfully!",
-    "demoClearedMsg": "Demo data cleared successfully!"
+    "demoClearedMsg": "Demo data cleared successfully!",
+    "backupTitle": "Data backup & restore",
+    "backupNote": "Your entries are saved on this phone. Clearing browser data or using a private window removes them.",
+    "downloadBackup": "Download my data (JSON)",
+    "restoreBackup": "Restore from backup",
+    "restoreConfirm": "Restore {{count}} entries from this backup file? Existing entries for the same dates will be updated.",
+    "restoreSuccess": "Successfully restored {{count}} check-in entries.",
+    "restoreInvalid": "Invalid backup file. Please select a valid Sakhi backup JSON file."
   },
   "log": {
     "title": "Daily check-in",
@@ -113,7 +120,11 @@
       "heavyBleeding": "Heavy bleeding",
       "pelvicPain": "Strong lower belly pain"
     },
-    "already": "You checked in today. You can change it."
+    "already": "You checked in today. You can change it.",
+    "backfillTitle": "Log for {{date}}",
+    "notesTitle": "Personal note (optional)",
+    "notesPlaceholder": "e.g., Felt tired, took rest, hot water bag helped...",
+    "notesCharLimit": "{{count}}/300"
   },
   "cycle": {
     "title": "My cycle",
@@ -126,7 +137,28 @@
     "regular": "Your cycles look regular",
     "last35": "Last 5 weeks",
     "history": "Past check-ins",
-    "see": "See my cycle"
+    "see": "See my cycle",
+    "summaryDaysLogged": "Logged: {{count}} days",
+    "summaryPeriodDays": "Period: {{count}} days",
+    "summaryMaxPain": "Peak pain: {{level}}/5",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "jumpToMonth": "Jump to month",
+    "legendFlow": "Period / Flow",
+    "legendPain": "Pain (3+)",
+    "legendSymptoms": "Symptoms",
+    "legendPredicted": "Predicted period",
+    "legendToday": "Today",
+    "dayPanelTitle": "Day details",
+    "cycleDay": "Cycle day {{day}}",
+    "noEntry": "No entry logged for this day.",
+    "addEntry": "Add entry",
+    "editEntry": "Edit this day",
+    "deleteEntry": "Delete entry",
+    "deleteConfirm": "Are you sure you want to delete the entry for this date? This cannot be undone.",
+    "notes": "Personal note",
+    "futureDateNotice": "Cannot log entries for future dates.",
+    "savedNotice": "Entry saved successfully!"
   },
   "flags": {
     "title": "Worth a doctor visit",

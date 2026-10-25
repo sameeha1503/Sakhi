@@ -1,20 +1,39 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Languages, Lock, Trash2, Sparkles, RefreshCw } from "lucide-react";
+import {
+  ArrowLeft,
+  Languages,
+  Lock,
+  Trash2,
+  Sparkles,
+  RefreshCw,
+  Database,
+  Download,
+  Upload,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { LanguageSelect } from "@/components/LanguageSelect";
 import { storage } from "@/services/storage";
 import { vaultService } from "@/services/vault";
 import { demoService } from "@/services/demo";
+import { logService, todayISO, backupPayloadSchema } from "@/services/logs";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
       { title: "Settings — Sakhi" },
-      { name: "description", content: "Change language, set a PIN or delete your data." },
+      {
+        name: "description",
+        content: "Change language, set a PIN, backup data or delete your records.",
+      },
       { property: "og:title", content: "Settings — Sakhi" },
-      { property: "og:description", content: "Change language, set a PIN or delete your data." },
+      {
+        property: "og:description",
+        content: "Change language, set a PIN, backup data or delete your records.",
+      },
     ],
   }),
   component: SettingsPage,
@@ -26,6 +45,15 @@ function SettingsPage() {
   const [confirm, setConfirm] = useState(false);
   const [demoLoaded, setDemoLoaded] = useState(false);
   const [demoMsg, setDemoMsg] = useState<string | null>(null);
+
+  // Backup & Restore State
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [backupMsg, setBackupMsg] = useState<{ type: "success" | "error"; text: string } | null>(
+    null,
+  );
+  const [pendingRestore, setPendingRestore] = useState<{ text: string; count: number } | null>(
+    null,
+  );
 
   useEffect(() => {
     setDemoLoaded(demoService.isDemoLoaded());
@@ -43,6 +71,71 @@ function SettingsPage() {
     setDemoLoaded(false);
     setDemoMsg(t("settings.demoClearedMsg"));
     setTimeout(() => setDemoMsg(null), 4000);
+  };
+
+  const handleDownloadBackup = () => {
+    try {
+      const jsonStr = logService.exportBackup();
+      const blob = new Blob([jsonStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `sakhi-backup-${todayISO()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setBackupMsg({
+        type: "success",
+        text: "Backup file downloaded successfully.",
+      });
+      setTimeout(() => setBackupMsg(null), 4000);
+    } catch {
+      setBackupMsg({
+        type: "error",
+        text: "Failed to download backup file.",
+      });
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const val = backupPayloadSchema.safeParse(parsed);
+
+      if (!val.success) {
+        setBackupMsg({ type: "error", text: t("settings.restoreInvalid") });
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
+
+      setPendingRestore({ text, count: val.data.logs.length });
+    } catch {
+      setBackupMsg({ type: "error", text: t("settings.restoreInvalid") });
+    }
+
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleConfirmRestore = () => {
+    if (!pendingRestore) return;
+    const res = logService.importBackup(pendingRestore.text);
+    if (res.success) {
+      setBackupMsg({
+        type: "success",
+        text: t("settings.restoreSuccess", { count: res.count }),
+      });
+      setPendingRestore(null);
+    } else {
+      setBackupMsg({
+        type: "error",
+        text: res.error || t("settings.restoreInvalid"),
+      });
+      setPendingRestore(null);
+    }
+    setTimeout(() => setBackupMsg(null), 5000);
   };
 
   return (
@@ -71,6 +164,13 @@ function SettingsPage() {
             >
               <Sparkles className="size-5 text-accent shrink-0" />
               <span>{t("settings.demoTitle")}</span>
+            </a>
+            <a
+              href="#backup-section"
+              className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-base font-semibold text-foreground hover:bg-muted transition-colors"
+            >
+              <Database className="size-5 text-primary shrink-0" />
+              <span>{t("settings.backupTitle")}</span>
             </a>
             <a
               href="#lang-section"
@@ -130,6 +230,94 @@ function SettingsPage() {
                 <RefreshCw className="size-5 text-muted-foreground" />
                 <span>{t("settings.clearDemo")}</span>
               </button>
+            </div>
+          </section>
+
+          {/* Backup & Restore Section */}
+          <section
+            id="backup-section"
+            className="card-soft border border-border/80 p-6 scroll-mt-24"
+          >
+            <h2 className="flex items-center gap-3 text-xl font-bold text-foreground">
+              <Database className="size-6 text-primary" />
+              <span>{t("settings.backupTitle")}</span>
+            </h2>
+
+            <div className="mt-2 rounded-2xl border border-border/70 bg-muted/30 p-3.5 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              ℹ️ {t("settings.backupNote")}
+            </div>
+
+            {backupMsg && (
+              <div
+                className={`mt-3 rounded-xl p-3 text-sm font-semibold flex items-center gap-2 ${
+                  backupMsg.type === "success"
+                    ? "bg-success/15 text-success border border-success/30"
+                    : "bg-destructive/15 text-destructive border border-destructive/30"
+                }`}
+              >
+                {backupMsg.type === "success" ? (
+                  <CheckCircle2 className="size-4 shrink-0" />
+                ) : (
+                  <AlertCircle className="size-4 shrink-0" />
+                )}
+                <span>{backupMsg.text}</span>
+              </div>
+            )}
+
+            {/* Pending Restore Confirmation Modal */}
+            {pendingRestore && (
+              <div className="mt-4 rounded-2xl border-2 border-primary/50 bg-secondary/80 p-4">
+                <p className="text-sm font-bold text-foreground">
+                  {t("settings.restoreConfirm", { count: pendingRestore.count })}
+                </p>
+                <div className="mt-3 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPendingRestore(null)}
+                    className="tap rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground"
+                  >
+                    {t("settings.no")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirmRestore}
+                    className="tap rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground hover:bg-primary/95"
+                  >
+                    {t("settings.yes")}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Download JSON Button */}
+              <button
+                type="button"
+                onClick={handleDownloadBackup}
+                className="tap flex min-h-[48px] items-center justify-center gap-2 rounded-2xl border-2 border-primary bg-primary/5 p-4 text-sm sm:text-base font-bold text-primary hover:bg-primary/10 transition-colors"
+              >
+                <Download className="size-5" />
+                <span>{t("settings.downloadBackup")}</span>
+              </button>
+
+              {/* Restore Button with Hidden File Input */}
+              <div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept=".json,application/json"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="tap flex w-full min-h-[48px] items-center justify-center gap-2 rounded-2xl border-2 border-border p-4 text-sm sm:text-base font-semibold hover:border-primary/40 transition-colors"
+                >
+                  <Upload className="size-5 text-muted-foreground" />
+                  <span>{t("settings.restoreBackup")}</span>
+                </button>
+              </div>
             </div>
           </section>
 

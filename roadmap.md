@@ -58,6 +58,31 @@
   - **Zero Personal Data**: Sends only the last 6 messages and the system prompt. Never includes user health logs, medicines, location, or personal vault documents.
   - **11-Locale Parity**: All 10 new strings (`chat.labelAi`, `chat.labelOffline`, `chat.stop`, `chat.busyNotice`, `chat.dosageDisclaimer`, `chat.distressNotice`, `chat.refusedMedicalNotice`, `chat.actions.*`) localized across all 11 Indian languages with 100% test parity.
 - [x] Complete Deprecation and Removal of "Learn" Feature:
+- [x] Monthly Cycle Calendar & Day-by-Day Historical Tracker:
+  - **Month Grid & Accessible Navigation**:
+    - 7-column calendar grid starting on **Monday**, responsive from 360px width with $\ge 44$px tap targets.
+    - Previous/Next navigation constrained to past 24 months up to current month (no future navigation beyond current month).
+    - Quick month & year jump dropdown sheet. Month and weekday labels localized via `Intl.DateTimeFormat(lang + "-IN", ...)` with clear Latin digits.
+    - Date cell indicators: flow dots (light, medium, heavy in accent rose; `veryHeavy` in destructive), pain marker ($\ge 3$), symptom dot, today ring, selected day highlight, muted unselectable future days, dashed outline for predicted next period dates, and a quick legend.
+    - Accessibility: full grid semantics (`role="grid"`, `role="row"`, `role="gridcell"`) with rich aria-labels (e.g. _"12 October, period, pain level 3, 2 symptoms logged"_).
+    - Summary banner above grid: days logged this month, period days, and highest pain level.
+  - **Day Detail Panel (Mobile Sheet / Desktop Side Panel)**:
+    - Displays complete saved entry: flow, pain areas & level, mood, energy, sleep, symptoms, cycle day number, and optional personal note (up to 300 chars).
+    - If empty: friendly "No entry for this day" with "Add entry" button (past days and today only).
+    - "Edit this day" and "Add entry" load `/log?date=YYYY-MM-DD`.
+    - "Delete this entry" with confirmation modal.
+  - **Check-in Wizard Backfill & Targeted Redirects**:
+    - `/log?date=YYYY-MM-DD` validates date param with Zod (rejects future dates, defaults to today).
+    - Shows backfill notice banner when editing or logging a past day.
+    - Free-text personal notes textarea (max 300 chars with live counter) in step 3.
+    - **Safe Urgent Redirect**: Severe red-flag entries redirect to `/urgent` **only when saving today's entry**; backfilled or edited older entries safely return to the calendar at `/cycle?date=YYYY-MM-DD&saved=true` with a confirmation toast.
+  - **Reliable Storage & Backup/Restore**:
+    - Replaced `toISOString().slice(0, 10)` with local-time `formatLocalDate()` using local year, month, and day, eliminating timezone day-shift bugs in India (`UTC+05:30`).
+    - Schema versioning (`LOGS_SCHEMA_VERSION = 2`) with migration, sanitization, and fallback defaults.
+    - Settings -> "Backup": "Download my data" (JSON export) and "Restore from backup" (Zod schema validation, overwrite confirmation modal).
+    - Local privacy disclaimer in Settings informing users data is stored on-device.
+    - Demo profile data populates calendar; "Delete all my data" completely wipes all entries and notes.
+    - 100% key parity across all 11 Indian languages and 16 unit tests in `src/test/cycle-calendar.test.ts`.
   - **Removed Route & Assets**: Deleted `src/routes/learn.tsx` and static imagery `src/assets/learn-pcos.jpg` and `src/assets/learn-endo.jpg`.
   - **Replaced Links with Ask Sakhi**: Pattern flags banner on Cycle page now features an **"Ask Sakhi"** button (dispatches custom event to open the chat widget with relevant contextual questions: _"What is PCOS?"_, _"What are signs of endometriosis?"_, or _"Is my cycle normal?"_) alongside doctor visit preparation.
   - **Rebalanced Home Dashboard**: Symmetrical 6-card grid below the Doctor Visit banner (2 rows of 3 on desktop, 3 rows of 2 on tablet) eliminating trailing odd gaps.
