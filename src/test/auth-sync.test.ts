@@ -17,7 +17,7 @@ import { setCustomSupabaseClient } from "@/lib/supabase";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 describe("Supabase Auth & Cloud Sync", () => {
-  let mockSupabase: {
+  type MockSupabaseType = {
     auth: {
       signUp: ReturnType<typeof vi.fn>;
       signInWithPassword: ReturnType<typeof vi.fn>;
@@ -27,8 +27,11 @@ describe("Supabase Auth & Cloud Sync", () => {
     };
     from: ReturnType<typeof vi.fn>;
   };
+
+  let mockSupabase: MockSupabaseType;
   let upsertSpy: ReturnType<typeof vi.fn>;
   let deleteSpy: ReturnType<typeof vi.fn>;
+  let deleteEqSpy: ReturnType<typeof vi.fn>;
   let selectSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
@@ -38,8 +41,9 @@ describe("Supabase Auth & Cloud Sync", () => {
     vi.useFakeTimers();
 
     upsertSpy = vi.fn().mockResolvedValue({ data: null, error: null });
+    deleteEqSpy = vi.fn().mockResolvedValue({ data: null, error: null });
     deleteSpy = vi.fn().mockReturnValue({
-      eq: vi.fn().mockResolvedValue({ data: null, error: null }),
+      eq: deleteEqSpy,
     });
     selectSpy = vi.fn().mockReturnValue({
       eq: vi.fn().mockResolvedValue({ data: [], error: null }),
@@ -65,9 +69,9 @@ describe("Supabase Auth & Cloud Sync", () => {
         }
         return {};
       }),
-    } as unknown as SupabaseClient;
+    };
 
-    setCustomSupabaseClient(mockSupabase);
+    setCustomSupabaseClient(mockSupabase as unknown as SupabaseClient);
   });
 
   afterEach(() => {
@@ -350,8 +354,7 @@ describe("Supabase Auth & Cloud Sync", () => {
       await storage.clearAll();
 
       expect(deleteSpy).toHaveBeenCalled();
-      const deleteEq = deleteSpy().eq;
-      expect(deleteEq).toHaveBeenCalledWith("user_id", "user_to_delete_uuid");
+      expect(deleteEqSpy).toHaveBeenCalledWith("user_id", "user_to_delete_uuid");
     });
   });
 

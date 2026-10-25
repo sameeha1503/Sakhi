@@ -20,6 +20,12 @@
 - [x] **PHASE 5: Ask Sakhi chat (Completed)**
 - [x] **PHASE 6: Share with doctor (QR) (Completed)**
 - [x] **PHASE 7: Local-First Supabase Cloud Sync & Phone Auth (Completed)**
+- [x] **PHASE 8: Top Bar Account Menu & Universal Log Out Flow (Completed)**
+  - Round account avatar button next to sync badge and language dropdown ($\ge 44$px tap target, Popover on desktop, bottom sheet on phones).
+  - Masked mobile number (`98••••3210`), sync status line, and quick links to Profile and Settings.
+  - "Sign in to sync" button when in guest mode or signed out; hidden on chrome-free routes.
+  - Safe log out confirmation dialog with up to 3s queue flush, offline unsynced warning, local device synced data cleanup (preserving private vault and language preference), redirect to `/signup`, and toast notification.
+  - Reusable flow at bottom of `/settings` and `/profile`. 100% parity across all 11 Indic locales.
 
 - [x] Phase 2: symptom log, cycle tracker, pattern flags, red-flag screen (awareness cards migrated to Ask Sakhi knowledge base; verified with automated E2E & flow test suite across EN/HI/TE)
 - [x] Phase 3: manual medicine entry, private vault prescription photo storage (AI prescription reading planned), medicines CRUD, dose reminders (verified; honest manual entry on /scan starting with empty card, direct vault photo saving with PIN lock, dose schedule generation, adherence history, refill alerts, discreet reminders, and unit tests passed)
@@ -244,3 +250,15 @@
    - Confirm deletion.
    - Reopen Ask Sakhi chat: verify conversation history has been completely wiped.
    - Reopen `/visit`: verify visits timeline is empty and question ticks/custom questions are reset.
+
+9. **Top Bar Account Menu & Universal Log Out Flow**:
+   - **Signed-in view**: Sign in with phone & PIN. Inspect top bar next to language selector and sync badge.
+     - On desktop ($\ge 768$px): Click round teal initial avatar $\rightarrow$ Popover opens showing user name, masked number (e.g. `98••••3210`), sync status line ("Synced" / "Saving..." / "Offline, will sync later"), "My profile" (`/profile`), "Settings" (`/settings`), and calm neutral/berry "Log out" button.
+     - On phone ($< 768$px, e.g. 360px): Tap round teal avatar $\rightarrow$ clean accessible Bottom Sheet opens with identical items and $\ge 44$px tap targets.
+   - **Signed-out / Guest view**: When guest or signed out, avatar is replaced by a "Sign in to sync" link leading to `/signup`.
+   - **Chrome-free routes**: Hidden on `/`, `/consent`, `/signup`, `/urgent`, `/share`.
+   - **Log Out Confirmation Flow**:
+     - Tap "Log out" $\rightarrow$ Confirmation dialog opens: _"Log out of Sakhi? Your data is safe in your account. Log in with your number and PIN to see it again on any phone."_ Buttons: "Stay logged in" and "Log out".
+     - When unsynced changes exist and offline: warns _"You have changes that have not synced. Log out anyway?"_ with an option to stay.
+     - On confirmation: flushes pending sync writes (max 3s), clears synced data from local storage on this phone, preserves private vault (PIN & lockout) and language preference, and redirects to `/signup` with toast _"You have been logged out"_.
+   - **Consistent Entry Points**: Verified identical "Log out" button at bottom of `/settings` and `/profile`.

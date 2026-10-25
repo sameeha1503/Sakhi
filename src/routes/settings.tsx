@@ -15,9 +15,11 @@ import {
   AlertCircle,
   Cloud,
   CloudOff,
+  LogOut,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { LanguageSelect } from "@/components/LanguageSelect";
+import { LogoutConfirmationDialog } from "@/components/LogoutConfirmationDialog";
 import { storage, type SyncStatus } from "@/services/storage";
 import { authService, type User } from "@/services/auth";
 import { vaultService } from "@/services/vault";
@@ -55,6 +57,7 @@ function SettingsPage() {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>(storage.getSyncStatus());
   const [currentUser, setCurrentUser] = useState<User | null>(authService.current());
   const [authMode, setAuthMode] = useState(authService.getAuthMode());
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   // Backup & Restore State
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -489,6 +492,35 @@ function SettingsPage() {
               </div>
             )}
           </section>
+
+          {/* Account Log out Section */}
+          {authMode === "account" && (
+            <section className="card-soft border border-border/80 p-6 rounded-3xl">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-bold font-serif text-foreground">
+                    {t("auth.logOut", "Log out")}
+                  </h2>
+                  <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
+                    {t(
+                      "auth.logoutConfirmBody",
+                      "Your data is safe in your account. Log in with your number and PIN to see it again on any phone.",
+                    )}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowLogoutDialog(true)}
+                  className="tap min-h-[44px] shrink-0 inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-primary/30 bg-primary/10 px-5 py-2.5 text-sm font-bold text-primary hover:bg-primary/20 transition-all self-start sm:self-auto"
+                >
+                  <LogOut className="size-4" />
+                  <span>{t("auth.logOut", "Log out")}</span>
+                </button>
+              </div>
+            </section>
+          )}
+
+          <LogoutConfirmationDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog} />
         </div>
       </div>
     </AppShell>

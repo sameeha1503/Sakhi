@@ -12,6 +12,7 @@ import {
   Cloud,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { LogoutConfirmationDialog } from "@/components/LogoutConfirmationDialog";
 import { authService, type User } from "@/services/auth";
 
 export const Route = createFileRoute("/profile")({
@@ -28,20 +29,14 @@ export const Route = createFileRoute("/profile")({
 
 function Profile() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [authMode, setAuthMode] = useState(authService.getAuthMode());
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   useEffect(() => {
     setUser(authService.current());
     setAuthMode(authService.getAuthMode());
   }, []);
-
-  const handleLogout = async () => {
-    await authService.logOut();
-    navigate({ to: "/signup" });
-  };
 
   return (
     <AppShell title={t("nav.profile")}>
@@ -83,39 +78,21 @@ function Profile() {
             <ArrowRight className="size-5 text-muted-foreground" />
           </Link>
 
-          {!showLogoutConfirm ? (
+          {authMode === "account" && (
             <button
-              onClick={() => setShowLogoutConfirm(true)}
-              className="tap card-soft border border-border/80 flex w-full items-center justify-between p-5 text-xl font-bold text-muted-foreground hover:text-primary transition-colors hover:border-primary/50"
+              type="button"
+              onClick={() => setShowLogoutDialog(true)}
+              className="tap card-soft border border-border/80 flex w-full items-center justify-between p-5 text-lg font-bold text-muted-foreground hover:text-primary transition-colors hover:border-primary/50 min-h-[44px] rounded-3xl"
             >
               <div className="flex items-center gap-3.5">
-                <LogOut className="size-7" />
-                <span>{t("profile.logout")}</span>
+                <LogOut className="size-6 text-primary" />
+                <span>{t("auth.logOut", "Log out")}</span>
               </div>
+              <ArrowRight className="size-5 text-muted-foreground" />
             </button>
-          ) : (
-            <div className="card-soft border-2 border-primary/50 bg-secondary/80 p-5 rounded-3xl">
-              <p className="text-sm font-bold text-foreground leading-relaxed">
-                {t("profile.logoutConfirm")}
-              </p>
-              <div className="mt-4 grid grid-cols-2 gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setShowLogoutConfirm(false)}
-                  className="tap min-h-[44px] rounded-xl border border-border bg-card text-sm font-semibold text-foreground hover:bg-muted"
-                >
-                  {t("profile.cancel")}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="tap min-h-[44px] rounded-xl bg-destructive text-sm font-bold text-destructive-foreground hover:bg-destructive/90"
-                >
-                  {t("profile.confirmLogout")}
-                </button>
-              </div>
-            </div>
           )}
+
+          <LogoutConfirmationDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog} />
         </div>
 
         {/* Right Column: Account & Security Features */}

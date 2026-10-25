@@ -42,7 +42,18 @@
     "showPin": "Show PIN",
     "hidePin": "Hide PIN",
     "firstLoginMerged": "Your existing health records have been saved to your account.",
-    "errorGeneric": "Unable to complete request. Please try again."
+    "errorGeneric": "Unable to complete request. Please try again.",
+    "accountMenu": "Account menu",
+    "myProfile": "My profile",
+    "signInToSync": "Sign in to sync",
+    "logoutConfirmTitle": "Log out of Sakhi?",
+    "logoutConfirmBody": "Your data is safe in your account. Log in with your number and PIN to see it again on any phone.",
+    "stayLoggedIn": "Stay logged in",
+    "logOut": "Log out",
+    "unsyncedWarningTitle": "Unsynced changes",
+    "unsyncedWarning": "You have changes that have not synced. Log out anyway?",
+    "logoutAnyway": "Log out anyway",
+    "loggedOutToast": "You have been logged out"
   },
   "nav": {
     "home": "Home",
@@ -57,9 +68,9 @@
     "checkin": "Daily check-in",
     "doctorVisitTitle": "Doctor visit",
     "doctorVisitDesc": "Prepare questions, log clinic visits, and print your doctor summary.",
-    "stepQuestions": "1 Prepare questions",
-    "stepVisits": "2 Log a visit",
-    "stepSummary": "3 Doctor summary",
+    "stepQuestions": "Prepare questions",
+    "stepVisits": "Log a visit",
+    "stepSummary": "Doctor summary",
     "tagRecords": "RECORDS",
     "schemesCardTitle": "Government schemes",
     "schemesCardDesc": "Free hospital cover, screening & maternal cash benefits.",
@@ -68,7 +79,7 @@
     "followupDueTomorrow": "Follow-up in 1 day",
     "newForYou": "New for you",
     "schemesCardWomenCount": "{{count}} schemes made for women you may qualify for",
-    "stepShare": "4 Share with QR"
+    "stepShare": "Share with QR"
   },
   "soon": "Coming in the next step",
   "profile": {

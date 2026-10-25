@@ -158,48 +158,36 @@ function HomePage() {
             <Link
               to="/visit"
               search={{ tab: "questions" }}
-              className="tap flex items-center justify-between sm:justify-center gap-2.5 rounded-2xl border-2 border-border bg-card p-3.5 text-xs sm:text-sm font-bold text-foreground hover:border-primary/50 hover:bg-secondary/40 transition-all"
+              className="tap flex items-center justify-center gap-2 rounded-2xl border-2 border-border bg-card p-3.5 text-xs sm:text-sm font-bold text-foreground hover:border-primary/50 hover:bg-secondary/40 transition-all text-center"
             >
-              <div className="flex items-center gap-2">
-                <FileQuestion className="size-4 text-primary shrink-0" />
-                <span>{t("home.stepQuestions", "1 Prepare questions")}</span>
-              </div>
-              <span className="text-muted-foreground sm:hidden">&rarr;</span>
+              <FileQuestion className="size-4 text-primary shrink-0" />
+              <span>{t("home.stepQuestions", "Prepare questions")}</span>
             </Link>
 
             <Link
               to="/visit"
               search={{ tab: "visits" }}
-              className="tap flex items-center justify-between sm:justify-center gap-2.5 rounded-2xl border-2 border-border bg-card p-3.5 text-xs sm:text-sm font-bold text-foreground hover:border-primary/50 hover:bg-secondary/40 transition-all"
+              className="tap flex items-center justify-center gap-2 rounded-2xl border-2 border-border bg-card p-3.5 text-xs sm:text-sm font-bold text-foreground hover:border-primary/50 hover:bg-secondary/40 transition-all text-center"
             >
-              <div className="flex items-center gap-2">
-                <CalendarDays className="size-4 text-primary shrink-0" />
-                <span>{t("home.stepVisits", "2 Log a visit")}</span>
-              </div>
-              <span className="text-muted-foreground sm:hidden">&rarr;</span>
+              <CalendarDays className="size-4 text-primary shrink-0" />
+              <span>{t("home.stepVisits", "Log a visit")}</span>
             </Link>
 
             <Link
               to="/visit"
               search={{ tab: "summary" }}
-              className="tap flex items-center justify-between sm:justify-center gap-2.5 rounded-2xl border-2 border-border bg-card p-3.5 text-xs sm:text-sm font-bold text-foreground hover:border-primary/50 hover:bg-secondary/40 transition-all"
+              className="tap flex items-center justify-center gap-2 rounded-2xl border-2 border-border bg-card p-3.5 text-xs sm:text-sm font-bold text-foreground hover:border-primary/50 hover:bg-secondary/40 transition-all text-center"
             >
-              <div className="flex items-center gap-2">
-                <FileText className="size-4 text-primary shrink-0" />
-                <span>{t("home.stepSummary", "3 Doctor summary")}</span>
-              </div>
-              <span className="text-muted-foreground sm:hidden">&rarr;</span>
+              <FileText className="size-4 text-primary shrink-0" />
+              <span>{t("home.stepSummary", "Doctor summary")}</span>
             </Link>
 
             <Link
               to="/share"
-              className="tap flex items-center justify-between sm:justify-center gap-2.5 rounded-2xl border-2 border-border bg-card p-3.5 text-xs sm:text-sm font-bold text-foreground hover:border-primary/50 hover:bg-secondary/40 transition-all"
+              className="tap flex items-center justify-center gap-2 rounded-2xl border-2 border-border bg-card p-3.5 text-xs sm:text-sm font-bold text-foreground hover:border-primary/50 hover:bg-secondary/40 transition-all text-center"
             >
-              <div className="flex items-center gap-2">
-                <QrCode className="size-4 text-primary shrink-0" />
-                <span>{t("home.stepShare", "4 Share with QR")}</span>
-              </div>
-              <span className="text-muted-foreground sm:hidden">&rarr;</span>
+              <QrCode className="size-4 text-primary shrink-0" />
+              <span>{t("home.stepShare", "Share with QR")}</span>
             </Link>
           </div>
         </div>

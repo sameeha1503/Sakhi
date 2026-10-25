@@ -279,12 +279,14 @@ export const storage = {
 
   /**
    * Clears synced data on logout to protect privacy on shared phones,
-   * without touching the vault.
+   * without touching the vault or language preference.
    */
   clearSyncedDataOnLogout() {
     if (typeof window === "undefined") return;
     SYNCED_KEYS.forEach((key) => {
-      this.remove(key);
+      if (key !== "lang") {
+        this.remove(key);
+      }
     });
     this.remove("sync_queue");
     this.remove("sync_timestamps");
@@ -295,6 +297,14 @@ export const storage = {
       debounceTimer = null;
     }
     updateSyncStatus("not_signed_in");
+  },
+
+  getPendingSyncCount(): number {
+    return pendingWrites.size + getOfflineQueue().length;
+  },
+
+  hasPendingSync(): boolean {
+    return this.getPendingSyncCount() > 0;
   },
 
   // --- Cloud Sync Internals ---

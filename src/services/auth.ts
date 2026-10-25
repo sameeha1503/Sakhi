@@ -94,6 +94,15 @@ export function validatePin(pin: string): { valid: boolean; errorKey?: string } 
   return { valid: true };
 }
 
+export function maskPhoneNumber(phoneRaw: string): string {
+  const norm = normalizePhoneNumber(phoneRaw);
+  const digits = norm.valid ? norm.normalized : phoneRaw.replace(/\D/g, "");
+  if (digits.length >= 6) {
+    return `${digits.slice(0, 2)}••••${digits.slice(-4)}`;
+  }
+  return phoneRaw;
+}
+
 type AuthListener = (user: User | null) => void;
 const authListeners: AuthListener[] = [];
 
@@ -133,6 +142,11 @@ export interface IAuthService {
     errorKey?: string | undefined;
   }>;
   logOut(): Promise<void>;
+  performLogout(options?: { force?: boolean }): Promise<{
+    success: boolean;
+    hasUnsynced?: boolean;
+  }>;
+  maskPhoneNumber(phone: string): string;
   initSession(): Promise<void>;
 }
 
@@ -170,18 +184,7 @@ export const authService: IAuthService = {
     return guestUser;
   },
 
-  signUp(
-    name: string,
-    phoneRaw: string,
-    pin?: string,
-  ):
-    | User
-    | Promise<{
-        success: boolean;
-        user?: User | undefined;
-        errorKey?: string | undefined;
-        alreadyRegistered?: boolean | undefined;
-      }> {
+  signUp: ((name: string, phoneRaw: string, pin?: string): unknown => {
     if (pin === undefined) {
       const user: User = {
         id: `u_${Date.now()}`,
@@ -286,18 +289,9 @@ export const authService: IAuthService = {
         return { success: false, errorKey: "auth.errorGeneric" };
       }
     })();
-  },
+  }) as IAuthService["signUp"],
 
-  logIn(
-    phoneRaw: string,
-    pin?: string,
-  ):
-    | (User | null)
-    | Promise<{
-        success: boolean;
-        user?: User | undefined;
-        errorKey?: string | undefined;
-      }> {
+  logIn: ((phoneRaw: string, pin?: string): unknown => {
     if (pin === undefined) {
       const u = storage.get<User | null>("user", null);
       return u && u.phone === phoneRaw.trim() ? u : null;
@@ -375,7 +369,7 @@ export const authService: IAuthService = {
         return { success: false, errorKey: "auth.invalidCredentials" };
       }
     })();
-  },
+  }) as IAuthService["logIn"],
 
   /**
    * Log out.
@@ -399,6 +393,36 @@ export const authService: IAuthService = {
     storage.remove("user");
     storage.remove("auth_mode");
     notifyAuthListeners(null);
+  },
+
+  maskPhoneNumber,
+
+  /**
+   * Unified performLogout flow:
+   * Flushes pending writes up to 3 seconds, checks for unsynced changes
+   * to warn if offline, and on proceed calls logOut().
+   */
+  async performLogout(options?: { force?: boolean }): Promise<{
+    success: boolean;
+    hasUnsynced?: boolean;
+  }> {
+    if (typeof navigator !== "undefined" && navigator.onLine) {
+      try {
+        await Promise.race([
+          storage.flushSyncQueue(),
+          new Promise((resolve) => setTimeout(resolve, 3000)),
+        ]);
+      } catch {
+        // Continue even if network error
+      }
+    }
+
+    if (!options?.force && storage.hasPendingSync()) {
+      return { success: false, hasUnsynced: true };
+    }
+
+    await this.logOut();
+    return { success: true, hasUnsynced: false };
   },
 
   /**

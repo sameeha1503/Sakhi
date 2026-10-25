@@ -14,11 +14,14 @@ import {
   CheckCircle2,
   RefreshCw,
   CloudOff,
+  LogIn,
 } from "lucide-react";
-import { authService, prefs } from "@/services/auth";
+import { authService, prefs, type User as AuthUser, type AuthMode } from "@/services/auth";
 import { storage, type SyncStatus } from "@/services/storage";
 import { LanguageSelect } from "@/components/LanguageSelect";
 import { AskSakhiWidget } from "@/components/AskSakhiWidget";
+import { AccountMenu } from "@/components/AccountMenu";
+import { LogoutConfirmationDialog } from "@/components/LogoutConfirmationDialog";
 
 const tabs = [
   { to: "/home", icon: Home, key: "home" },
@@ -36,6 +39,9 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
   const [isOffline, setIsOffline] = useState(false);
   const [storageError, setStorageError] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>(storage.getSyncStatus());
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => authService.current());
+  const [authMode, setAuthMode] = useState<AuthMode>(() => authService.getAuthMode());
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   const pathname = routerState.location.pathname;
   const isWidgetHidden =
@@ -74,13 +80,21 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
       setSyncStatus(st);
     });
 
+    const unbindAuth = authService.onAuthChange((u) => {
+      setCurrentUser(u);
+      setAuthMode(authService.getAuthMode());
+    });
+
     return () => {
       window.removeEventListener("online", onOnline);
       window.removeEventListener("offline", onOffline);
       unbindStorage();
       unbindSync();
+      unbindAuth();
     };
   }, [navigate, pathname]);
+
+  const isAccountUser = Boolean(currentUser && currentUser.id && authMode === "account");
 
   if (!ok) return <div className="min-h-screen" />;
 
@@ -140,10 +154,10 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
             </div>
           </Link>
 
-          {/* Right: Sync Status & Language Selector */}
+          {/* Right: Sync Status & Language Selector & Account Menu */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Sync Status Badge */}
-            {syncStatus === "synced" && (
+            {/* Sync Status Badge (when signed in) */}
+            {isAccountUser && syncStatus === "synced" && (
               <div
                 className="flex items-center gap-1.5 rounded-full bg-success/15 px-2.5 py-1 text-xs font-semibold text-success transition-all"
                 title={t("sync.syncedDesc")}
@@ -152,7 +166,7 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
                 <span className="hidden sm:inline">{t("sync.synced")}</span>
               </div>
             )}
-            {syncStatus === "saving" && (
+            {isAccountUser && syncStatus === "saving" && (
               <div
                 className="flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary transition-all"
                 title={t("sync.saving")}
@@ -161,7 +175,7 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
                 <span className="hidden sm:inline">{t("sync.saving")}</span>
               </div>
             )}
-            {syncStatus === "offline" && (
+            {isAccountUser && syncStatus === "offline" && (
               <div
                 className="flex items-center gap-1.5 rounded-full bg-warning/20 px-2.5 py-1 text-xs font-semibold text-warning-foreground transition-all"
                 title={t("sync.offlineDesc")}
@@ -170,18 +184,30 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
                 <span className="hidden sm:inline">{t("sync.offline")}</span>
               </div>
             )}
-            {syncStatus === "not_signed_in" && (
-              <Link
-                to="/signup"
-                className="hidden sm:flex items-center gap-1.5 rounded-full border border-border/70 bg-muted/50 px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
-                title={t("sync.notSignedInDesc")}
-              >
-                <CloudOff className="size-3.5" />
-                <span>{t("sync.notSignedIn")}</span>
-              </Link>
-            )}
 
             <LanguageSelect variant="header" />
+
+            {/* Account Menu (Signed-in) or Sign in to sync (Signed-out / Guest) */}
+            {!isWidgetHidden &&
+              (isAccountUser && currentUser ? (
+                <AccountMenu
+                  user={currentUser}
+                  syncStatus={syncStatus}
+                  onRequestLogout={() => setShowLogoutDialog(true)}
+                />
+              ) : (
+                <Link
+                  to="/signup"
+                  className="tap inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/20 transition-all min-h-[44px]"
+                  title={t("sync.notSignedInDesc")}
+                >
+                  <LogIn className="size-3.5 shrink-0" />
+                  <span className="hidden sm:inline">
+                    {t("auth.signInToSync", "Sign in to sync")}
+                  </span>
+                  <span className="sm:hidden">{t("auth.login", "Log in")}</span>
+                </Link>
+              ))}
           </div>
         </div>
       </header>
@@ -229,6 +255,9 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
 
       {/* Floating Ask Sakhi Widget */}
       {!isWidgetHidden && <AskSakhiWidget />}
+
+      {/* Shared Logout Confirmation Dialog */}
+      <LogoutConfirmationDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog} />
     </div>
   );
 }
