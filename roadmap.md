@@ -81,8 +81,19 @@
        - **Service Unreachable**: _"Healthcare service unreachable — showing sample facilities"_.
        - **Bad Response**: _"Unable to load live facilities — showing sample facilities"_.
        - Interactive **"Try again"** button.
-  - **Source Badges & Attribution**: Renders honest badges on `/care` (_"Live data, updated just now"_, _"Saved results from <time>"_, or _"Sample data"_), progressive radius summary label, and licence attribution (_"Powered by Geoapify"_ and _"© OpenStreetMap contributors"_) under the list and on the Leaflet map.
   - **Test Suite**: Added 13 mocked-fetch tests in `src/test/geoapify-places.test.ts` covering successful fixture parsing, progressive radius expansion, quota error (429), invalid key (401), network drop, 4-step fallback sequence, 10-minute caching, rate limit enforcement, and geocoding, with 100% i18n parity across 11 languages.
+
+- [x] Pan-India Government Schemes Overhaul (All 28 States & 8 UTs, 3 Tiers, Check-in Personalization):
+  - **All 36 States & Union Territories**: Added searchable, keyboard-accessible selector (bottom sheet on phones, dialog on desktop) covering all 28 states and 8 union territories, defaulting to detected or last chosen state without restricting the user's choices.
+  - **Three Collapsible Tiers**:
+    - **Tier 1 ("Made for women")**: Prominently placed at the top with accent/pink styling, count badge, and alert banner: _"Many women miss these. You may qualify for N schemes made for women."_ Covers maternity, cancer screening, menstrual hygiene, nutrition/anaemia, and women-specific state welfare.
+    - **Tier 2 ("Health schemes you may also qualify for")**: Comprehensive general health coverage including Ayushman Bharat PM-JAY (with state-specific portal links), Ayushman Arogya Mandirs, and free diagnostics.
+    - **Tier 3 ("Other support")**: Verified state cash transfers and welfare programs for women's socioeconomic wellbeing.
+  - **Official Verification (No Inventions)**: Every scheme contains `officialUrl`, `sourceUrl`, and `verifiedOn: "2026-10-25"`. Verified state schemes across 20 largest/priority states (UP, MH, BR, WB, MP, TN, RJ, KA, GJ, AP, OD, TS, KL, JH, AS, PB, CG, HR, DL, GA). Remaining 16 states & UTs show national schemes plus verified health department fallback cards. Zero invented schemes for PCOS/endometriosis.
+  - **Personalization & On-Device Patterns**: Uses 4 finder questions (age group, maternal status, household category, state) plus private on-device pattern switch (default ON). Automatically highlights anaemia support (AMB) if heavy bleeding logs exist and free cancer screening (Arogya Mandir) for women 30+.
+  - **My List Tracker & Reminders**: Tracks "Saved", "Applied", and "Received" statuses in local storage (cleared upon data wipe). Offers monthly 9th PMSMA antenatal reminder and 30+ cancer screening reminder. Links schemes to `/care` for local health centre delivery.
+  - **Home Dashboard Indicator**: Shows _"N schemes made for women you may qualify for"_ and an active unread indicator dot until the user opens the schemes page.
+  - **Test Suite**: 14 tests in `src/test/schemes.test.ts` asserting 36 states/UTs, national scheme coverage, required fields, tier sorting, personalization, tracker persistence, and reminders, plus 100% key parity across all 11 Indic languages in `locales-parity.test.ts`.
 
 ## Manual Browser Testing Checklist
 

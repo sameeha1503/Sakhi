@@ -186,12 +186,12 @@ describe("Sakhi End-to-End Flow Verification", () => {
     // 4. Schemes finder
     const { matchSchemes } = await import("@/services/schemes");
     const matching = matchSchemes({
-      ageGroup: "30_49",
-      isPregnant: "no",
+      ageGroup: "30_59",
+      maternalStatus: "neither",
       household: "bpl_ration",
-      state: "Telangana",
+      stateCode: "TS",
     });
-    expect(matching.length).toBeGreaterThan(0);
+    expect(matching.totalCount).toBeGreaterThan(0);
 
     // 5. Setup Private Vault with PIN and store a document
     await vaultService.setupPin("5678");

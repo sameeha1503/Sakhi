@@ -21,6 +21,7 @@ import { authService } from "@/services/auth";
 import { logService, todayISO } from "@/services/logs";
 import { cycleSummary, patternFlags, type FlagId } from "@/services/cycle";
 import { visitService, type Visit } from "@/services/visits";
+import { schemeService } from "@/services/schemes";
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -43,6 +44,8 @@ function HomePage() {
   const [upcomingFollowUps, setUpcomingFollowUps] = useState<
     { visit: Visit; daysRemaining: number }[]
   >([]);
+  const [womenSchemesCount, setWomenSchemesCount] = useState<number>(0);
+  const [isSchemesNew, setIsSchemesNew] = useState<boolean>(false);
 
   useEffect(() => {
     setName(authService.current()?.name ?? "");
@@ -52,6 +55,8 @@ function HomePage() {
     setDone(!!logService.get(today));
     setFlags(patternFlags(logs, today));
     setUpcomingFollowUps(visitService.getUpcomingFollowUps(today, 3));
+    setWomenSchemesCount(schemeService.getWomenSchemesCount());
+    setIsSchemesNew(!schemeService.hasViewedSchemes());
   }, []);
 
   return (
@@ -287,23 +292,41 @@ function HomePage() {
           className="group tap card-soft flex flex-col justify-between p-6 border-2 border-accent/30 bg-card transition-all hover:-translate-y-0.5 hover:border-accent"
         >
           <div className="flex items-center justify-between">
-            <div className="grid size-12 sm:size-14 place-items-center rounded-full bg-accent/15 text-accent">
-              <ShieldAlert className="size-6 sm:size-7" />
+            <div className="relative">
+              <div className="grid size-12 sm:size-14 place-items-center rounded-full bg-accent/15 text-accent">
+                <ShieldAlert className="size-6 sm:size-7" />
+              </div>
+              {isSchemesNew && (
+                <span
+                  className="absolute -top-1 -right-1 flex size-3.5"
+                  title={t("home.newForYou", "New for you")}
+                >
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                  <span className="relative inline-flex size-3.5 rounded-full bg-primary border-2 border-card" />
+                </span>
+              )}
             </div>
-            <span className="rounded-full bg-accent/15 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-accent">
-              {t("home.tagSchemes", "BENEFITS")}
-            </span>
+            <div className="flex items-center gap-2">
+              {isSchemesNew && (
+                <span className="rounded-full bg-primary/15 text-primary border border-primary/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                  {t("home.newForYou", "NEW")}
+                </span>
+              )}
+              <span className="rounded-full bg-accent/15 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-accent">
+                {t("home.tagSchemes", "BENEFITS")}
+              </span>
+            </div>
           </div>
 
           <div className="mt-5">
             <h2 className="text-xl sm:text-2xl font-bold font-serif text-foreground">
               {t("home.schemesCardTitle", "Government schemes")}
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {t(
-                "home.schemesCardDesc",
-                "Free hospital cover, screening & maternal cash benefits.",
-              )}
+            <p className="mt-1 text-sm text-muted-foreground font-medium">
+              {t("home.schemesCardWomenCount", {
+                count: womenSchemesCount || 8,
+                defaultValue: `${womenSchemesCount || 8} schemes made for women you may qualify for`,
+              })}
             </p>
             <span className="inline-flex items-center gap-1 text-sm font-bold text-accent mt-4 group-hover:translate-x-1 transition-transform">
               Open &rarr;

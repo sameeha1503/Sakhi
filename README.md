@@ -77,6 +77,18 @@ When deploying to Cloudflare Workers / Pages, Vercel, or Node.js hosts, define t
 - (Optional) `LLM_DAILY_LIMIT`, `LLM_FALLBACK_URL`, `LLM_FALLBACK_KEY`, `LLM_FALLBACK_MODEL`
   The runtime server reads these securely at runtime and logs only presence (`set`/`missing`), keeping secrets safe.
 
+### Government Schemes Engine & Pan-India Coverage
+
+- **All 36 States & Union Territories**: Searchable, keyboard-accessible state selector (bottom sheet on phones, modal on desktop) allowing access to schemes across all 28 states and 8 union territories, defaulting to detected/saved state without restrictions.
+- **Three-Tier Categorization**:
+  1. **Made for Women (Top, Accent Highlighted)**: Maternity (JSY, PMMVY, PMSMA, JSSK, SUMAN, state maternity), cancer screening (Ayushman Arogya Mandirs, Arogya Mahila), menstrual & adolescent health (MHS, RKSK, Udaan, Swechha, Khushi, She Pad), nutrition & anaemia (Anemia Mukt Bharat, Poshan 2.0, Mathru Poorna), and women-specific state welfare.
+  2. **Health Schemes You May Also Qualify For**: General health insurance & care (PM-JAY with state-specific implementation links, state insurance schemes like MJPJAY, Aarogyasri, Chiranjeevi/MAAY, Chirayu, DDSSY, and free diagnostics).
+  3. **Other Support**: Verified state cash-transfer & welfare schemes for women (Ladki Bahin, Ladli Behna, Gruha Lakshmi, Kalaignar Magalir Urimai, Orunodoi, Mahtari Vandan, Maiyan Samman, Subhadra, Lakshmir Bhandar, Griha Aadhar).
+- **Official Sources Only**: Every entry contains `sourceUrl`, `officialUrl`, and `verifiedOn: "2026-10-25"`. States without custom verified entries provide an official fallback to the state health department website.
+- **Check-in Pattern Personalization**: Connects to on-device daily logs (default ON, private) to highlight anaemia support (Anemia Mukt Bharat) for heavy bleeding patterns and free cancer screening at Arogya Mandirs for women 30+.
+- **My List Tracker**: Local tracker for "Saved", "Applied", and "Received" statuses, completely wiped by "Delete all my data".
+- **Reminders & Care Integration**: Monthly 9th PMSMA antenatal reminder, 30+ screening reminder, and direct links to `/care` for schemes delivered at primary health centres.
+
 > **Note on Reminders**: In-app reminders trigger toasts and notification banners while the app is open. Reliable background reminders will require Twilio SMS/WhatsApp integration.
 
 ## Getting Started
