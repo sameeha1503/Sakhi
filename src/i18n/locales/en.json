@@ -591,7 +591,10 @@
       "schemes": "Government schemes",
       "medicines": "Medicines",
       "vault": "Open private vault",
-      "emergency": "Go to a hospital now"
+      "emergency": "Go to a hospital now",
+      "call108": "Call 108",
+      "telemanas": "Call Tele-MANAS 14416",
+      "emergency112": "Call 112"
     },
     "kb": {
       "pcosWhat": {
@@ -658,6 +661,13 @@
         "keywords": "missed dose, forgot medicine, skipped pill, miss medicine, what if i forget tablet, missed tablet",
         "answer": "If you forget a dose of your regular medicine, take it as soon as you remember, unless it is almost time for your next scheduled dose. Never take a double dose to make up for a missed one. If you are unsure, consult your doctor or pharmacist."
       }
-    }
+    },
+    "labelAi": "AI-generated, general information only",
+    "labelOffline": "Offline answer",
+    "stop": "Stop",
+    "busyNotice": "The assistant is busy, here is a quick answer.",
+    "dosageDisclaimer": "Please ask your doctor or pharmacist about medicines and doses.",
+    "distressNotice": "You are not alone. Please reach out to caring counselors at Tele-MANAS (14416) or emergency services (112) for free, confidential emotional support anytime.",
+    "refusedMedicalNotice": "Sakhi cannot provide medicine dosages, medical diagnoses, or instructions for abortion or contraception. Please consult a doctor or licensed pharmacist for your safety."
   }
 }

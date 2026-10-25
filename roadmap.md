@@ -17,7 +17,7 @@
 - [ ] **PHASE 2: Medicines and reminders**
 - [ ] **PHASE 3: Demo profile**
 - [ ] **PHASE 4: Care journey and same-day safety**
-- [ ] **PHASE 5: Ask Sakhi chat**
+- [x] **PHASE 5: Ask Sakhi chat (Completed)**
 - [ ] **PHASE 6: Share with doctor (QR)**
 
 - [x] Phase 2: symptom log, cycle tracker, pattern flags, red-flag screen (awareness cards migrated to Ask Sakhi knowledge base; verified with automated E2E & flow test suite across EN/HI/TE)
@@ -37,13 +37,20 @@
   - **Government Schemes (`/schemes`)**: Dedicated top-level route with 4 big-button questions (age, pregnancy, household category, state) matching schemes from `src/data/schemes.ts` (PM-JAY, Arogya Mandirs, JSY, PMMVY, PMSMA, JSSK) with what it offers, documents to carry, and official links.
   - **Home Dashboard**: Wide "Doctor visit" module card (tag: `RECORDS`) with 3 step buttons (1 Prepare questions, 2 Log a visit, 3 Doctor summary) and upcoming follow-up badge ("Follow-up in 2 days"). Dedicated Government schemes module card.
   - **Global Card/Link Audit**: Replaced shadowed card row on `/care` with two clean cards ("Doctor visit" $\rightarrow$ `/visit`, "Government schemes" $\rightarrow$ `/schemes`), updated `FlagCards` and `DoseReminders` links, and verified all 117 Vitest tests passing with 100% i18n key parity across 11 languages.
-- [x] "Ask Sakhi" Floating Chat Assistant Widget & Service:
-  - **Floating Trigger Button**: Positioned fixed at bottom-right (`bottom-20 right-4` on mobile, `bottom-6 right-6` on desktop) sitting strictly above the mobile floating navigation bar so they never overlap. Displays a friendly "Ask Sakhi ✨" speech-bubble tooltip on first visit. Hidden automatically on signed-out pages, consent, signup, `/urgent`, and `/share`.
-  - **Accessible Chat Panel**: Bottom sheet on mobile devices (`max-h-[85vh]`), 380px panel anchored bottom-right on desktop. Features Sakhi avatar, clear chat, close, Esc keyboard dismiss, focus trap, and live announcements. Includes permanent safety notice: _"Sakhi shares general information, not medical advice."_
-  - **Tappable Suggestion Chips**: 9 curated chips in greeting for zero-typing interaction: _"What is PCOS?"_, _"What are signs of endometriosis?"_, _"Is my cycle normal?"_, _"When should I see a doctor?"_, _"How do I log my symptoms?"_, _"Find a hospital near me"_, _"What government schemes can I get?"_, _"How do I share my records with my doctor?"_, _"Is my data private?"_.
-  - **Mode 1 (Knowledge Base)**: 16 intents in `src/data/knowledge.ts` covering PCOS, endometriosis, cycle normalcy, irregular periods, heavy bleeding, period pain, doctor red flags, symptom logging, reminders, finding care, government schemes, doctor summary sharing, privacy vault, and missed medicine dose. Uses Unicode NFC normalisation and space-padded substring matching (avoiding `\w`/`\b` regexes that break on Indian scripts). Includes direct 1-tap action buttons opening `/log`, `/care`, `/visit`, `/schemes`, `/medicines`, or `/vault`.
-  - **Mode 2 (Server LLM Route `/api/chat`)**: TanStack Start server route activated only when `LLM_API_KEY` and `LLM_API_URL` exist. Enforces 500-char max, last 6 messages only, rate limiting (~10 req/min/client), 15s timeout, and automatic fallback to Mode 1. Never sends user logs, medicines, or location data to the model.
-  - **Storage & Data Wipe**: Chat history saved in local storage (`sakhi:chat_history`) and wiped completely when "Delete all my data" is triggered in Settings.
+- [x] "Ask Sakhi" Live Streaming AI Assistant & Safety Guardrails:
+  - **Live Token-by-Token Streaming**: OpenAI-compatible server-sent events (SSE) via `/api/chat`. Features animated typing indicator before the first token arrives and an interactive **Stop** button allowing the user to cancel generation at any point.
+  - **Strict Local Safety Layer**: Intercepts emergency queries (108, chest pain, heavy bleeding), emotional distress (Tele-MANAS 14416, 112), and refused medical requests (dosages, diagnoses, home abortions) entirely on the client before ANY external AI call is made. Renders immediate action buttons (`tel:108`, `tel:14416`, `tel:112`, `/urgent`, `/care`) with zero latency.
+  - **Educational Clinical Guardrails**: Injects a strict system prompt tailored to the active Indic language (<language name>): short sentences for limited literacy, women's health focus (periods, PCOS, nutrition, hygiene, mental wellbeing), under 120 words, zero medical diagnosis or prescribing.
+  - **Automated Dosage Guard**: Server-side output guard scans all AI responses for medication dosing patterns (`\b\d+\s*(?:mg|ml|tablets?|capsules?)\b`) and automatically replaces them with a safety disclaimer: _"Please ask your doctor or pharmacist about medicines and doses."_
+  - **Resilience & Fallback Sequence**:
+    - **Sliding-Window Rate Limiting**: ~10 requests/min per IP with single-concurrency lock (1 request at a time per client).
+    - **Daily Budget Tracking**: In-memory count of successful AI calls resetting at midnight (default 400 calls; `LLM_DAILY_LIMIT`). Emits clear server logs and smoothly falls back to the offline knowledge base once reached.
+    - **Multi-Provider Fallback**: Automatically tries `LLM_FALLBACK_URL`/`LLM_FALLBACK_KEY`/`LLM_FALLBACK_MODEL` on primary 429, 5xx, or 20s timeout before falling back to the 16 curated offline intents.
+    - **30-Minute Server Cache**: Caches suggestion-chip queries per language for instant responses and credit conservation.
+    - **Secure Error Handling**: On 401/403 logs developer guidance and falls back; on 429 informs user _"The assistant is busy, here is a quick answer"_; never displays raw API keys or provider errors to users.
+  - **Honest UI Labels**: Displays _"AI-generated, general information only"_ below AI responses and _"Offline answer"_ below fallback knowledge-base answers.
+  - **Zero Personal Data**: Sends only the last 6 messages and the system prompt. Never includes user health logs, medicines, location, or personal vault documents.
+  - **11-Locale Parity**: All 10 new strings (`chat.labelAi`, `chat.labelOffline`, `chat.stop`, `chat.busyNotice`, `chat.dosageDisclaimer`, `chat.distressNotice`, `chat.refusedMedicalNotice`, `chat.actions.*`) localized across all 11 Indian languages with 100% test parity.
 - [x] Complete Deprecation and Removal of "Learn" Feature:
   - **Removed Route & Assets**: Deleted `src/routes/learn.tsx` and static imagery `src/assets/learn-pcos.jpg` and `src/assets/learn-endo.jpg`.
   - **Replaced Links with Ask Sakhi**: Pattern flags banner on Cycle page now features an **"Ask Sakhi"** button (dispatches custom event to open the chat widget with relevant contextual questions: _"What is PCOS?"_, _"What are signs of endometriosis?"_, or _"Is my cycle normal?"_) alongside doctor visit preparation.
@@ -122,18 +129,40 @@
    - Answer the 4 quick eligibility questions (age, pregnancy, household category, state) and tap "See matching schemes".
    - Verify matching scheme cards display benefits, documents to carry, and official portal links.
 
-7. **"Ask Sakhi" Floating Chat Assistant**:
-   - On signed-in pages (`/home`, `/log`, `/medicines`, `/care`, `/visit`, etc.), inspect the round floating button at the bottom-right.
-   - On phone width (e.g. 390px): verify the button sits at `bottom-20`, clearly above the floating pill bottom navigation without overlapping.
-   - On first visit: verify the "Ask Sakhi ✨" speech-bubble tooltip appears.
-   - Tap the button: verify it opens as a smooth bottom sheet on phones, or an anchored 380px panel on desktop.
-   - Verify the permanent safety note: _"Sakhi shares general information, not medical advice."_
-   - Tap suggestion chip **"What is PCOS?"**: verify it sends, displays the assistant response with plain-language explanation, and displays the **"Doctor visit"** action link (`/visit`).
-   - Tap **"Find a hospital near me"**: verify response displays with **"Find care near me"** action link (`/care`).
-   - Type a custom question (e.g. _"I missed my medicine dose"_) and tap Send: verify it returns guidance and links to `/medicines`.
-   - Switch language to हिन्दी: verify chips, answers, and interface adapt into Hindi, and typing _"पीसीओएस क्या है"_ returns accurate Hindi response.
-   - Press **Escape** or tap Close: panel closes.
-   - Verify the widget is NOT present on `/`, `/consent`, `/signup`, or `/urgent`.
+7. **"Ask Sakhi" Live AI Streaming Assistant & Safety Testing**:
+   - **Positioning & Responsive Layout**:
+     - On desktop ($\ge 768$px): Floating button sits fixed at `bottom-6 right-6`. Tapping it opens a clean 380px panel anchored to the bottom-right.
+     - On phone width (e.g. 390px): Floating button sits at `bottom-20 right-4`, comfortably above the floating bottom navigation bar without overlapping. Tapping opens a smooth bottom-sheet drawer (`max-h-[85vh]`).
+     - On first load: speech-bubble tooltip _"Ask Sakhi ✨"_ appears.
+     - Verify widget is hidden on signed-out routes (`/`, `/consent`, `/signup`, `/urgent`, `/share`).
+   - **Test 1: Live AI Streaming (Question NOT in knowledge base)**:
+     - **English**: Type a novel health question not in the 16 offline intents (e.g., _"Can drinking warm water with lemon help my digestion during periods?"_).
+       - Verify animated typing indicator appears before the first token.
+       - Verify words stream in live token-by-token.
+       - Verify the **Stop** button appears while streaming and tapping it halts generation.
+       - Verify the source label at the bottom reads: **"AI-generated, general information only"**.
+     - **हिन्दी (Hindi)**: Switch language to हिन्दी from the top bar dropdown. Type _"पीरियड्स के दौरान क्या खाने से कमजोरी कम होती है?"_.
+       - Verify the answer streams live in simple Hindi.
+       - Verify the footer reads: _"एआई द्वारा जनरेट, केवल सामान्य जानकारी"_.
+     - **తెలుగు (Telugu)**: Switch language to తెలుగు. Type _"పీరియడ్స్ సమయంలో ఎలాంటి ఆహారం తీసుకోవాలి?"_.
+       - Verify the answer streams live in simple Telugu.
+       - Verify the footer reads: _"AI-సృష్టించినది, సాధారణ సమాచారం మాత్రమే"_.
+   - **Test 2: Emergency Safety Interception (No AI Call, Instant)**:
+     - In English, type an emergency query: _"I am bleeding very heavily and feeling dizzy"_ or _"Call 108"_.
+       - Verify response appears **instantly** without typing indicator or AI latency.
+       - Verify direct emergency dialer button appears: **"Call 108"** (`tel:108`) and link to **"Emergency guidance"** (`/urgent`).
+     - In Hindi, type: _"मुझे बहुत चक्कर आ रहे हैं और बहुत ज्यादा ब्लीडिंग हो रही है"_.
+       - Verify instant Hindi emergency response with **"108 पर कॉल करें"** button.
+     - In Telugu, type: _"ఎక్కువ రక్తస్రావం అవుతోంది తల తిరుగుతోంది"_.
+       - Verify instant Telugu emergency response with **"108 కి కాల్ చేయండి"** button.
+   - **Test 3: Dosage Guardrail & Medical Refusal**:
+     - Type: _"What dose of meftal spas or paracetamol should I take for period pain?"_ or _"How many 500mg tablets should I take?"_.
+       - If intercepted by local safety, verify message refuses dosing and instructs seeing a doctor.
+       - If answered by AI, verify any dosage pattern (e.g. 500mg, 10 ml, 2 tablets) is automatically replaced with: _"Please ask your doctor or pharmacist about medicines and doses."_
+   - **Test 4: Offline / Fallback Transparency**:
+     - If `LLM_API_KEY` is not set or network is disconnected:
+       - Tap any suggestion chip (e.g. _"What is PCOS?"_).
+       - Verify offline answer is rendered with source label: **"Offline answer"**.
 
 8. **Data Deletion Verification**:
    - Go to `/settings` and tap **"Delete all data"**.

@@ -9,9 +9,11 @@ import {
   Flower2,
   Sparkles,
   ArrowRight,
-  ExternalLink,
+  Square,
+  Phone,
 } from "lucide-react";
-import { askSakhi, chatStorage, type ChatMessage } from "@/services/chat";
+import { askSakhiStream, matchKnowledgeBase, chatStorage, type ChatMessage } from "@/services/chat";
+import { checkSafetyLayer } from "@/services/safety";
 import { storage } from "@/services/storage";
 
 const TOOLTIP_SEEN_KEY = "chat_tooltip_seen";
@@ -22,11 +24,13 @@ export function AskSakhiWidget() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Initialize from storage
   useEffect(() => {
@@ -69,7 +73,7 @@ export function AskSakhiWidget() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen]);
 
-  const handleSendRef = useRef<(text?: string) => Promise<void>>(undefined);
+  const handleSendRef = useRef<(text?: string, isChip?: boolean) => Promise<void>>(undefined);
 
   // Global event listener for opening chat widget from pattern flags or other modules
   useEffect(() => {
@@ -83,7 +87,7 @@ export function AskSakhiWidget() {
         storage.set(TOOLTIP_SEEN_KEY, true);
       }
       if (detail?.query) {
-        handleSendRef.current?.(detail.query);
+        handleSendRef.current?.(detail.query, true);
       }
     };
 
@@ -104,14 +108,29 @@ export function AskSakhiWidget() {
   };
 
   const handleClear = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsGenerating(false);
+    setIsTyping(false);
     chatStorage.clearHistory();
     setMessages([]);
   };
 
-  const handleSend = async (textToSend?: string) => {
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsGenerating(false);
+    setIsTyping(false);
+  };
+
+  const handleSend = async (textToSend?: string, isChip = false) => {
     const rawText = textToSend !== undefined ? textToSend : input;
     const query = rawText.trim();
-    if (!query || isTyping) return;
+    if (!query || isGenerating) return;
 
     setInput("");
 
@@ -127,34 +146,116 @@ export function AskSakhiWidget() {
     chatStorage.saveHistory(newHistory);
 
     setIsTyping(true);
+    setIsGenerating(true);
+
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+    const botMsgId = `bot_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
     try {
-      const response = await askSakhi(newHistory, i18n.language || "en");
+      await askSakhiStream(
+        newHistory,
+        i18n.language || "en",
+        {
+          onStart: () => {
+            setIsTyping(true);
+          },
+          onToken: (_token, accumulated) => {
+            setIsTyping(false);
+            setMessages((prev) => {
+              const existingIdx = prev.findIndex((m) => m.id === botMsgId);
+              if (existingIdx === -1) {
+                return [
+                  ...prev,
+                  {
+                    id: botMsgId,
+                    sender: "assistant",
+                    text: accumulated,
+                    source: "llm",
+                    timestamp: new Date().toISOString(),
+                  },
+                ];
+              }
+              const updated = [...prev];
+              updated[existingIdx] = {
+                ...updated[existingIdx]!,
+                text: accumulated,
+              };
+              return updated;
+            });
+          },
+          onDone: (fullText, source, isBusy) => {
+            setIsTyping(false);
+            setIsGenerating(false);
+            abortControllerRef.current = null;
 
-      const botMsg: ChatMessage = {
-        id: `bot_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-        sender: "assistant",
-        text: response.text,
-        source: response.source,
-        actions: response.actions,
-        timestamp: new Date().toISOString(),
-      };
+            const lang = i18n.language || "en";
+            const actions =
+              source === "safety"
+                ? checkSafetyLayer(query, lang)?.actions
+                : source === "kb"
+                  ? matchKnowledgeBase(query, lang).actions
+                  : undefined;
 
-      const finalHistory = [...newHistory, botMsg];
-      setMessages(finalHistory);
-      chatStorage.saveHistory(finalHistory);
+            setMessages((prev) => {
+              const existingIdx = prev.findIndex((m) => m.id === botMsgId);
+              const botMsg: ChatMessage = {
+                id: botMsgId,
+                sender: "assistant",
+                text: fullText,
+                source,
+                isBusy,
+                actions,
+                timestamp: new Date().toISOString(),
+              };
+
+              let updated: ChatMessage[];
+              if (existingIdx === -1) {
+                updated = [...prev, botMsg];
+              } else {
+                updated = [...prev];
+                updated[existingIdx] = botMsg;
+              }
+
+              chatStorage.saveHistory(updated);
+              return updated;
+            });
+          },
+          onError: () => {
+            setIsTyping(false);
+            setIsGenerating(false);
+            abortControllerRef.current = null;
+
+            const lang = i18n.language || "en";
+            const fallback = matchKnowledgeBase(query, lang);
+            const fallbackMsg: ChatMessage = {
+              id: botMsgId,
+              sender: "assistant",
+              text: fallback.text,
+              source: "kb",
+              actions: fallback.actions,
+              timestamp: new Date().toISOString(),
+            };
+
+            setMessages((prev) => {
+              const existingIdx = prev.findIndex((m) => m.id === botMsgId);
+              const updated =
+                existingIdx === -1
+                  ? [...prev, fallbackMsg]
+                  : prev.map((m, idx) => (idx === existingIdx ? fallbackMsg : m));
+              chatStorage.saveHistory(updated);
+              return updated;
+            });
+          },
+        },
+        {
+          signal: abortController.signal,
+          isSuggestionChip: isChip,
+        },
+      );
     } catch {
-      const fallbackMsg: ChatMessage = {
-        id: `bot_${Date.now()}_fallback`,
-        sender: "assistant",
-        text: t("chat.fallback"),
-        timestamp: new Date().toISOString(),
-      };
-      const finalHistory = [...newHistory, fallbackMsg];
-      setMessages(finalHistory);
-      chatStorage.saveHistory(finalHistory);
-    } finally {
       setIsTyping(false);
+      setIsGenerating(false);
     }
   };
   handleSendRef.current = handleSend;
@@ -236,7 +337,7 @@ export function AskSakhiWidget() {
                 <Flower2 className="size-5" />
               </div>
               <div className="flex flex-col">
-                <span className="text-base font-bold leading-tight text-foreground">
+                <span className="text-base font-bold leading-tight text-foreground font-serif">
                   {t("chat.title")}
                 </span>
                 <span className="text-[11px] font-medium leading-none text-muted-foreground">
@@ -265,38 +366,29 @@ export function AskSakhiWidget() {
             </div>
           </header>
 
-          {/* Permanent Disclaimer Banner */}
-          <div className="border-b border-border/50 bg-muted/60 px-3.5 py-1.5 text-center text-[11px] font-medium text-muted-foreground">
+          {/* Non-Diagnostic Safety Notice Banner */}
+          <div className="border-b border-border/50 bg-secondary/40 px-3.5 py-1.5 text-center text-[11px] font-semibold text-secondary-foreground">
             {t("chat.disclaimer")}
           </div>
 
-          {/* Message History & Chips */}
-          <div
-            className="flex-1 overflow-y-auto px-4 py-3 space-y-3"
-            aria-live="polite"
-            aria-atomic="false"
-          >
-            {/* Initial Welcome Greeting & Chips */}
+          {/* Messages Scroll Area */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3" role="log" aria-live="polite">
+            {/* Greeting and Chips if empty */}
             {messages.length === 0 && (
-              <div className="space-y-3 animate-in fade-in duration-200">
-                <div className="flex items-start gap-2 max-w-[90%]">
-                  <div className="grid size-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary mt-0.5">
-                    <Flower2 className="size-4" />
-                  </div>
-                  <div className="rounded-2xl rounded-tl-xs border border-border/70 bg-muted px-3.5 py-2.5 text-xs md:text-sm text-foreground shadow-2xs leading-relaxed">
-                    {t("chat.greeting")}
-                  </div>
+              <div className="space-y-4">
+                <div className="rounded-2xl rounded-tl-xs border border-border/70 bg-muted p-3.5 text-xs md:text-sm text-foreground shadow-2xs leading-relaxed">
+                  <p>{t("chat.greeting")}</p>
                 </div>
 
-                <div className="pt-1">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-2 px-1">
-                    {t("chat.chipsLabel", { defaultValue: "Common Questions" })}
+                <div className="space-y-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    {t("chat.chipsLabel")}
                   </span>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="grid grid-cols-1 gap-1.5">
                     {suggestionChips.map((chip) => (
                       <button
                         key={chip.key}
-                        onClick={() => handleSend(t(chip.textKey))}
+                        onClick={() => handleSend(t(chip.textKey), true)}
                         className="tap flex min-h-11 items-center gap-1.5 rounded-xl border border-primary/20 bg-secondary/80 px-3 py-2 text-left text-xs font-semibold text-secondary-foreground hover:bg-secondary active:scale-95 transition-all"
                       >
                         <Sparkles className="size-3 text-primary shrink-0" />
@@ -324,26 +416,65 @@ export function AskSakhiWidget() {
                   <p className="whitespace-pre-wrap">{msg.text}</p>
                 </div>
 
+                {/* Assistant Labels */}
+                {msg.sender === "assistant" && (
+                  <div className="mt-1 flex flex-col gap-0.5">
+                    {msg.source === "llm" && (
+                      <span className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
+                        <Sparkles className="size-3 text-primary shrink-0" />
+                        {t("chat.labelAi")}
+                      </span>
+                    )}
+                    {msg.source === "kb" && (
+                      <div className="flex flex-col gap-0.5">
+                        {msg.isBusy && (
+                          <span className="text-[10px] font-semibold text-warning">
+                            {t("chat.busyNotice")}
+                          </span>
+                        )}
+                        <span className="text-[10px] font-medium text-muted-foreground">
+                          {t("chat.labelOffline")}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Assistant Action Buttons */}
                 {msg.actions && msg.actions.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1.5 max-w-[90%]">
-                    {msg.actions.map((act) => (
-                      <Link
-                        key={act.to}
-                        to={act.to}
-                        onClick={handleClose}
-                        className="tap flex min-h-10 items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/20 transition-colors"
-                      >
-                        <span>{act.label}</span>
-                        <ArrowRight className="size-3 shrink-0" />
-                      </Link>
-                    ))}
+                    {msg.actions.map((act) => {
+                      const isTel = act.to.startsWith("tel:");
+                      if (isTel) {
+                        return (
+                          <a
+                            key={act.to}
+                            href={act.to}
+                            className="tap flex min-h-10 items-center gap-1.5 rounded-xl border border-destructive/40 bg-destructive/10 px-3.5 py-1.5 text-xs font-bold text-destructive hover:bg-destructive/20 transition-colors"
+                          >
+                            <Phone className="size-3.5 shrink-0" />
+                            <span>{act.label}</span>
+                          </a>
+                        );
+                      }
+                      return (
+                        <Link
+                          key={act.to}
+                          to={act.to}
+                          onClick={handleClose}
+                          className="tap flex min-h-10 items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/20 transition-colors"
+                        >
+                          <span>{act.label}</span>
+                          <ArrowRight className="size-3 shrink-0" />
+                        </Link>
+                      );
+                    })}
                   </div>
                 )}
               </div>
             ))}
 
-            {/* Typing Indicator */}
+            {/* Typing Indicator before first token arrives */}
             {isTyping && (
               <div className="flex items-center gap-1.5 px-3 py-2 text-muted-foreground text-xs font-medium">
                 <div className="size-2 rounded-full bg-primary animate-pulse" />
@@ -357,12 +488,12 @@ export function AskSakhiWidget() {
           </div>
 
           {/* Quick Suggestion Chips Footer if in ongoing chat */}
-          {messages.length > 0 && (
+          {messages.length > 0 && !isGenerating && (
             <div className="border-t border-border/40 px-3 py-1.5 overflow-x-auto flex gap-1.5 scrollbar-none bg-background/50">
               {suggestionChips.slice(0, 4).map((chip) => (
                 <button
                   key={chip.key}
-                  onClick={() => handleSend(t(chip.textKey))}
+                  onClick={() => handleSend(t(chip.textKey), true)}
                   className="tap whitespace-nowrap text-[11px] font-semibold text-primary bg-primary/5 hover:bg-primary/10 border border-primary/15 rounded-lg px-2.5 py-1 transition-colors"
                 >
                   {t(chip.textKey)}
@@ -383,16 +514,31 @@ export function AskSakhiWidget() {
               onChange={(e) => setInput(e.target.value)}
               placeholder={t("chat.inputPlaceholder")}
               maxLength={500}
-              className="flex-1 min-h-11 rounded-xl border border-input bg-background px-3.5 py-2 text-xs md:text-sm text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/40"
+              disabled={isGenerating}
+              className="flex-1 min-h-11 rounded-xl border border-input bg-background px-3.5 py-2 text-xs md:text-sm text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
             />
-            <button
-              type="submit"
-              disabled={!input.trim() || isTyping}
-              className="tap flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 active:scale-95 disabled:opacity-40 transition-all"
-              aria-label={t("chat.send")}
-            >
-              <Send className="size-4" />
-            </button>
+
+            {/* If streaming/generating, show Stop button */}
+            {isGenerating ? (
+              <button
+                type="button"
+                onClick={handleStop}
+                className="tap flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-destructive px-3.5 text-xs font-bold text-destructive-foreground shadow-xs hover:bg-destructive/90 active:scale-95 transition-all"
+                aria-label={t("chat.stop")}
+              >
+                <Square className="size-3.5 fill-current" />
+                <span>{t("chat.stop")}</span>
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={!input.trim()}
+                className="tap flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 active:scale-95 disabled:opacity-40 transition-all"
+                aria-label={t("chat.send")}
+              >
+                <Send className="size-4" />
+              </button>
+            )}
           </form>
         </div>
       )}

@@ -40,7 +40,7 @@ export function loadServerEnv(): void {
     // Graceful fallback for non-Node environments (Cloudflare Workers, edge runtimes)
   }
 
-  logGeoapifyStartup();
+  logServerEnvStartup();
 }
 
 /**
@@ -72,6 +72,8 @@ export function parseAndApplyEnv(rawContent: string): void {
   }
 }
 
+let hasLoggedLlm = false;
+
 /**
  * Logs whether GEOAPIFY_API_KEY is present or missing on startup.
  * Logs only the presence ("set" or "missing"), NEVER the secret key value.
@@ -90,11 +92,52 @@ export function logGeoapifyStartup(): void {
 }
 
 /**
+ * Logs whether LLM variables are present or missing on startup.
+ * Logs only the presence ("set" or "missing"), NEVER the secret key values.
+ * Guaranteed to log at most once per process.
+ */
+export function logLlmStartup(): void {
+  const g = globalThis as { __sakhi_llm_logged?: boolean };
+  if (hasLoggedLlm || g.__sakhi_llm_logged) {
+    return;
+  }
+  hasLoggedLlm = true;
+  g.__sakhi_llm_logged = true;
+
+  const isLlmUrlSet = Boolean(process.env["LLM_API_URL"]?.trim());
+  const isLlmKeySet = Boolean(process.env["LLM_API_KEY"]?.trim());
+  const isLlmModelSet = Boolean(process.env["LLM_MODEL"]?.trim());
+
+  console.log(`LLM_API_URL: ${isLlmUrlSet ? "set" : "missing"}`);
+  console.log(`LLM_API_KEY: ${isLlmKeySet ? "set" : "missing"}`);
+  console.log(`LLM_MODEL: ${isLlmModelSet ? "set" : "missing"}`);
+
+  if (process.env["LLM_FALLBACK_URL"]?.trim() || process.env["LLM_FALLBACK_KEY"]?.trim()) {
+    console.log(`LLM_FALLBACK_URL: ${process.env["LLM_FALLBACK_URL"]?.trim() ? "set" : "missing"}`);
+    console.log(`LLM_FALLBACK_KEY: ${process.env["LLM_FALLBACK_KEY"]?.trim() ? "set" : "missing"}`);
+    console.log(
+      `LLM_FALLBACK_MODEL: ${process.env["LLM_FALLBACK_MODEL"]?.trim() ? "set" : "missing"}`,
+    );
+  }
+}
+
+/**
+ * Logs both Geoapify and LLM startup environment statuses.
+ */
+export function logServerEnvStartup(): void {
+  logGeoapifyStartup();
+  logLlmStartup();
+}
+
+/**
  * Reset helper strictly for unit testing.
  */
 export function resetLoggedStatusForTests(): void {
   hasLoggedGeoapify = false;
+  hasLoggedLlm = false;
   delete (globalThis as { __sakhi_geoapify_logged?: boolean }).__sakhi_geoapify_logged;
+  delete (globalThis as { __sakhi_llm_logged?: boolean }).__sakhi_llm_logged;
+  delete (globalThis as { __sakhi_env_logged?: boolean }).__sakhi_env_logged;
 }
 
 /**
@@ -113,4 +156,21 @@ export function getGeoapifyApiKey(): string | null {
 export function isGeoapifyConfigured(): boolean {
   loadServerEnv();
   return Boolean(process.env["GEOAPIFY_API_KEY"]?.trim());
+}
+
+/**
+ * Returns LLM server configurations securely.
+ * Server-side only: never expose secrets to browser client.
+ */
+export function getLlmConfig() {
+  loadServerEnv();
+  return {
+    apiUrl: process.env["LLM_API_URL"]?.trim() || null,
+    apiKey: process.env["LLM_API_KEY"]?.trim() || null,
+    model: process.env["LLM_MODEL"]?.trim() || "gpt-4o-mini",
+    dailyLimit: Number(process.env["LLM_DAILY_LIMIT"]) || 400,
+    fallbackUrl: process.env["LLM_FALLBACK_URL"]?.trim() || null,
+    fallbackKey: process.env["LLM_FALLBACK_KEY"]?.trim() || null,
+    fallbackModel: process.env["LLM_FALLBACK_MODEL"]?.trim() || "gpt-4o-mini",
+  };
 }

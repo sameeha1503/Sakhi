@@ -1,28 +1,39 @@
 // Chat service for Ask Sakhi assistant.
 // Implements:
-// - Mode 1 (Knowledge Base): Offline, privacy-first intent matching covering women's health topics.
-// - Mode 2 (Optional AI): Calls /api/chat if LLM is configured on the server, falling back to Mode 1 on any error.
-// - Multilingual normalisation and robust substring matching (avoiding \b/\w which break on Indian scripts).
-// - Chat history persistence via the storage service (cleared on "Delete all my data").
+// - Step 1: Local Safety Layer (emergencies, distress, refused topics) with ZERO AI call.
+// - Step 2: Live AI Streaming via /api/chat with token-by-token updates and Stop control.
+// - Step 3: Offline Knowledge Base fallback on 401, 429, timeout (20s), daily budget, or network failure.
+// - Output Guard: replaces medicine dosing patterns in generated text.
+// - Chat history persistence via the storage service (wiped on "Delete all my data").
 
 import i18n from "i18next";
 import { loadLanguageResources } from "@/i18n";
 import { storage } from "./storage";
 import { KNOWLEDGE_INTENTS, type KnowledgeIntent } from "@/data/knowledge";
+import { checkSafetyLayer, applyDosageGuard, normalizeSafetyText } from "./safety";
 
 export type ChatMessage = {
   id: string;
   sender: "user" | "assistant";
   text: string;
   timestamp: string;
-  source?: "kb" | "llm" | undefined;
+  source?: "kb" | "llm" | "safety" | undefined;
+  isBusy?: boolean | undefined;
   actions?: Array<{ label: string; to: string }> | undefined;
 };
 
 export type AskSakhiResponse = {
   text: string;
-  source: "kb" | "llm";
+  source: "kb" | "llm" | "safety";
+  isBusy?: boolean | undefined;
   actions?: Array<{ label: string; to: string }> | undefined;
+};
+
+export type StreamCallbacks = {
+  onStart?: () => void;
+  onToken?: (token: string, accumulated: string) => void;
+  onDone?: (fullText: string, source: "llm" | "kb" | "safety", isBusy?: boolean) => void;
+  onError?: (error: Error) => void;
 };
 
 const CHAT_STORAGE_KEY = "chat_history";
@@ -47,35 +58,8 @@ export const chatStorage = {
  * Critical: Does NOT use \w or \b which break on Indian scripts.
  */
 export function normalizeText(text: string): string {
-  if (!text) return "";
-  return (
-    text
-      .normalize("NFC")
-      .toLowerCase()
-      // Remove zero-width non-joiner (\u200C), zero-width joiner (\u200D), zero-width space (\u200B), BOM (\uFEFF), soft hyphen (\u00AD)
-      .replace(/[\u200B-\u200D\uFEFF\u00AD]/g, "")
-      // Remove punctuation including Indian dandas (। and ॥)
-      .replace(/[.,/#!$%^&*;:{}=\-_`~()?"'<>।॥[\]\\|]/g, " ")
-      // Collapse multiple whitespace
-      .replace(/\s+/g, " ")
-      .trim()
-  );
+  return normalizeSafetyText(text);
 }
-
-const EMERGENCY_KEYWORDS = [
-  "108",
-  "emergency",
-  "ambulance",
-  "chest pain",
-  "unconscious",
-  "heavy blood loss",
-  "fainted",
-  "poison",
-  "behoshi",
-  "saans nahi",
-  "bahut jyada khoon",
-  "bleeding heavily",
-];
 
 /**
  * Match user query against the offline curated Knowledge Base.
@@ -94,39 +78,22 @@ export function matchKnowledgeBase(query: string, lang: string): AskSakhiRespons
     };
   }
 
-  const paddedQuery = ` ${normQuery} `;
-
-  // Emergency safety check (using padded matching to avoid sub-word false positives)
-  const isEmergency = EMERGENCY_KEYWORDS.some((kw) => {
-    const normKw = normalizeText(kw);
-    return paddedQuery.includes(` ${normKw} `) || normQuery.includes(normKw);
-  });
-
-  if (isEmergency) {
+  // Safety layer check inside KB fallback as well
+  const safety = checkSafetyLayer(query, lang);
+  if (safety) {
     return {
-      text: i18n.t("chat.emergencyNotice", {
-        lng: lang,
-        defaultValue:
-          "If you have severe pain, heavy bleeding, or difficulty breathing, please go to the nearest hospital or call 108 immediately.",
-      }),
-      source: "kb",
-      actions: [
-        {
-          label: i18n.t("urgent.btnHospital", {
-            lng: lang,
-            defaultValue: "Go to a hospital now",
-          }),
-          to: "/urgent",
-        },
-      ],
+      text: safety.text,
+      source: "safety",
+      actions: safety.actions,
     };
   }
+
+  const paddedQuery = ` ${normQuery} `;
 
   let bestMatch: { intent: KnowledgeIntent; score: number } | null = null;
 
   // Search through all intents and pick the one with highest specificity score
   for (const intent of KNOWLEDGE_INTENTS) {
-    // Gather keywords from current language bundle + defaults
     const rawLocaleKeywords = i18n.t(intent.keywordsKey, {
       lng: lang,
       defaultValue: "",
@@ -145,17 +112,13 @@ export function matchKnowledgeBase(query: string, lang: string): AskSakhiRespons
 
       const paddedKw = ` ${normKw} `;
 
-      // Check whole-word / phrase match
       if (paddedQuery.includes(paddedKw)) {
-        // Boosted score by phrase length
         const score = normKw.length * 2;
         if (score > intentMaxScore) intentMaxScore = score;
       } else if (normQuery.includes(normKw)) {
-        // Substring match
         const score = normKw.length;
         if (score > intentMaxScore) intentMaxScore = score;
       } else if (normQuery.length >= 4 && normKw.includes(normQuery)) {
-        // User typed a substring of a keyword
         const score = normQuery.length;
         if (score > intentMaxScore) intentMaxScore = score;
       }
@@ -220,59 +183,176 @@ export function matchKnowledgeBase(query: string, lang: string): AskSakhiRespons
 }
 
 /**
- * Main export: askSakhi(messages, lang) returning { text, source: "kb" | "llm", actions?: [...] }
- * Preserves signature so providers can be swapped.
+ * Streams Ask Sakhi replies token-by-token.
+ * Order of execution:
+ * 1. Local Safety Layer checks (emergencies, distress, refused topics) -> instant response, NO AI call.
+ * 2. Real AI Assistant streaming via /api/chat.
+ * 3. Fallback to offline Knowledge Base on 401, 429, timeout (20s), daily budget, or network drop.
  */
-export async function askSakhi(
+export async function askSakhiStream(
   messages: Array<{ sender: "user" | "assistant"; text: string }>,
   lang: string,
-): Promise<AskSakhiResponse> {
-  // Ensure locale resources for the chosen language are loaded
+  callbacks: StreamCallbacks,
+  options?: { signal?: AbortSignal; isSuggestionChip?: boolean },
+): Promise<void> {
   if (lang && lang !== "en") {
     await loadLanguageResources(lang);
   }
 
   const lastUserMessage = [...messages].reverse().find((m) => m.sender === "user")?.text || "";
 
-  // Attempt Mode 2 (Server LLM API) if in browser
+  // 1. ORDER OF HANDLING: Local safety layer FIRST with NO AI call
+  const safetyMatch = checkSafetyLayer(lastUserMessage, lang);
+  if (safetyMatch) {
+    callbacks.onStart?.();
+    callbacks.onToken?.(safetyMatch.text, safetyMatch.text);
+    callbacks.onDone?.(safetyMatch.text, "safety");
+    return;
+  }
+
+  // 2. Call server /api/chat with streaming
   if (typeof window !== "undefined") {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
-
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: messages.slice(-6),
+          messages: messages.slice(-6).map((m) => ({
+            sender: m.sender,
+            text: m.text.slice(0, 500),
+          })),
           lang,
+          isSuggestionChip: Boolean(options?.isSuggestionChip),
         }),
-        signal: controller.signal,
+        ...(options?.signal ? { signal: options.signal } : {}),
       });
 
-      clearTimeout(timeoutId);
+      const contentType = res.headers.get("content-type") ?? "";
 
-      if (res.ok) {
-        const data = (await res.json()) as {
-          text?: string;
-          source?: "kb" | "llm";
-          fallback?: boolean;
-          actions?: Array<{ label: string; to: string }>;
-        };
+      // If streaming response (text/event-stream)
+      if (res.ok && contentType.includes("text/event-stream") && res.body) {
+        callbacks.onStart?.();
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let accumulated = "";
+        let buffer = "";
 
-        if (data.text && !data.fallback) {
-          return {
-            text: data.text,
-            source: data.source || "llm",
-            actions: data.actions,
-          };
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith(":")) continue;
+
+            if (trimmed === "data: [DONE]") {
+              const guarded = applyDosageGuard(accumulated);
+              callbacks.onDone?.(guarded, "llm");
+              return;
+            }
+
+            if (trimmed.startsWith("data:")) {
+              try {
+                const parsed = JSON.parse(trimmed.slice(5).trim()) as { token?: string };
+                if (parsed.token) {
+                  accumulated += parsed.token;
+                  callbacks.onToken?.(parsed.token, accumulated);
+                }
+              } catch {
+                // Ignore malformed SSE lines
+              }
+            }
+          }
         }
+
+        const guarded = applyDosageGuard(accumulated);
+        callbacks.onDone?.(guarded, "llm");
+        return;
       }
-    } catch {
-      // Network failure, timeout, or rate-limited: silently fall back to Mode 1
+
+      // If non-streaming response (e.g. rate-limited 429, daily budget reached, 401 auth, or error JSON)
+      const data = (await res.json().catch(() => null)) as {
+        error?: string;
+        fallback?: boolean;
+        message?: string;
+      } | null;
+
+      const isBusy = res.status === 429 || data?.error === "busy";
+      const fallbackResp = matchKnowledgeBase(lastUserMessage, lang);
+
+      callbacks.onStart?.();
+      callbacks.onToken?.(fallbackResp.text, fallbackResp.text);
+      callbacks.onDone?.(fallbackResp.text, "kb", isBusy);
+      return;
+    } catch (err: unknown) {
+      if (options?.signal?.aborted) {
+        // User deliberately clicked Stop
+        return;
+      }
+      // On network failure or timeout, fall back to offline Knowledge Base
+      console.warn("[chat-service] AI assistant failed, falling back to offline KB:", err);
     }
   }
 
-  // Mode 1: Knowledge Base fallback
-  return matchKnowledgeBase(lastUserMessage, lang);
+  // 3. Fallback to offline Knowledge Base
+  const fallbackResp = matchKnowledgeBase(lastUserMessage, lang);
+  callbacks.onStart?.();
+  callbacks.onToken?.(fallbackResp.text, fallbackResp.text);
+  callbacks.onDone?.(fallbackResp.text, "kb", false);
+}
+
+/**
+ * Promise-based askSakhi function (useful for synchronous workflows & backwards compatibility).
+ */
+export async function askSakhi(
+  messages: Array<{ sender: "user" | "assistant"; text: string }>,
+  lang: string,
+): Promise<AskSakhiResponse> {
+  return new Promise((resolve) => {
+    let finalSource: "llm" | "kb" | "safety" = "kb";
+    let finalText = "";
+    let isBusyResult = false;
+
+    askSakhiStream(messages, lang, {
+      onToken: (_token, accumulated) => {
+        finalText = accumulated;
+      },
+      onDone: (text, source, isBusy) => {
+        finalText = text;
+        finalSource = source;
+        isBusyResult = Boolean(isBusy);
+
+        const actions =
+          source === "safety"
+            ? checkSafetyLayer(
+                [...messages].reverse().find((m) => m.sender === "user")?.text || "",
+                lang,
+              )?.actions
+            : source === "kb"
+              ? matchKnowledgeBase(
+                  [...messages].reverse().find((m) => m.sender === "user")?.text || "",
+                  lang,
+                ).actions
+              : undefined;
+
+        resolve({
+          text: finalText,
+          source: finalSource,
+          isBusy: isBusyResult,
+          actions,
+        });
+      },
+      onError: () => {
+        const fallback = matchKnowledgeBase(
+          [...messages].reverse().find((m) => m.sender === "user")?.text || "",
+          lang,
+        );
+        resolve(fallback);
+      },
+    });
+  });
 }

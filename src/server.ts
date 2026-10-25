@@ -52,8 +52,20 @@ export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     if (env && typeof env === "object") {
       const bindings = env as Record<string, unknown>;
-      if (typeof bindings["GEOAPIFY_API_KEY"] === "string" && !process.env["GEOAPIFY_API_KEY"]) {
-        process.env["GEOAPIFY_API_KEY"] = bindings["GEOAPIFY_API_KEY"];
+      const bindingKeys = [
+        "GEOAPIFY_API_KEY",
+        "LLM_API_URL",
+        "LLM_API_KEY",
+        "LLM_MODEL",
+        "LLM_DAILY_LIMIT",
+        "LLM_FALLBACK_URL",
+        "LLM_FALLBACK_KEY",
+        "LLM_FALLBACK_MODEL",
+      ];
+      for (const k of bindingKeys) {
+        if (typeof bindings[k] === "string" && !process.env[k]) {
+          process.env[k] = bindings[k] as string;
+        }
       }
     }
     try {
