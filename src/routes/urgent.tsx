@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Siren, Phone, Navigation, Ambulance, AlertTriangle } from "lucide-react";
+import { Siren, Phone, Navigation, Ambulance, MapPin } from "lucide-react";
 import { getNearestEmergencyHospital, locationPrefs, type Place } from "@/services/places";
 
 export const Route = createFileRoute("/urgent")({
@@ -19,52 +19,76 @@ export const Route = createFileRoute("/urgent")({
   component: UrgentPage,
 });
 
+// Casting Link to accept search params for /care?locate=1 without router type friction
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const CareLink = Link as any;
+
 function UrgentPage() {
   const { t } = useTranslation();
   const [place, setPlace] = useState<Place | null>(null);
-  const [isFallbackSample, setIsFallbackSample] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [isLocating, setIsLocating] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
+    let didFindLive = false;
+
+    // Timeout after 8 seconds and stop locating
+    const timeoutTimer = setTimeout(() => {
+      if (!isMounted) return;
+      setIsLocating(false);
+    }, 8000);
+
+    const checkLiveHospital = async (coords?: { lat: number; lng: number }) => {
+      try {
+        const res = await getNearestEmergencyHospital(coords);
+        if (!isMounted) return;
+        const isLive =
+          (res.source === "geoapify" || res.source === "saved") && !res.isFallbackSample;
+        if (isLive && res.place) {
+          didFindLive = true;
+          setPlace(res.place);
+          setIsLocating(false);
+          clearTimeout(timeoutTimer);
+        }
+      } catch {
+        // Ignore error - do not show sample data
+      }
+    };
+
+    // 1. Try saved location first if available
     const saved = locationPrefs.getSaved();
+    if (saved) {
+      checkLiveHospital(saved);
+    }
 
-    // Fast initial load using saved location or default
-    getNearestEmergencyHospital(saved || undefined)
-      .then((res) => {
-        if (!isMounted) return;
-        setPlace(res.place);
-        setIsFallbackSample(res.isFallbackSample);
-        setLoading(false);
-      })
-      .catch(() => {
-        if (!isMounted) return;
-        setLoading(false);
-      });
-
-    // Try geolocation with quick 6-second timeout
+    // 2. Try geolocation with 8-second timeout
     if (typeof navigator !== "undefined" && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (p) => {
+        async (p) => {
+          if (!isMounted) return;
           const coords = { lat: p.coords.latitude, lng: p.coords.longitude };
-          getNearestEmergencyHospital(coords).then((res) => {
-            if (!isMounted) return;
-            setPlace(res.place);
-            setIsFallbackSample(res.isFallbackSample);
-            if (locationPrefs.isRememberEnabled()) {
-              locationPrefs.setSaved(coords);
-            }
-          });
+          await checkLiveHospital(coords);
+          if (!isMounted) return;
+          setIsLocating(false);
+          if (didFindLive && locationPrefs.isRememberEnabled()) {
+            locationPrefs.setSaved(coords);
+          }
         },
         () => {
-          // Keep current/saved place on error
+          if (!isMounted) return;
+          setIsLocating(false);
         },
-        { timeout: 6000, enableHighAccuracy: true },
+        { timeout: 8000, enableHighAccuracy: true },
       );
+    } else {
+      if (!saved) {
+        setIsLocating(false);
+      }
     }
 
     return () => {
       isMounted = false;
+      clearTimeout(timeoutTimer);
     };
   }, []);
 
@@ -84,27 +108,42 @@ function UrgentPage() {
           </p>
         </div>
 
-        {/* 1. 108 Ambulance Call Button - ALWAYS SHOWN FIRST */}
+        {/* 1. 108 Ambulance Call Button - ALWAYS SHOWN FIRST & PROMINENT */}
         <a
           href="tel:108"
-          className="tap flex min-h-[64px] items-center justify-center gap-4 rounded-3xl bg-card py-5 text-2xl sm:text-3xl font-extrabold text-destructive shadow-lg transition-transform hover:scale-[1.01] active:scale-[0.98]"
+          className="tap flex min-h-[64px] items-center justify-center gap-4 rounded-3xl bg-white text-destructive py-5 px-6 text-2xl sm:text-3xl font-extrabold shadow-lg transition-transform hover:scale-[1.01] active:scale-[0.98]"
         >
           <Ambulance className="size-10" />
           <span>{t("urgent.ambulance")}</span>
         </a>
 
-        {/* Fallback Sample Data Warning */}
-        {isFallbackSample && (
-          <div
-            role="status"
-            className="flex items-center gap-2.5 rounded-2xl bg-black/25 px-4 py-2.5 text-xs font-semibold text-white/95"
-          >
-            <AlertTriangle className="size-4 shrink-0 text-warning-tint" />
-            <span>{t("urgent.sampleDataNotice")}</span>
+        {/* 2. Direct to Care: Find hospitals near me button */}
+        <CareLink
+          to="/care"
+          search={{ locate: "1" }}
+          className="tap flex min-h-[56px] items-center justify-center gap-3 rounded-2xl bg-white/20 hover:bg-white/30 border border-white/40 py-3.5 px-6 text-xl sm:text-2xl font-bold text-white shadow-md transition-all active:scale-[0.98]"
+        >
+          <MapPin className="size-7 shrink-0" />
+          <span>{t("urgent.findHospitals")}</span>
+        </CareLink>
+
+        {/* Locating Notice - small calm line, never blocking buttons */}
+        {isLocating && !place && (
+          <p className="text-center text-sm font-medium text-white/80 animate-pulse">
+            {t("urgent.finding")}
+          </p>
+        )}
+
+        {/* Fallback Line when no live hospital is found */}
+        {!isLocating && !place && (
+          <div className="rounded-2xl bg-black/20 p-4 text-center">
+            <p className="text-base sm:text-lg font-medium text-white/95 leading-relaxed">
+              {t("urgent.noLive")}
+            </p>
           </div>
         )}
 
-        {/* 2. Nearest Emergency Facility Card */}
+        {/* 3. Nearest Live Emergency Facility Card (ONLY SHOWN FOR LIVE DATA) */}
         {place && (
           <div className="rounded-3xl bg-card p-6 sm:p-8 text-card-foreground shadow-lg border border-white/20">
             <div className="flex items-center justify-between gap-2">
@@ -157,18 +196,29 @@ function UrgentPage() {
                 <Navigation className="size-5" /> {t("urgent.directions")}
               </a>
             </div>
+
+            {/* Link to Care with search param */}
+            <div className="mt-4 pt-3 border-t border-border/40 text-center">
+              <CareLink
+                to="/care"
+                search={{ locate: "1" }}
+                className="tap min-h-[44px] inline-flex items-center text-sm font-semibold text-primary underline hover:opacity-80 transition-opacity"
+              >
+                {t("urgent.seeAll")}
+              </CareLink>
+            </div>
           </div>
         )}
 
-        {/* Back Link & OpenStreetMap Attribution */}
-        <div className="flex flex-col items-center gap-3">
+        {/* Back Link & Attribution (attribution only when live place is shown) */}
+        <div className="flex flex-col items-center gap-3 mt-2">
           <Link
             to="/home"
             className="tap inline-flex min-h-[48px] items-center justify-center rounded-2xl bg-white/20 px-6 py-2.5 text-base font-bold text-white hover:bg-white/30"
           >
             {t("urgent.ok")}
           </Link>
-          <p className="text-xs text-white/70">{t("urgent.osmAttribution")}</p>
+          {place && <p className="text-xs text-white/70">{t("urgent.osmAttribution")}</p>}
         </div>
       </div>
     </div>

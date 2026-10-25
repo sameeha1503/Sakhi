@@ -110,10 +110,18 @@ function CarePage() {
 
   // Initialize saved location preference or attempt geolocation
   useEffect(() => {
+    let shouldAutoLocate = false;
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("locate") === "1") {
+        shouldAutoLocate = true;
+      }
+    }
+
     const isRemember = locationPrefs.isRememberEnabled();
     setRememberLoc(isRemember);
 
-    if (isRemember) {
+    if (!shouldAutoLocate && isRemember) {
       const saved = locationPrefs.getSaved();
       if (saved) {
         setUserLoc(saved);
@@ -122,7 +130,7 @@ function CarePage() {
       }
     }
 
-    // Default: try geolocation on load
+    // Default or when locate=1: try geolocation on load
     requestLocation();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -743,7 +743,7 @@ export async function searchLocationNominatim(query: string): Promise<GeocodingR
 export async function getNearestEmergencyHospital(coords?: {
   lat: number;
   lng: number;
-}): Promise<{ place: Place; isFallbackSample: boolean }> {
+}): Promise<{ place: Place; isFallbackSample: boolean; source: PlaceDataSource }> {
   const userLoc = coords || locationPrefs.getSaved() || { lat: 17.4239, lng: 78.5026 };
 
   try {
@@ -755,7 +755,11 @@ export async function getNearestEmergencyHospital(coords?: {
       result.places[0];
 
     if (emergencyHospital) {
-      return { place: emergencyHospital, isFallbackSample: result.isFallbackSample };
+      return {
+        place: emergencyHospital,
+        isFallbackSample: result.isFallbackSample,
+        source: result.source,
+      };
     }
   } catch {
     // continue to sample fallback
@@ -775,6 +779,7 @@ export async function getNearestEmergencyHospital(coords?: {
       isApproxDistance: true,
     },
     isFallbackSample: true,
+    source: "sample",
   };
 }
 

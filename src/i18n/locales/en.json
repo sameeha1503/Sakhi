@@ -232,7 +232,11 @@
     "ok": "I am safe, go back",
     "km": "{{n}} km away",
     "sampleDataNotice": "Showing sample hospital — live service unavailable",
-    "osmAttribution": "© OpenStreetMap contributors"
+    "osmAttribution": "© OpenStreetMap contributors",
+    "findHospitals": "Find hospitals near me",
+    "finding": "Finding the nearest hospital...",
+    "seeAll": "See all hospitals near you",
+    "noLive": "If you can, ask someone to take you to the nearest hospital now."
   },
   "medicines": {
     "title": "Medicines",

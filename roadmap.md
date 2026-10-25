@@ -34,6 +34,14 @@
   - Honest privacy section ("Your health, your control") removing all obsolete device-only/e2e claims.
   - Always-visible emergency 108 strip with direct `tel:108` dialer button above footer.
   - SEO `<title>` and description head meta tags. 13 unit tests in `src/test/landing.test.tsx` and 100% locale parity.
+- [x] **PHASE 10: Emergency Screen (/urgent) Live-Data Guard & Direct Care Access (Completed)**
+  - Red layout with prominent "Call 108 ambulance" button rendered immediately on mount, never blocked or delayed.
+  - Large secondary button "Find hospitals near me" linking to `/care?locate=1`, triggering immediate geolocation search.
+  - Nearest hospital card shown strictly for live data (`geoapify` or `saved`); zero sample data or sample banners shown on emergency screen.
+  - Non-blocking "Finding the nearest hospital..." line while locating, timing out after 8 seconds.
+  - Calm fallback line when no live hospital is found: "If you can, ask someone to take you to the nearest hospital now."
+  - "See all hospitals near you" text link inside live hospital card to `/care?locate=1`.
+  - Attribution shown only when live hospital is displayed. 6 unit tests in `src/test/urgent.test.tsx` and 100% 11-locale parity.
 
 - [x] Phase 2: symptom log, cycle tracker, pattern flags, red-flag screen (awareness cards migrated to Ask Sakhi knowledge base; verified with automated E2E & flow test suite across EN/HI/TE)
 - [x] Phase 3: manual medicine entry, private vault prescription photo storage (AI prescription reading planned), medicines CRUD, dose reminders (verified; honest manual entry on /scan starting with empty card, direct vault photo saving with PIN lock, dose schedule generation, adherence history, refill alerts, discreet reminders, and unit tests passed)
