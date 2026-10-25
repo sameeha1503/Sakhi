@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import {
   CalendarHeart,
-  ArrowLeft,
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -251,16 +250,6 @@ function CyclePage() {
   return (
     <AppShell>
       <div className="flex flex-col gap-5 pb-12 pt-2">
-        {/* Top Header */}
-        <div className="flex items-center justify-between">
-          <Link
-            to="/home"
-            className="tap inline-flex items-center gap-2 text-base font-semibold text-primary hover:opacity-85"
-          >
-            <ArrowLeft className="size-5" /> {t("settings.back")}
-          </Link>
-        </div>
-
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">

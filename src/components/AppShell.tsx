@@ -1,4 +1,4 @@
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   X,
   Flower2,
+  ArrowLeft,
 } from "lucide-react";
 import { prefs } from "@/services/auth";
 import { storage } from "@/services/storage";
@@ -24,6 +25,51 @@ const tabs = [
   { to: "/care", icon: HeartPulse, key: "care" },
   { to: "/profile", icon: User, key: "profile" },
 ] as const;
+
+import { inAppHistoryStack, canGoBackInApp } from "@/lib/navigation";
+
+export function GlobalBackButton({ pathname }: { pathname: string }) {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const navigate = useNavigate();
+
+  // On /log specifically, keep a small "← Home" link that leaves to Home
+  if (pathname === "/log") {
+    return (
+      <div className="no-print mb-4">
+        <Link
+          to="/home"
+          className="tap inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-2 text-sm font-semibold text-primary hover:opacity-85 focus:outline-hidden focus:ring-2 focus:ring-primary focus:ring-offset-2 -ml-2 transition-all"
+        >
+          <ArrowLeft className="size-4 shrink-0" />
+          <span>{t("nav.home")}</span>
+        </Link>
+      </div>
+    );
+  }
+
+  const handleBack = () => {
+    if (canGoBackInApp()) {
+      router.history.back();
+    } else {
+      navigate({ to: "/home" });
+    }
+  };
+
+  return (
+    <div className="no-print mb-4 flex items-center">
+      <button
+        type="button"
+        onClick={handleBack}
+        className="tap inline-flex min-h-[44px] min-w-[44px] items-center gap-2 rounded-xl bg-secondary/80 px-3.5 py-2 text-sm font-semibold text-foreground hover:bg-secondary active:scale-95 focus:outline-hidden focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all shadow-2xs"
+        aria-label={t("common.back")}
+      >
+        <ArrowLeft className="size-5 text-primary shrink-0" />
+        <span>{t("common.back")}</span>
+      </button>
+    </div>
+  );
+}
 
 export function AppShell({ children, title }: { children: ReactNode; title?: string }) {
   const { t } = useTranslation();
@@ -40,6 +86,19 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
     pathname === "/signup" ||
     pathname === "/urgent" ||
     pathname.startsWith("/share");
+
+  useEffect(() => {
+    if (inAppHistoryStack[inAppHistoryStack.length - 1] !== pathname) {
+      inAppHistoryStack.push(pathname);
+    }
+    const onPopState = () => {
+      if (inAppHistoryStack.length > 1) {
+        inAppHistoryStack.pop();
+      }
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [pathname]);
 
   useEffect(() => {
     if (!prefs.language()) navigate({ to: "/" });
@@ -103,13 +162,13 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
         </div>
       )}
 
-      {/* Slim Top Bar with App Name on all screen sizes */}
-      <header className="sticky top-0 z-40 border-b border-border/70 bg-card/95 backdrop-blur-md">
+      {/* Slim Top Bar with App Name and Desktop Nav on all screen sizes */}
+      <header className="no-print sticky top-0 z-40 border-b border-border/70 bg-card/95 backdrop-blur-md">
         <div className="mx-auto flex h-14 sm:h-16 max-w-5xl items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Logo / Name */}
           <Link
             to="/home"
-            className="group flex items-center gap-2.5 transition-transform hover:opacity-95"
+            className="group flex items-center gap-2.5 transition-transform hover:opacity-95 focus:outline-hidden focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg"
           >
             <div className="grid size-9 sm:size-10 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-xs transition-transform group-hover:scale-105">
               <Flower2 className="size-5 sm:size-6" />
@@ -124,8 +183,18 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
             </div>
           </Link>
 
-          {/* Right: Language Selector Dropdown */}
-          <div className="flex items-center gap-2">
+          {/* Right: Desktop Home Link & Language Selector Dropdown */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              to="/home"
+              className="hidden md:inline-flex min-h-[40px] items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground transition-all focus:outline-hidden focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              activeProps={{
+                className: "bg-primary/10 text-primary font-bold shadow-2xs hover:bg-primary/15",
+              }}
+            >
+              <Home className="size-4 shrink-0" />
+              <span>{t("nav.home")}</span>
+            </Link>
             <LanguageSelect variant="header" />
           </div>
         </div>
@@ -133,12 +202,13 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
 
       {/* Main Container */}
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 sm:px-6 lg:px-8 pt-4 pb-28 md:pt-6 md:pb-28">
+        {pathname !== "/home" && <GlobalBackButton pathname={pathname} />}
         {title && <h1 className="mb-4 text-3xl font-bold md:text-4xl">{title}</h1>}
         {children}
       </main>
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-border/40 py-6 pb-24 text-center text-xs text-muted-foreground">
+      <footer className="no-print mt-auto border-t border-border/40 py-6 pb-24 text-center text-xs text-muted-foreground">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-2 px-4 sm:flex-row sm:px-6">
           <div className="flex items-center gap-2">
             <Flower2 className="size-3.5 text-primary" />
@@ -151,14 +221,14 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
       {/* Floating Pill Bottom Navigation (Home, Log, Medicines, Care, Profile) on all screen sizes */}
       <nav
         aria-label="Navigation"
-        className="fixed bottom-3 sm:bottom-4 inset-x-0 z-30 flex justify-center px-3 sm:px-4 pointer-events-none"
+        className="no-print fixed bottom-3 sm:bottom-4 inset-x-0 z-40 flex justify-center px-3 sm:px-4 pointer-events-none"
       >
         <div className="pointer-events-auto flex items-center justify-around sm:justify-center gap-1 sm:gap-2 rounded-full bg-card/95 border border-border shadow-lg backdrop-blur-md px-2.5 sm:px-4 py-1.5 max-w-md w-full">
           {tabs.map(({ to, icon: Icon, key }) => (
             <Link
               key={to}
               to={to}
-              className="flex min-h-[44px] min-w-[44px] flex-col items-center justify-center rounded-full px-2.5 sm:px-3 py-1 text-xs font-semibold text-muted-foreground transition-all hover:bg-muted hover:text-foreground active:scale-95"
+              className="flex min-h-[44px] min-w-[44px] flex-col items-center justify-center rounded-full px-2.5 sm:px-3 py-1 text-xs font-semibold text-muted-foreground transition-all hover:bg-muted hover:text-foreground active:scale-95 focus:outline-hidden focus:ring-2 focus:ring-primary/40"
               activeProps={{
                 className: "bg-primary/10 text-primary font-bold shadow-2xs hover:bg-primary/15",
               }}

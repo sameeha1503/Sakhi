@@ -1,8 +1,7 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ArrowLeft,
   Camera,
   Upload,
   AlertTriangle,
@@ -157,13 +156,6 @@ function ScanPage() {
 
   return (
     <AppShell>
-      <div className="mb-4 flex items-center justify-between">
-        <Link to="/medicines" className="tap inline-flex items-center gap-2 text-lg text-primary">
-          <ArrowLeft className="size-6" /> {t("settings.back")}
-        </Link>
-        <span className="text-sm font-semibold text-muted-foreground">{t("scan.title")}</span>
-      </div>
-
       {step === "upload" && (
         <div className="flex flex-col gap-6 py-4">
           <div className="text-center">

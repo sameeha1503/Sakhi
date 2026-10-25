@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Siren, Phone, Navigation, Ambulance, AlertTriangle } from "lucide-react";
+import { Siren, Phone, Navigation, Ambulance, AlertTriangle, ArrowLeft } from "lucide-react";
 import { getNearestEmergencyHospital, locationPrefs, type Place } from "@/services/places";
 
 export const Route = createFileRoute("/urgent")({
@@ -164,9 +164,10 @@ function UrgentPage() {
         <div className="flex flex-col items-center gap-3">
           <Link
             to="/home"
-            className="tap inline-flex min-h-[48px] items-center justify-center rounded-2xl bg-white/20 px-6 py-2.5 text-base font-bold text-white hover:bg-white/30"
+            className="tap inline-flex min-h-[48px] items-center justify-center gap-2 rounded-2xl bg-white/20 px-6 py-2.5 text-base font-bold text-white hover:bg-white/30"
           >
-            {t("urgent.ok")}
+            <ArrowLeft className="size-5" />
+            <span>{t("urgent.ok")}</span>
           </Link>
           <p className="text-xs text-white/70">{t("urgent.osmAttribution")}</p>
         </div>

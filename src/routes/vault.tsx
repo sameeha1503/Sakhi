@@ -1,8 +1,7 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ArrowLeft,
   Lock,
   Unlock,
   ShieldAlert,
@@ -276,14 +275,7 @@ function VaultPage() {
       <AppShell>
         <div className="flex flex-col gap-5 pb-8 pt-2">
           {/* Header */}
-          <div className="flex items-center justify-between">
-            <Link
-              to="/settings"
-              aria-label={t("common.back", "Back")}
-              className="tap grid size-12 place-items-center rounded-2xl bg-secondary text-foreground"
-            >
-              <ArrowLeft className="size-6" />
-            </Link>
+          <div className="flex items-center justify-end">
             <button
               onClick={() => navigate({ to: "/settings" })}
               className="tap text-sm font-bold text-muted-foreground hover:text-foreground"
@@ -381,17 +373,8 @@ function VaultPage() {
       <AppShell>
         <div className="flex flex-col gap-5 pb-8 pt-2">
           {/* Header */}
-          <div className="flex items-center gap-3">
-            <Link
-              to="/settings"
-              aria-label={t("common.back", "Back")}
-              className="tap grid size-12 place-items-center rounded-2xl bg-secondary text-foreground"
-            >
-              <ArrowLeft className="size-6" />
-            </Link>
-            <div className="min-w-0">
-              <h1 className="text-2xl font-bold leading-tight">{t("vault.lockedTitle")}</h1>
-            </div>
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold leading-tight">{t("vault.lockedTitle")}</h1>
           </div>
 
           <div className="card-soft flex flex-col items-center gap-4 p-6 mt-2">
@@ -514,19 +497,9 @@ function VaultPage() {
       <div className="flex flex-col gap-5 pb-8 pt-2">
         {/* Top Header */}
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <Link
-              to="/settings"
-              onClick={lockVault}
-              aria-label={t("common.back", "Back")}
-              className="tap grid size-12 place-items-center rounded-2xl bg-secondary text-foreground"
-            >
-              <ArrowLeft className="size-6" />
-            </Link>
-            <div className="min-w-0">
-              <h1 className="text-2xl font-bold leading-tight">{t("vault.unlockedTitle")}</h1>
-              <p className="text-xs text-muted-foreground">{t("vault.autoLockNotice")}</p>
-            </div>
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold leading-tight">{t("vault.unlockedTitle")}</h1>
+            <p className="text-xs text-muted-foreground">{t("vault.autoLockNotice")}</p>
           </div>
           <button
             onClick={lockVault}

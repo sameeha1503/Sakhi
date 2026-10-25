@@ -140,16 +140,7 @@ function SettingsPage() {
 
   return (
     <AppShell>
-      <div className="flex items-center justify-between">
-        <Link
-          to="/profile"
-          className="tap inline-flex items-center gap-2 text-base sm:text-lg font-semibold text-primary hover:opacity-85"
-        >
-          <ArrowLeft className="size-5" /> {t("settings.back")}
-        </Link>
-      </div>
-
-      <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
+      <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
         {t("settings.title")}
       </h1>
 

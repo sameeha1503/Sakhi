@@ -1,9 +1,8 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import {
-  ArrowLeft,
   Calendar,
   CalendarDays,
   FileQuestion,
@@ -382,22 +381,11 @@ function VisitPage() {
       <div className="flex flex-col gap-5 pb-8 pt-2">
         {/* Top Header */}
         <div className="no-print flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <Link
-              to="/home"
-              aria-label={t("common.back", "Back")}
-              className="tap grid size-12 shrink-0 place-items-center rounded-2xl bg-secondary text-foreground"
-            >
-              <ArrowLeft className="size-6" />
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold leading-tight">
-                {t("visit.title", "Doctor visit")}
-              </h1>
-              <p className="text-xs text-muted-foreground">
-                {t("visit.subtitle", "Prepare questions, log visits, and doctor summary.")}
-              </p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold leading-tight">{t("visit.title", "Doctor visit")}</h1>
+            <p className="text-xs text-muted-foreground">
+              {t("visit.subtitle", "Prepare questions, log visits, and doctor summary.")}
+            </p>
           </div>
 
           {currentTab === "summary" && (
