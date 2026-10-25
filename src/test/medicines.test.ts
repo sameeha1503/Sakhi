@@ -265,14 +265,56 @@ describe("Medicines & Dose Reminders (Phase 3)", () => {
     expect(medicineService.all()).toHaveLength(0);
   });
 
-  it("scans prescription with realistic extraction", async () => {
-    const dummyBlob = new Blob(["dummy prescription"], { type: "image/jpeg" });
-    const result = await scanPrescription(dummyBlob);
+  it("scans prescription with realistic extraction via endpoint", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        isPrescription: true,
+        medicines: [
+          {
+            name: "Ferrous Ascorbate + Folic Acid",
+            dose: "100 mg",
+            frequency: 1,
+            timings: ["night"],
+            food: "after",
+            durationDays: 30,
+            category: "iron",
+          },
+          {
+            name: "Calcium 500mg + Vitamin D3",
+            dose: "500 mg",
+            frequency: 1,
+            timings: ["morning"],
+            food: "after",
+            durationDays: 30,
+            category: "calcium",
+          },
+          {
+            name: "Mefenamic Acid",
+            dose: "250 mg",
+            frequency: 2,
+            timings: ["morning", "night"],
+            food: "after",
+            durationDays: 5,
+            category: "painRelief",
+          },
+        ],
+        model: "gemini-2.5-flash",
+      }),
+    } as unknown as Response);
 
-    expect(result).toHaveLength(5);
-    expect(result[0]?.name).toContain("Ferrous Ascorbate");
-    expect(result[0]?.category).toBe("iron");
-    expect(result[1]?.category).toBe("calcium");
-    expect(result[2]?.category).toBe("painRelief");
+    try {
+      const dummyBlob = new Blob(["dummy prescription"], { type: "image/jpeg" });
+      const result = await scanPrescription(dummyBlob);
+
+      expect(result).toHaveLength(3);
+      expect(result[0]?.name).toContain("Ferrous Ascorbate");
+      expect(result[0]?.category).toBe("iron");
+      expect(result[1]?.category).toBe("calcium");
+      expect(result[2]?.category).toBe("painRelief");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 });

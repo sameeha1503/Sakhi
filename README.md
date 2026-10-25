@@ -39,7 +39,39 @@ LLM_FALLBACK_URL=
 LLM_FALLBACK_KEY=
 # Optional fallback LLM model name
 LLM_FALLBACK_MODEL=
+
+# --- Prescription Scanner (Server-Side Only) ---
+# Provider adapter: openai (default, works with Google Gemini OpenAI-compatible endpoint) or anthropic
+SCAN_PROVIDER=openai
+# Secret API key for prescription scanner vision model (Google AI Studio Gemini key)
+SCAN_API_KEY=
+# OpenAI-compatible completions endpoint (Google Gemini)
+SCAN_API_URL=https://generativelanguage.googleapis.com/v1beta/openai/chat/completions
+# Primary vision model identifier (e.g., gemini-2.5-flash or gemini-1.5-flash)
+SCAN_MODEL=gemini-2.5-flash
+# Fallback vision model identifier on quota/429/not-found (e.g., gemini-2.0-flash or gemini-1.5-flash-8b)
+SCAN_MODEL_FALLBACK=gemini-2.0-flash
+# Daily request cap for primary model before routing to fallback (default: 15)
+SCAN_DAILY_LIMIT=15
 ```
+
+### Prescription Scanner (Vision AI via Google Gemini)
+
+Sakhi includes a real prescription digitizer powered by Google Gemini through its OpenAI-compatible endpoint:
+
+- **Endpoint**: Configured at `SCAN_API_URL` (e.g., `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`) using `Authorization: Bearer SCAN_API_KEY`.
+- **Primary & Fallback Model Chain**: Tries `SCAN_MODEL` first (e.g., `gemini-2.5-flash`). If rate-limited (429), out of quota, or if the primary daily limit is reached, it automatically falls back once to `SCAN_MODEL_FALLBACK` (e.g., `gemini-2.0-flash`).
+- **How to Get a Gemini API Key**:
+  1. Go to [Google AI Studio (aistudio.google.com)](https://aistudio.google.com).
+  2. Sign in with your Google account and click **Get API key** -> **Create API key**.
+  3. Set `SCAN_API_KEY` in `.env.local`.
+- **Privacy Notice & Free-Tier Data Policy**:
+  - In Google AI Studio's free tier, prompts and images may be reviewed by human reviewers and used by Google to train products. **Never upload real, personally identifiable patient prescriptions on the free tier; use sample, test, or synthetic prescription slips only.**
+  - Sakhi never persists or logs prescription photos or extracted text on the server or in `localStorage`. The photo is downscaled in the browser (max 1600px, 85% JPEG), sent directly to the `/api/scan` endpoint in memory, and immediately discarded.
+  - A 5-entry client-side LRU hash cache prevents redundant API calls if the user re-scans the same photo.
+- **Known Limitations & Human-in-the-Loop Verification**:
+  - Doctor handwriting and abbreviations vary widely across clinics and languages. Vision models can misread dosages or brand names.
+  - Sakhi flags uncertain entries with an amber **"Please check this one"** (`needsCheck`) badge, highlights empty dose/duration fields, and requires the user to review and confirm every medicine before saving to their active list.
 
 ### How to Get an AI Key & Model Recommendations
 
@@ -134,19 +166,19 @@ When deploying to Cloudflare Workers / Pages, Vercel, or Node.js hosts, define t
 
 ### Supported Languages & Localization Review Status
 
-| Language | Code | Native Script | Awareness Cards Status | Overall Status |
-| :--- | :---: | :--- | :---: | :---: |
-| English | `en` | English | Complete | Verified |
-| Hindi | `hi` | हिन्दी | Complete (needs native review) | Verified |
-| Telugu | `te` | తెలుగు | Complete (needs native review) | Verified |
-| Tamil | `ta` | தமிழ் | Complete (needs native review) | Verified |
-| Kannada | `kn` | ಕನ್ನಡ | Complete (needs native review) | Verified |
-| Malayalam | `ml` | മലയാളം | Complete (needs native review) | Verified |
-| Marathi | `mr` | मराठी | Complete (needs native review) | Verified |
-| Bengali | `bn` | বাংলা | Complete (needs native review) | Verified |
-| Gujarati | `gu` | ગુજરાતી | Complete (needs native review) | Verified |
-| Punjabi | `pa` | ਪੰਜਾਬੀ | Complete (needs native review) | Verified |
-| Odia | `or` | ଓଡ଼ିଆ | Complete (needs native review) | Verified |
+| Language  | Code | Native Script |     Awareness Cards Status     | Overall Status |
+| :-------- | :--: | :------------ | :----------------------------: | :------------: |
+| English   | `en` | English       |            Complete            |    Verified    |
+| Hindi     | `hi` | हिन्दी        | Complete (needs native review) |    Verified    |
+| Telugu    | `te` | తెలుగు        | Complete (needs native review) |    Verified    |
+| Tamil     | `ta` | தமிழ்         | Complete (needs native review) |    Verified    |
+| Kannada   | `kn` | ಕನ್ನಡ         | Complete (needs native review) |    Verified    |
+| Malayalam | `ml` | മലയാളം        | Complete (needs native review) |    Verified    |
+| Marathi   | `mr` | मराठी         | Complete (needs native review) |    Verified    |
+| Bengali   | `bn` | বাংলা         | Complete (needs native review) |    Verified    |
+| Gujarati  | `gu` | ગુજરાતી       | Complete (needs native review) |    Verified    |
+| Punjabi   | `pa` | ਪੰਜਾਬੀ        | Complete (needs native review) |    Verified    |
+| Odia      | `or` | ଓଡ଼ିଆ         | Complete (needs native review) |    Verified    |
 
 ## Getting Started
 

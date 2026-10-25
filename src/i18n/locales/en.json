@@ -241,7 +241,18 @@
     "foodWhen": "Food timing",
     "save": "Save to my medicines",
     "retry": "Scan again",
-    "deleteMed": "Remove"
+    "deleteMed": "Remove",
+    "errorUnreadable": "We could not read this photo. Try again in good light, with the page flat and the whole prescription in view.",
+    "errorNotPrescription": "This does not look like a prescription.",
+    "errorOffline": "Scanning needs internet. You can add your medicines by hand.",
+    "errorUnavailable": "Scanning is not available right now.",
+    "errorTooLarge": "Image is too large. Please use a smaller photo.",
+    "tryAgain": "Try again",
+    "addManual": "Add medicines manually",
+    "verificationNotice": "Handwriting can be misread. Please check every medicine, dose and time before saving.",
+    "needsCheck": "Please check this one",
+    "asNeeded": "Only when needed",
+    "consentNote": "Your photo is sent to an AI service only to read the text. Sakhi does not keep it."
   },
   "reminders": {
     "discreetTitle": "Time for your tablet",

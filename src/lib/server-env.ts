@@ -121,12 +121,42 @@ export function logLlmStartup(): void {
   }
 }
 
+let hasLoggedScan = false;
+
 /**
- * Logs both Geoapify and LLM startup environment statuses.
+ * Logs whether SCAN variables are present or missing on startup.
+ * Logs only the presence ("set" or "missing"), NEVER the secret key values or lengths.
+ * Guaranteed to log at most once per process.
+ */
+export function logScanStartup(): void {
+  const g = globalThis as { __sakhi_scan_logged?: boolean };
+  if (hasLoggedScan || g.__sakhi_scan_logged) {
+    return;
+  }
+  hasLoggedScan = true;
+  g.__sakhi_scan_logged = true;
+
+  const isScanUrlSet = Boolean(process.env["SCAN_API_URL"]?.trim());
+  const isScanKeySet = Boolean(process.env["SCAN_API_KEY"]?.trim());
+  const isScanModelSet = Boolean(process.env["SCAN_MODEL"]?.trim());
+
+  if (isScanUrlSet || isScanKeySet || isScanModelSet) {
+    console.log(`SCAN_API_URL: ${isScanUrlSet ? "set" : "missing"}`);
+    console.log(`SCAN_API_KEY: ${isScanKeySet ? "set" : "missing"}`);
+    console.log(`SCAN_MODEL: ${isScanModelSet ? "set" : "missing"}`);
+    if (process.env["SCAN_MODEL_FALLBACK"]?.trim()) {
+      console.log("SCAN_MODEL_FALLBACK: set");
+    }
+  }
+}
+
+/**
+ * Logs Geoapify, LLM, and Scanner startup environment statuses.
  */
 export function logServerEnvStartup(): void {
   logGeoapifyStartup();
   logLlmStartup();
+  logScanStartup();
 }
 
 /**
@@ -135,8 +165,10 @@ export function logServerEnvStartup(): void {
 export function resetLoggedStatusForTests(): void {
   hasLoggedGeoapify = false;
   hasLoggedLlm = false;
+  hasLoggedScan = false;
   delete (globalThis as { __sakhi_geoapify_logged?: boolean }).__sakhi_geoapify_logged;
   delete (globalThis as { __sakhi_llm_logged?: boolean }).__sakhi_llm_logged;
+  delete (globalThis as { __sakhi_scan_logged?: boolean }).__sakhi_scan_logged;
   delete (globalThis as { __sakhi_env_logged?: boolean }).__sakhi_env_logged;
 }
 
@@ -173,4 +205,42 @@ export function getLlmConfig() {
     fallbackKey: process.env["LLM_FALLBACK_KEY"]?.trim() || null,
     fallbackModel: process.env["LLM_FALLBACK_MODEL"]?.trim() || "gpt-4o-mini",
   };
+}
+
+export type ScanConfig = {
+  provider: "openai" | "anthropic";
+  apiUrl: string | null;
+  apiKey: string | null;
+  model: string | null;
+  modelFallback: string | null;
+  dailyLimit: number;
+};
+
+/**
+ * Returns Prescription Scanner configurations securely.
+ * Server-side only: never expose secrets to browser client.
+ */
+export function getScanConfig(): ScanConfig {
+  loadServerEnv();
+  const rawProvider = process.env["SCAN_PROVIDER"]?.trim().toLowerCase();
+  const provider = rawProvider === "anthropic" ? "anthropic" : "openai";
+  const dailyLimitRaw = parseInt(process.env["SCAN_DAILY_LIMIT"] || "15", 10);
+  const dailyLimit = Number.isFinite(dailyLimitRaw) && dailyLimitRaw > 0 ? dailyLimitRaw : 15;
+
+  return {
+    provider,
+    apiUrl: process.env["SCAN_API_URL"]?.trim() || null,
+    apiKey: process.env["SCAN_API_KEY"]?.trim() || null,
+    model: process.env["SCAN_MODEL"]?.trim() || null,
+    modelFallback: process.env["SCAN_MODEL_FALLBACK"]?.trim() || null,
+    dailyLimit,
+  };
+}
+
+/**
+ * Checks if Prescription Scanner is fully configured without leaking values.
+ */
+export function isScanConfigured(): boolean {
+  const config = getScanConfig();
+  return Boolean(config.apiKey && config.apiUrl && config.model);
 }

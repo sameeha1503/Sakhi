@@ -27,6 +27,7 @@ import { Route as VisitRouteImport } from './routes/visit'
 import { Route as ApiChatRouteImport } from './routes/api.chat'
 import { Route as ApiGeocodeRouteImport } from './routes/api.geocode'
 import { Route as ApiNearbyRouteImport } from './routes/api.nearby'
+import { Route as ApiScanRouteImport } from './routes/api.scan'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -118,6 +119,11 @@ const ApiNearbyRoute = ApiNearbyRouteImport.update({
   path: '/api/nearby',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiScanRoute = ApiScanRouteImport.update({
+  id: '/api/scan',
+  path: '/api/scan',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -138,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/api/chat': typeof ApiChatRoute
   '/api/geocode': typeof ApiGeocodeRoute
   '/api/nearby': typeof ApiNearbyRoute
+  '/api/scan': typeof ApiScanRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -158,6 +165,7 @@ export interface FileRoutesByTo {
   '/api/chat': typeof ApiChatRoute
   '/api/geocode': typeof ApiGeocodeRoute
   '/api/nearby': typeof ApiNearbyRoute
+  '/api/scan': typeof ApiScanRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -179,6 +187,7 @@ export interface FileRoutesById {
   '/api/chat': typeof ApiChatRoute
   '/api/geocode': typeof ApiGeocodeRoute
   '/api/nearby': typeof ApiNearbyRoute
+  '/api/scan': typeof ApiScanRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -201,6 +210,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/geocode'
     | '/api/nearby'
+    | '/api/scan'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -221,6 +231,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/geocode'
     | '/api/nearby'
+    | '/api/scan'
   id:
     | '__root__'
     | '/'
@@ -241,6 +252,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/geocode'
     | '/api/nearby'
+    | '/api/scan'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -262,6 +274,7 @@ export interface RootRouteChildren {
   ApiChatRoute: typeof ApiChatRoute
   ApiGeocodeRoute: typeof ApiGeocodeRoute
   ApiNearbyRoute: typeof ApiNearbyRoute
+  ApiScanRoute: typeof ApiScanRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -392,6 +405,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiNearbyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/scan': {
+      id: '/api/scan'
+      path: '/api/scan'
+      fullPath: '/api/scan'
+      preLoaderRoute: typeof ApiScanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -414,6 +434,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiChatRoute: ApiChatRoute,
   ApiGeocodeRoute: ApiGeocodeRoute,
   ApiNearbyRoute: ApiNearbyRoute,
+  ApiScanRoute: ApiScanRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

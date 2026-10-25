@@ -9,20 +9,24 @@ import {
   Trash2,
   Plus,
   Loader2,
-  FileText,
   Clock,
   Utensils,
   Sparkles,
+  ShieldCheck,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { scanPrescription, type ScannedMedicine } from "@/services/scanner";
+import {
+  scanPrescription,
+  ScanError,
+  type ScannedMedicine,
+  type ScanErrorCode,
+} from "@/services/scanner";
 import {
   medicineService,
   inferCategory,
   TIMES_OF_DAY,
   type TimeOfDay,
   type FoodTiming,
-  type MedicineCategory,
 } from "@/services/medicines";
 import { todayISO } from "@/services/logs";
 
@@ -60,14 +64,33 @@ function ScanPage() {
   const navigate = useNavigate();
 
   const [step, setStep] = useState<"upload" | "scanning" | "confirm">("upload");
+  const [error, setError] = useState<ScanErrorCode | null>(null);
   const [medicines, setMedicines] = useState<EditableMedicine[]>([]);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
+  const getErrorMessage = (code: ScanErrorCode): string => {
+    switch (code) {
+      case "unreadable":
+        return t("scan.errorUnreadable");
+      case "not_prescription":
+        return t("scan.errorNotPrescription");
+      case "offline":
+        return t("scan.errorOffline");
+      case "too_large":
+        return t("scan.errorTooLarge");
+      case "rate_limited":
+      case "scan_unavailable":
+      default:
+        return t("scan.errorUnavailable");
+    }
+  };
+
   const handleFile = async (file: File) => {
-    // Show preview
+    setError(null);
+    // Show preview in memory (never written to localStorage)
     const reader = new FileReader();
     reader.onload = (e) => setPhotoPreview(e.target?.result as string);
     reader.readAsDataURL(file);
@@ -82,7 +105,9 @@ function ScanPage() {
       }));
       setMedicines(withIds);
       setStep("confirm");
-    } catch {
+    } catch (err: unknown) {
+      const code: ScanErrorCode = err instanceof ScanError ? err.code : "upstream_error";
+      setError(code);
       setStep("upload");
     }
   };
@@ -129,6 +154,9 @@ function ScanPage() {
       food: "after",
       durationDays: 7,
       category: "general",
+      needsCheck: false,
+      asNeeded: false,
+      note: null,
     };
     setMedicines((prev) => [...prev, newMed]);
   };
@@ -140,8 +168,8 @@ function ScanPage() {
       .map((m) => ({
         name: m.name.trim(),
         dose: m.dose.trim() || "1 tablet",
-        frequency: m.timings.length,
-        timings: m.timings,
+        frequency: m.asNeeded ? 0 : m.timings.length,
+        timings: m.asNeeded ? [] : m.timings,
         food: m.food,
         startDate: today,
         durationDays: Math.max(1, m.durationDays),
@@ -162,6 +190,46 @@ function ScanPage() {
             <h1 className="text-3xl font-bold">{t("scan.title")}</h1>
             <p className="mt-2 text-muted-foreground">{t("scan.subtitle")}</p>
           </div>
+
+          {/* Error Banner with Try Again & Add Manually */}
+          {error && (
+            <div
+              role="alert"
+              className="flex flex-col gap-3 rounded-2xl border-2 border-warning/50 bg-warning-tint p-4 shadow-xs"
+            >
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="size-6 shrink-0 text-warning" />
+                <p className="text-sm font-bold text-warning leading-snug">
+                  {getErrorMessage(error)}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError(null);
+                    setStep("upload");
+                  }}
+                  className="tap inline-flex min-h-[40px] items-center justify-center rounded-xl bg-card px-4 py-2 text-xs font-bold text-foreground border border-border shadow-xs hover:bg-muted"
+                >
+                  {t("scan.tryAgain")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError(null);
+                    setMedicines([]);
+                    addManualMed();
+                    setStep("confirm");
+                  }}
+                  className="tap inline-flex min-h-[40px] items-center justify-center rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-xs hover:bg-primary/90"
+                >
+                  <Plus className="mr-1.5 size-4" />
+                  {t("scan.addManual")}
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 gap-4">
             <input
@@ -204,6 +272,12 @@ function ScanPage() {
             </button>
           </div>
 
+          {/* Consent note (zero persistence) */}
+          <div className="rounded-2xl border border-primary/20 bg-secondary/40 p-3.5 text-xs text-muted-foreground flex items-center gap-2.5">
+            <ShieldCheck className="size-5 shrink-0 text-primary" />
+            <span>{t("scan.consentNote")}</span>
+          </div>
+
           <div className="rounded-2xl border-2 border-primary/20 bg-secondary/50 p-4 text-sm text-foreground">
             <p className="flex items-center gap-2 font-semibold">
               <Sparkles className="size-5 text-primary" /> {t("scan.readingNote")}
@@ -237,14 +311,14 @@ function ScanPage() {
             </span>
           </div>
 
-          {/* Caution notice in all languages */}
+          {/* Prominent verification notice */}
           <div
             role="alert"
-            className="flex items-start gap-3 rounded-2xl border-2 border-warning/40 bg-warning-tint p-4 shadow-xs"
+            className="flex items-start gap-3 rounded-2xl border-2 border-warning/60 bg-warning-tint p-4 shadow-xs"
           >
-            <AlertTriangle className="size-7 shrink-0 text-warning" />
-            <p className="text-base font-bold text-warning leading-snug">
-              {t("scan.doctorWarning")}
+            <AlertTriangle className="size-6 shrink-0 text-warning" />
+            <p className="text-base font-extrabold text-warning leading-snug">
+              {t("scan.verificationNotice")}
             </p>
           </div>
 
@@ -274,6 +348,21 @@ function ScanPage() {
                     </button>
                   </div>
 
+                  {/* Badges: Needs Check & As Needed */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {med.needsCheck && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 px-2.5 py-0.5 text-xs font-bold text-amber-900 dark:text-amber-200">
+                        <AlertTriangle className="size-3.5 text-amber-600 dark:text-amber-400" />
+                        {t("scan.needsCheck")}
+                      </span>
+                    )}
+                    {med.asNeeded && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/30 px-2.5 py-0.5 text-xs font-bold text-primary">
+                        {t("scan.asNeeded")}
+                      </span>
+                    )}
+                  </div>
+
                   {/* Plain-language purpose from static dictionary */}
                   <div className="rounded-xl bg-secondary/50 p-2.5 text-sm">
                     <span className="font-semibold text-primary">
@@ -291,7 +380,11 @@ function ScanPage() {
                         value={med.dose}
                         onChange={(e) => updateMed(med.tempId, { dose: e.target.value })}
                         placeholder="e.g. 500 mg"
-                        className="tap mt-1 w-full rounded-xl border px-3 text-base outline-none focus:border-primary"
+                        className={`tap mt-1 w-full rounded-xl border px-3 text-base outline-none focus:border-primary ${
+                          !med.dose.trim()
+                            ? "border-2 border-amber-500 bg-amber-50/40 dark:bg-amber-950/20"
+                            : ""
+                        }`}
                       />
                     </div>
                     <div>
@@ -302,11 +395,16 @@ function ScanPage() {
                         type="number"
                         min="1"
                         max="365"
-                        value={med.durationDays}
+                        value={med.durationDays || ""}
                         onChange={(e) =>
-                          updateMed(med.tempId, { durationDays: parseInt(e.target.value, 10) || 1 })
+                          updateMed(med.tempId, { durationDays: parseInt(e.target.value, 10) || 0 })
                         }
-                        className="tap mt-1 w-full rounded-xl border px-3 text-base outline-none focus:border-primary"
+                        placeholder="Days"
+                        className={`tap mt-1 w-full rounded-xl border px-3 text-base outline-none focus:border-primary ${
+                          !med.durationDays || med.durationDays <= 0
+                            ? "border-2 border-amber-500 bg-amber-50/40 dark:bg-amber-950/20"
+                            : ""
+                        }`}
                       />
                     </div>
                   </div>
@@ -359,6 +457,14 @@ function ScanPage() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Note under the card if provided */}
+                  {med.note && (
+                    <div className="rounded-xl border border-border/80 bg-muted/40 p-2.5 text-xs text-muted-foreground">
+                      <span className="font-bold text-foreground">Note: </span>
+                      {med.note}
+                    </div>
+                  )}
                 </div>
               );
             })}
