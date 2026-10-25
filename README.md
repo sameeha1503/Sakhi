@@ -257,7 +257,7 @@ Sakhi keeps all secret API keys strictly on the server. Environment variables wi
 
 ### 1. Setting Up `GEOAPIFY_API_KEY`
 
-Live healthcare facility search (`/care`) and village/town geocoding use the **Geoapify Places & Geocoding APIs**.
+Live healthcare facility search (`/care`, `/urgent`) and village/town geocoding use the **Geoapify Places API v2** and **Geoapify Geocoding API v1**.
 
 1. Obtain a free API key at [myprojects.geoapify.com](https://myprojects.geoapify.com) (Free tier, no credit card required).
 2. Create a local environment file named `.env.local` in the project root (or copy `.env.example`):
@@ -266,19 +266,69 @@ Live healthcare facility search (`/care`) and village/town geocoding use the **G
    ```
 3. Keep `.env.local` private. It is ignored by git in `.gitignore` and must never be committed.
 
-### 2. Runtime Behavior & Startup Logging
+### 2. Free-Tier Limits & Quota Protection
 
-- **Startup Presence Log**: On server startup, the server logs only whether the key is configured:
-  - `GEOAPIFY_API_KEY: set` — when a non-empty key is provided in `.env.local` or environment variables.
-  - `GEOAPIFY_API_KEY: missing` — when the key is not configured.
-  - The secret key value is **never** printed to logs and never returned in API payloads.
-- **Server Routes**:
-  - `/api/nearby`: Proxies healthcare facility queries to Geoapify Places API on the server.
-  - `/api/geocode`: Proxies location/PIN searches to Geoapify Geocoding API on the server.
-- **When Key is Missing**:
-  - The `/care` page displays a visible warning banner: **"Live search is not configured"**.
-  - A helpful message is logged to the developer console pointing to this README section.
-  - Sakhi falls back gracefully to curated local facilities (`src/data/sampleFacilities.ts`) so all navigation, distance, and directory views remain fully functional without crashing.
+- **Daily Free Quota**: Geoapify's free tier provides **3,000 credits/day** at **5 requests/second**. Each Places or Geocoding search consumes 1 credit.
+- **Client Rate Limiting**: The server route enforces an in-memory sliding window rate limit of **~10 requests per minute per client IP**. Requests exceeding this threshold return HTTP 429 (`rate_limited`).
+- **10-Minute Response Caching**: Responses from `/api/nearby` are cached in memory for **10 minutes**, keyed by user coordinates rounded to 3 decimal places (~110-meter precision: `${lat.toFixed(3)}_${lng.toFixed(3)}_${radiusMeters}`). Repeated queries or nearby movements do not consume additional API credits.
+- **Progressive Radius Optimization**: Searches start at **5 km**, expanding to **10 km**, **25 km**, and **50 km** only until at least **8 healthcare facilities** are returned. Requests are made one at a time, stopping immediately once sufficient facilities are found, preserving credits.
+
+### 3. The 4-Step Fallback Chain & Honesty
+
+When searching for healthcare facilities, Sakhi follows a strict, honest multi-tiered fallback hierarchy:
+
+1. **Primary — Geoapify Places API** (via server route `/api/nearby`):
+   - Healthcare categories: `healthcare.hospital,healthcare.clinic_or_praxis`.
+   - Circle filter with longitude-first coordinates (`circle:lon,lat,radiusMeters`) and proximity bias.
+   - Extracts: name, type (`hospital`, `clinic`, `phc`, `chc`), address, phone, opening hours, straight-line distance (`km`), and women's health doctors (strictly when explicitly mentioning gynaecology, obstetrics, or maternity).
+   - Source badge displayed: **"Live data, updated just now"** (green/emerald badge).
+2. **Secondary — Saved Results** (if user enabled _"Remember my location"_):
+   - If Geoapify fails or returns no results, Sakhi checks local storage for previously saved facilities on this device.
+   - Source badge displayed: **"Saved results from &lt;time&gt;"** (neutral badge).
+3. **Tertiary — OpenStreetMap Overpass API** (one-shot fallback):
+   - Queries `https://overpass-api.de/api/interpreter` with a short **8-second timeout**, tried **once** without unresponsive mirrors.
+   - If successful, results are rendered with live source indicators.
+4. **Final Fallback — Curated Sample Facilities**:
+   - If all live services fail, Sakhi falls back to verified sample facilities (`src/data/sampleFacilities.ts`) so users are never left stranded.
+   - Source badge displayed: **"Sample data"** (amber badge).
+   - Displays a prominent status banner with specific failure reasons:
+     - **Unconfigured / Invalid Key**: _"Live search is not configured"_ (with developer console guidance).
+     - **Quota Exceeded (429)**: _"Live search limit reached — showing sample facilities"_.
+     - **Service Unreachable**: _"Healthcare service unreachable — showing sample facilities"_.
+     - **Bad Response**: _"Unable to load live facilities — showing sample facilities"_.
+   - Includes an interactive **"Try again"** button to retry live discovery on demand.
+
+### 4. Attribution Requirements
+
+Per the Geoapify and OpenStreetMap licensing terms, attribution is prominently displayed:
+
+- **Under the Facility List**: Links to _"Powered by Geoapify"_ and _"© OpenStreetMap contributors"_.
+- **On the Leaflet Map**: TileLayer attribution includes _"Powered by Geoapify | © OpenStreetMap contributors"_.
+
+### 5. Deploying to Production with Environment Variables
+
+When deploying to serverless platforms, set `GEOAPIFY_API_KEY` in your hosting dashboard:
+
+- **Vercel**:
+  1. Open your project on [vercel.com](https://vercel.com) $\rightarrow$ **Settings** $\rightarrow$ **Environment Variables**.
+  2. Add **Key**: `GEOAPIFY_API_KEY`, **Value**: `<your-api-key>`.
+  3. Select all environments (**Production**, **Preview**, **Development**).
+  4. Redeploy your application.
+- **Cloudflare Pages / Workers**:
+  1. Go to **Workers & Pages** $\rightarrow$ select your project $\rightarrow$ **Settings** $\rightarrow$ **Variables and Secrets**.
+  2. Add `GEOAPIFY_API_KEY` as an encrypted secret or environment variable.
+- **Netlify**:
+  1. Go to **Site Configuration** $\rightarrow$ **Environment Variables** $\rightarrow$ **Add a variable**.
+  2. Add `GEOAPIFY_API_KEY`.
+- **Docker / Self-Hosted VPS**:
+  Pass the variable in your `docker-compose.yml` or container environment:
+  ```yaml
+  environment:
+    - GEOAPIFY_API_KEY=your_actual_key_here
+  ```
+
+> [!IMPORTANT]
+> **Security Notice:** Never prefix `GEOAPIFY_API_KEY` with `VITE_`. Variables without the `VITE_` prefix remain server-side only and are never exposed to the client bundle or browser network requests.
 
 ---
 

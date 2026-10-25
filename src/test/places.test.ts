@@ -260,7 +260,7 @@ describe("Live Places & Overpass Services", () => {
       expect(res.places[0]?.name).toBe("Test Hospital 1");
     });
 
-    it("falls back to mirror when primary endpoint fails", async () => {
+    it("falls back to Overpass when Geoapify server route is unreachable", async () => {
       const mockResponse = {
         elements: [
           {
@@ -268,17 +268,17 @@ describe("Live Places & Overpass Services", () => {
             id: 11,
             lat: 17.42,
             lon: 78.5,
-            tags: { name: "Mirror Hospital", amenity: "hospital" },
+            tags: { name: "Overpass Hospital", amenity: "hospital" },
           },
         ],
       };
 
       vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
         const urlStr = String(url);
-        if (urlStr.includes("overpass-api.de")) {
-          throw new Error("Primary Overpass Timeout");
+        if (urlStr.includes("/api/nearby")) {
+          throw new Error("Geoapify endpoint offline");
         }
-        if (urlStr.includes("kumi.systems")) {
+        if (urlStr.includes("overpass-api.de")) {
           return {
             ok: true,
             json: async () => mockResponse,
@@ -292,15 +292,18 @@ describe("Live Places & Overpass Services", () => {
 
       const res = await findNearby(17.42, 78.5, 10);
       expect(res.places.length).toBe(1);
-      expect(res.places[0]?.name).toBe("Mirror Hospital");
+      expect(res.places[0]?.name).toBe("Overpass Hospital");
+      expect(res.source).toBe("overpass");
       expect(res.isFallbackSample).toBe(false);
     });
 
-    it("falls back to sample facilities when all Overpass mirrors fail", async () => {
+    it("falls back to sample facilities when all live services fail", async () => {
       vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("Network completely offline"));
 
       const res = await findNearby(17.4239, 78.5026, 25);
       expect(res.isFallbackSample).toBe(true);
+      expect(res.source).toBe("sample");
+      expect(res.failureReason).toBe("unreachable");
       expect(res.places.length).toBeGreaterThanOrEqual(10);
       expect(res.places[0]?.name).toBe("Gandhi Hospital");
     });

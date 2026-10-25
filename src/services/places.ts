@@ -30,13 +30,20 @@ export interface Place {
   isApproxDistance?: boolean; // true if straight-line, false if road distance
 }
 
+export type PlaceDataSource = "geoapify" | "saved" | "overpass" | "sample";
+
+export type PlaceFailureReason =
+  "unconfigured" | "quota_exceeded" | "unreachable" | "bad_response" | "denied";
+
 export interface FindNearbyResult {
   places: Place[];
   radiusUsedKm: number;
   totalFound: number;
+  source: PlaceDataSource;
   isCached: boolean;
   isFallbackSample: boolean;
   liveSearchConfigured?: boolean;
+  failureReason?: PlaceFailureReason | null;
   lastUpdated?: string | null;
 }
 
@@ -450,6 +457,11 @@ async function enrichWithOsrmRoadDistance(
 /**
  * Searches for healthcare facilities near the user coordinates with progressive radius expansion.
  * Attempts 5 km, 10 km, 25 km, and 50 km until at least 8 results are returned.
+ * Fallback order:
+ * 1. Geoapify (via /api/nearby with progressive radius expansion)
+ * 2. Saved results (if user enabled "remember my location")
+ * 3. Overpass via overpass-api.de with a short 8-second timeout, tried once
+ * 4. Sample data with visible banner
  */
 export async function findNearby(
   lat: number,
@@ -458,161 +470,159 @@ export async function findNearby(
 ): Promise<FindNearbyResult> {
   const cacheKey = `${lat.toFixed(2)},${lng.toFixed(2)}`;
 
-  // 1. Check in-memory session cache
+  // Check in-memory session cache
   const cached = sessionCache.get(cacheKey);
-  if (cached && Date.now() - cached.timestamp < 1000 * 60 * 15) {
+  if (cached && Date.now() - cached.timestamp < 1000 * 60 * 10) {
     return cached.result;
   }
 
-  // Helper for generating sample fallback results
-  const createSampleFallback = (isConfigured: boolean): FindNearbyResult => {
-    const sampleFallbackPlaces: Place[] = SAMPLE_FACILITIES.map((s) => {
-      const dist = Number(distanceKm({ lat, lng }, s).toFixed(1));
-      return {
-        id: s.id,
-        name: s.name,
-        type: s.type,
-        lat: s.lat,
-        lng: s.lng,
-        phone: s.phone,
-        address: `${s.town}, ${s.district}, ${s.state}`,
-        town: s.town,
-        district: s.district,
-        state: s.state,
-        operator: s.isGovernment ? "Government" : null,
-        isGovernment: !!s.isGovernment,
-        emergency: s.type === "hospital",
-        hasWomenHealth: s.hasGynaecology,
-        hasGynaecology: s.hasGynaecology,
-        opening_hours: null,
-        km: dist,
-        isApproxDistance: true,
-      };
-    }).sort((a, b) => (a.km ?? 0) - (b.km ?? 0));
+  // 1. Try server-side live healthcare search (/api/nearby powered by Geoapify)
+  // Progressive radius (5, 10, 25, 50 km) until at least 8 results; one request at a time
+  const radiiKm = [5, 10, 25, 50].filter((r) => r <= maxRadiusLimitKm);
+  if (radiiKm.length === 0) radiiKm.push(maxRadiusLimitKm);
 
-    return {
-      places: sampleFallbackPlaces,
-      radiusUsedKm: 50,
-      totalFound: sampleFallbackPlaces.length,
-      isCached: false,
-      isFallbackSample: true,
-      liveSearchConfigured: isConfigured,
-    };
-  };
+  let geoapifyFailureReason: PlaceFailureReason | null = null;
+  let geoapifyPlaces: Place[] = [];
+  let geoapifyRadiusUsed = radiiKm[0]!;
 
-  // 2. Try server-side live healthcare search (/api/nearby powered by Geoapify)
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 7000);
-    const apiUrl = `/api/nearby?lat=${lat}&lng=${lng}&radius=${maxRadiusLimitKm * 1000}`;
-    const res = await fetch(apiUrl, {
-      headers: { Accept: "application/json" },
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
+  for (const radiusKm of radiiKm) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 7000);
+      const apiUrl = `/api/nearby?lat=${lat}&lng=${lng}&radius=${radiusKm * 1000}`;
+      const res = await fetch(apiUrl, {
+        headers: { Accept: "application/json" },
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
 
-    if (res.ok) {
+      if (!res.ok) {
+        if (res.status === 401) {
+          geoapifyFailureReason = "unconfigured";
+          console.warn(
+            "[places] Live search is not configured: GEOAPIFY_API_KEY is invalid or missing.",
+          );
+        } else if (res.status === 429) {
+          geoapifyFailureReason = "quota_exceeded";
+          console.warn("[places] Geoapify quota exceeded (429).");
+        } else if (res.status === 400) {
+          geoapifyFailureReason = "bad_response";
+        } else {
+          geoapifyFailureReason = "unreachable";
+        }
+        break; // Stop progressive expansion on error
+      }
+
       const data = (await res.json()) as {
         configured?: boolean;
         places?: Place[];
         radiusUsedKm?: number;
       };
 
-      // Server indicates GEOAPIFY_API_KEY is not configured
       if (data?.configured === false) {
-        return createSampleFallback(false);
+        geoapifyFailureReason = "unconfigured";
+        console.warn(
+          "[places] Live search is not configured: GEOAPIFY_API_KEY is missing. " +
+            "See README.md to configure your key.",
+        );
+        break; // Stop progressive expansion
       }
 
-      if (data?.configured === true && Array.isArray(data.places) && data.places.length > 0) {
-        const places = data.places;
-        await enrichWithOsrmRoadDistance({ lat, lng }, places);
+      const found = Array.isArray(data?.places) ? data.places : [];
+      geoapifyPlaces = found;
+      geoapifyRadiusUsed = data.radiusUsedKm || radiusKm;
 
-        const result: FindNearbyResult = {
-          places,
-          radiusUsedKm: data.radiusUsedKm || maxRadiusLimitKm,
-          totalFound: places.length,
-          isCached: false,
-          isFallbackSample: false,
-          liveSearchConfigured: true,
-          lastUpdated: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        };
-
-        sessionCache.set(cacheKey, { result, timestamp: Date.now() });
-
-        if (locationPrefs.isRememberEnabled()) {
-          storage.set("cached_places_result", { ...result, isCached: true });
-        }
-
-        return result;
-      }
-    }
-  } catch {
-    // API endpoint failed or running in test/mock environment: proceed to Overpass fallback
-  }
-
-  const radiiKm = [5, 10, 25, 50].filter((r) => r <= maxRadiusLimitKm);
-  if (radiiKm.length === 0) radiiKm.push(maxRadiusLimitKm);
-
-  let finalPlaces: Place[] = [];
-  let radiusUsedKm = radiiKm[0]!;
-  let fetchSucceeded = false;
-
-  for (const radiusKm of radiiKm) {
-    try {
-      const rawElements = await queryOverpass(lat, lng, radiusKm * 1000);
-      const parsed = parseOverpassElements(rawElements, { lat, lng });
-
-      finalPlaces = parsed;
-      radiusUsedKm = radiusKm;
-      fetchSucceeded = true;
-
-      if (finalPlaces.length >= 8) {
-        break; // Found sufficient facilities
+      // Stop once we find at least 8 results
+      if (geoapifyPlaces.length >= 8) {
+        break;
       }
     } catch {
-      // Continue to next radius or let outer error handler manage failure
+      geoapifyFailureReason = "unreachable";
       break;
     }
   }
 
-  if (fetchSucceeded && finalPlaces.length > 0) {
-    // Enrich top 10 with road distances (non-blocking)
-    await enrichWithOsrmRoadDistance({ lat, lng }, finalPlaces);
+  // If Geoapify succeeded and found facilities
+  if (geoapifyPlaces.length > 0) {
+    await enrichWithOsrmRoadDistance({ lat, lng }, geoapifyPlaces);
 
     const result: FindNearbyResult = {
-      places: finalPlaces,
-      radiusUsedKm,
-      totalFound: finalPlaces.length,
+      places: geoapifyPlaces,
+      radiusUsedKm: geoapifyRadiusUsed,
+      totalFound: geoapifyPlaces.length,
+      source: "geoapify",
       isCached: false,
       isFallbackSample: false,
+      liveSearchConfigured: true,
+      failureReason: null,
       lastUpdated: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
 
-    // Store in session cache
     sessionCache.set(cacheKey, { result, timestamp: Date.now() });
 
-    // Store in persistent storage only if user opted in
     if (locationPrefs.isRememberEnabled()) {
-      storage.set("cached_places_result", {
-        ...result,
-        isCached: true,
-      });
+      storage.set("cached_places_result", { ...result, isCached: true, source: "saved" });
     }
 
     return result;
   }
 
-  // 2. Fallback: check persistent storage cache (if available)
-  const savedCache = storage.get<FindNearbyResult | null>("cached_places_result", null);
-  if (savedCache && Array.isArray(savedCache.places) && savedCache.places.length > 0) {
-    return {
-      ...savedCache,
-      isCached: true,
-      isFallbackSample: false,
-    };
+  // 2. Fallback: Saved results (if user enabled "remember my location")
+  if (locationPrefs.isRememberEnabled()) {
+    const savedCache = storage.get<FindNearbyResult | null>("cached_places_result", null);
+    if (savedCache && Array.isArray(savedCache.places) && savedCache.places.length > 0) {
+      return {
+        ...savedCache,
+        source: "saved",
+        isCached: true,
+        isFallbackSample: false,
+        failureReason: geoapifyFailureReason || null,
+      };
+    }
   }
 
-  // 3. Ultimate fallback: sample facilities with visible fallback banner
+  // 3. Fallback: Overpass via overpass-api.de with a short 8-second timeout, tried once
+  try {
+    const overpassQuery = buildOverpassQuery(lat, lng, maxRadiusLimitKm * 1000);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    const res = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      },
+      body: `data=${encodeURIComponent(overpassQuery)}`,
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+
+    if (res.ok) {
+      const data = (await res.json()) as { elements?: unknown[] };
+      if (Array.isArray(data?.elements) && data.elements.length > 0) {
+        const parsed = parseOverpassElements(data.elements as never, { lat, lng });
+        if (parsed.length > 0) {
+          await enrichWithOsrmRoadDistance({ lat, lng }, parsed);
+          const result: FindNearbyResult = {
+            places: parsed,
+            radiusUsedKm: maxRadiusLimitKm,
+            totalFound: parsed.length,
+            source: "overpass",
+            isCached: false,
+            isFallbackSample: false,
+            liveSearchConfigured: true,
+            failureReason: null,
+            lastUpdated: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          };
+          sessionCache.set(cacheKey, { result, timestamp: Date.now() });
+          return result;
+        }
+      }
+    }
+  } catch (overpassErr) {
+    console.warn("[places] Overpass single attempt failed or timed out:", overpassErr);
+  }
+
+  // 4. Ultimate fallback: sample facilities with visible fallback banner
   const sampleFallbackPlaces: Place[] = SAMPLE_FACILITIES.map((s) => {
     const dist = Number(distanceKm({ lat, lng }, s).toFixed(1));
     return {
@@ -641,8 +651,12 @@ export async function findNearby(
     places: sampleFallbackPlaces,
     radiusUsedKm: 50,
     totalFound: sampleFallbackPlaces.length,
+    source: "sample",
     isCached: false,
     isFallbackSample: true,
+    liveSearchConfigured: geoapifyFailureReason !== "unconfigured",
+    failureReason: geoapifyFailureReason || "unreachable",
+    lastUpdated: null,
   };
 }
 

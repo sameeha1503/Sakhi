@@ -32,32 +32,64 @@
   - **100% i18n Cleanliness**: Removed all `learn.*` keys across all 11 Indic language files while preserving `chat.kb.*` educational answers and `flags.*` pattern detection strings. Tested 0 missing/extra keys.
   - **Zero Broken Links**: Audited all app links and verified zero references to `/learn` or obsolete routes.
 
+- [x] Primary Live Healthcare Places via Geoapify & 4-Step Fallback Chain:
+  - **Replaced Unreliable Overpass**: Switched primary live hospital & healthcare directory provider from Overpass (which suffered frequent 502 capacity errors and unresponsive mirrors) to **Geoapify Places API v2** and **Geoapify Geocoding API v1**, preserving data access strictly behind the typed `src/services/places.ts` contract.
+  - **Server-Side API Routes**:
+    - `/api/nearby`: TanStack Start server route reading `GEOAPIFY_API_KEY` (server-side only, never prefixed with `VITE_`, never exposed to browser or responses). Enforces sliding-window rate limiting (~10 req/min/IP), 10-minute in-memory cache keyed by coordinates rounded to 3 decimals (`lat.toFixed(3), lng.toFixed(3)`), India-sized bounds validation (lat: 6.0–38.5, lng: 68.0–98.5, radius $\le 50$ km), circle filter with longitude-first coordinates (`circle:lon,lat,radiusMeters`), proximity bias, and healthcare categories (`healthcare.hospital,healthcare.clinic_or_praxis`).
+    - `/api/geocode`: TanStack Start server route proxying Indian village/town/PIN queries to Geoapify Geocoding API (`filter=countrycode:in`, limit 5) with rate limiting and 10-minute caching.
+  - **Progressive Radius Optimization**: Searches 5 km, 10 km, 25 km, and 50 km progressively, one request at a time, halting as soon as at least 8 healthcare facilities are found to conserve the free daily quota of 3,000 credits.
+  - **Clean Place Typing**: Parses facility type (`hospital`, `clinic`, `phc`, `chc`), normalized callable phone or `null`, opening hours or `null`, distance in km, and women's health flags **strictly** when data explicitly mentions gynaecology, obstetrics, or maternity.
+  - **4-Step Fallback Chain & Honesty**:
+    1. Geoapify Places (via `/api/nearby` with progressive radius expansion).
+    2. Saved results (if user enabled _"Remember my location"_ on this device).
+    3. Overpass via `overpass-api.de` with a short 8-second timeout, tried once.
+    4. Curated sample facilities (`src/data/sampleFacilities.ts`) with prominent banner and specific failure reasons:
+       - **Unconfigured**: _"Live search is not configured"_ (with developer console guidance).
+       - **Quota Exceeded (429)**: _"Live search limit reached — showing sample facilities"_.
+       - **Service Unreachable**: _"Healthcare service unreachable — showing sample facilities"_.
+       - **Bad Response**: _"Unable to load live facilities — showing sample facilities"_.
+       - Interactive **"Try again"** button.
+  - **Source Badges & Attribution**: Renders honest badges on `/care` (_"Live data, updated just now"_, _"Saved results from <time>"_, or _"Sample data"_), progressive radius summary label, and licence attribution (_"Powered by Geoapify"_ and _"© OpenStreetMap contributors"_) under the list and on the Leaflet map.
+  - **Test Suite**: Added 13 mocked-fetch tests in `src/test/geoapify-places.test.ts` covering successful fixture parsing, progressive radius expansion, quota error (429), invalid key (401), network drop, 4-step fallback sequence, 10-minute caching, rate limit enforcement, and geocoding, with 100% i18n parity across 11 languages.
+
 ## Manual Browser Testing Checklist
 
-1. **Allow Location (Happy Path)**:
-   - Navigate to `/care`.
+1. **Allow Location (Happy Path — Geoapify Live Search)**:
+   - Make sure `GEOAPIFY_API_KEY` is set in `.env.local`.
+   - Run `npm run dev` and navigate to `http://localhost:8080/care`.
    - Click the **"Use my location"** button and accept the browser's geolocation prompt.
-   - Verify the loading indicator (_"Finding care near you..."_) is shown.
-   - Confirm live centres are rendered on the Leaflet map and list, sorted by proximity.
-   - Verify distance tags show drive time/road distance or "approx", Government badges appear when applicable, and Women's health doctor badges only appear for verified facilities.
-   - Verify the radius indicator displays (e.g., _"X centres within 10 km"_).
+   - Verify the loading indicator (_"Finding care near you..."_) displays.
+   - Confirm live healthcare centres near you appear on the Leaflet map and in the facility list, sorted by proximity.
+   - Verify the source badge displays: **"Live data, updated just now"** (green/emerald badge).
+   - Verify the radius header displays the correct range (e.g., _"X centres within 10 km"_).
+   - Check attribution at the bottom of the list and on the map: links to _"Powered by Geoapify"_ and _"© OpenStreetMap contributors"_.
 
-2. **Deny Location (Permission Denied Fallback)**:
-   - Reset geolocation permissions in your browser (click the lock/tune icon beside the URL bar and set Location to "Block" or "Ask").
-   - Click **"Use my location"**.
-   - Confirm a friendly, clear alert appears explaining location access was denied, keeping the manual search box prominently displayed.
-
-3. **Search a Village / Town / PIN Code (Nominatim Geocoding)**:
-   - In the "Search a place" box on `/care`, type an Indian village, town, or PIN code (e.g. `Shamshabad`, `Suryapet`, `Wayanad`, or `501218`).
-   - Notice that typing does not trigger autocomplete (per OSM policy). Press **Enter** or tap the **Search** button.
+2. **Deny Location then Search a Place (Geocoding)**:
+   - Reset geolocation permissions in your browser (click the tune/lock icon beside the URL bar $\rightarrow$ set Location to "Block" or "Ask").
+   - Reload `/care` and click **"Use my location"**.
+   - Confirm the red alert appears explaining permission was denied, and the "Search a place" box is revealed.
+   - In the search input, type an Indian village, town, or PIN code (e.g. `Shamshabad`, `Suryapet`, `Wayanad`, or `500096`).
+   - Notice that typing does **not** trigger autocomplete on keystroke. Press **Enter** or click **Search**.
    - Select a matching result from the dropdown list.
-   - Verify that the map recenters and live healthcare facilities within the progressive radius are queried and rendered.
+   - Verify that the map recenters to the selected location, live facilities are queried progressively via `/api/nearby`, and the list updates.
 
-4. **Network Offline / Failure (Graceful Degradation)**:
-   - Open browser DevTools $\rightarrow$ Network tab $\rightarrow$ Throttling dropdown $\rightarrow$ select **"Offline"**.
-   - Navigate to `/care` or `/urgent`.
-   - On `/care`: verify the fallback banner displays: _"Showing sample data, no internet or service unavailable"_, rendering reliable offline sample facilities.
-   - On `/urgent`: verify the emergency **"Call 108 Ambulance"** button is prominently displayed first and functional even offline, alongside fallback nearest hospital details and the advisory banner.
+3. **Turn the Network Off (Offline / Unreachable Fallback)**:
+   - Open browser DevTools $\rightarrow$ **Network** tab $\rightarrow$ Throttling dropdown $\rightarrow$ select **"Offline"**.
+   - On `/care`, click **"Change location"** and search a place or click **"Try again"**.
+   - Confirm that Sakhi does not crash or hang.
+   - Verify the fallback banner displays: **"Healthcare service unreachable — showing sample facilities"**.
+   - Confirm the source badge displays: **"Sample data"** (amber badge).
+   - Click the **"Try again"** button in the banner.
+   - In DevTools, set throttling back to **"No throttling"** (Online) and click **"Try again"** $\rightarrow$ verify live search recovers smoothly.
+
+4. **Missing or Invalid Key (Unconfigured State)**:
+   - Temporarily clear `GEOAPIFY_API_KEY` in `.env.local` (or set an invalid value like `bad_key`).
+   - Open DevTools **Console**.
+   - Reload `/care`.
+   - Verify the console logs the developer guidance:
+     `[care] Live search is not configured: GEOAPIFY_API_KEY is missing or invalid. See README.md ('Environment Variables') to set up your free Geoapify key.`
+   - Verify the banner displays: **"Live search is not configured"** with a **"Try again"** button.
+   - Restore your valid key in `.env.local` and click **"Try again"** $\rightarrow$ live data returns.
 
 5. **Consolidated Doctor Visit (`/visit`)**:
    - On `/home`, inspect the wide "Doctor visit" module card (tag: `RECORDS`).

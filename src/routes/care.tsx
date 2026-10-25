@@ -26,6 +26,7 @@ import {
   findNearby,
   searchLocation,
   locationPrefs,
+  clearPlacesCache,
   type Place,
   type FindNearbyResult,
   type GeocodingResult,
@@ -91,9 +92,9 @@ function CarePage() {
     try {
       const result = await findNearby(lat, lng, 50);
       setNearbyResult(result);
-      if (result.liveSearchConfigured === false) {
+      if (result.failureReason === "unconfigured" || result.liveSearchConfigured === false) {
         console.warn(
-          "[care] Live search is not configured: GEOAPIFY_API_KEY is missing. " +
+          "[care] Live search is not configured: GEOAPIFY_API_KEY is missing or invalid. " +
             "See README.md ('Environment Variables') to set up your free Geoapify key.",
         );
       }
@@ -237,14 +238,32 @@ function CarePage() {
         {nearbyResult?.isFallbackSample && (
           <div
             role="status"
-            className="flex items-center gap-3 rounded-2xl border-2 border-warning/40 bg-warning-tint p-4 text-sm font-semibold text-warning shadow-xs"
+            className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border-2 border-warning/40 bg-warning-tint p-4 text-sm font-semibold text-warning shadow-xs"
           >
-            <AlertTriangle className="size-5 shrink-0 text-warning" />
-            <p className="flex-1">
-              {nearbyResult.liveSearchConfigured === false
-                ? t("care.liveSearchNotConfigured")
-                : t("care.sampleDataBanner")}
-            </p>
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="size-5 shrink-0 text-warning" />
+              <p>
+                {nearbyResult.failureReason === "unconfigured" ||
+                nearbyResult.liveSearchConfigured === false
+                  ? t("care.liveSearchNotConfigured")
+                  : nearbyResult.failureReason === "quota_exceeded"
+                    ? t("care.quotaExceeded")
+                    : nearbyResult.failureReason === "bad_response"
+                      ? t("care.badResponse")
+                      : t("care.serviceUnreachable")}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                clearPlacesCache();
+                if (userLoc) fetchPlacesForLocation(userLoc.lat, userLoc.lng);
+              }}
+              className="tap inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-warning/50 bg-warning/15 px-3 py-1.5 text-xs font-bold text-warning hover:bg-warning/25 transition-colors"
+            >
+              <RefreshCw className="size-3.5" />
+              <span>{t("care.tryAgain")}</span>
+            </button>
           </div>
         )}
 
@@ -463,7 +482,25 @@ function CarePage() {
         <section className="flex flex-col gap-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <h2 className="text-xl font-bold text-foreground">{t("care.allFacilities")}</h2>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-xl font-bold text-foreground">{t("care.allFacilities")}</h2>
+                {nearbyResult?.source === "geoapify" || nearbyResult?.source === "overpass" ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                    <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    {t("care.sourceLive")}
+                  </span>
+                ) : nearbyResult?.source === "saved" ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-muted border border-border px-2.5 py-0.5 text-xs font-bold text-muted-foreground">
+                    <Clock className="size-3 text-muted-foreground" />
+                    {t("care.sourceSaved", { time: nearbyResult.lastUpdated || "earlier" })}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400">
+                    <AlertTriangle className="size-3 text-amber-600" />
+                    {t("care.sourceSample")}
+                  </span>
+                )}
+              </div>
               <p className="text-xs font-semibold text-muted-foreground mt-0.5">
                 {t("care.radiusSummary", {
                   count: filteredFacilities.length,
@@ -620,10 +657,28 @@ function CarePage() {
             )}
           </div>
 
-          {/* Call Notice & OSM Attribution */}
+          {/* Call Notice & Attribution */}
           <div className="mt-3 flex flex-col gap-1 text-center text-xs text-muted-foreground border-t border-border/40 pt-4">
             <p className="font-medium">ℹ️ {t("care.callNotice")}</p>
-            <p className="text-[11px] text-muted-foreground/80">{t("care.osmAttribution")}</p>
+            <p className="text-[11px] text-muted-foreground/80">
+              <a
+                href="https://www.geoapify.com/"
+                target="_blank"
+                rel="noreferrer"
+                className="underline hover:text-primary transition-colors"
+              >
+                {t("care.geoapifyAttribution")}
+              </a>{" "}
+              ·{" "}
+              <a
+                href="https://www.openstreetmap.org/copyright"
+                target="_blank"
+                rel="noreferrer"
+                className="underline hover:text-primary transition-colors"
+              >
+                {t("care.osmAttribution")}
+              </a>
+            </p>
           </div>
         </section>
 
