@@ -16,6 +16,22 @@
 3. **Rural-Friendly UI**: Large tap targets (minimum 44px), icon-first UI, few words per screen, serif headings, clean sans body, and one main action per view.
 4. **Offline Resilience**: App shell caching and clear honest status banners keep check-ins, cycles, and medicines accessible without internet connectivity.
 
+## Services Architecture
+
+All data operations are encapsulated cleanly behind `src/services/*`. The UI layer interacts exclusively through typed service contracts, ensuring privacy and allowing local storage mocks to be seamlessly swapped with real production backends:
+
+| Service | Source File | Current State | Architecture & Future Evolution |
+| :--- | :--- | :--- | :--- |
+| **Medicines & Doses** | `src/services/medicines.ts` | Complete local-first CRUD, dose schedule generation, taken/skipped adherence tracking, refill alerts, and timing reminders. | Local storage adapter; supports multi-dose regimens. |
+| **Prescription Scanner** | `/scan` (`src/routes/scan.tsx`) | **Manual entry plus private photo storage; AI prescription reading is planned.** Does not simulate reading photos or use mock OCR delays. Users add medicines by hand, and can optionally save prescription photos to their private vault. | Automated vision AI prescription extraction will be added in a future update with human-in-the-loop confirmation. |
+| **Private Vault** | `src/services/vault.ts` | PBKDF2 Web Crypto PIN hashing (SHA-256, 100,000 iterations), brute-force lockout protection, and IndexedDB storage for prescriptions and reports. Client-side privacy lock for shared family phones. | Biometric WebAuthn unlock; client-side encrypted export. |
+| **Cycle & Symptoms** | `src/services/cycle.ts`, `src/services/logs.ts` | Month-by-month calendar grid, flow/pain/symptom tracking, and 5 clinical pattern flag detectors (`irregularPlus`, `painCycle`, `heavyRepeat`, `lateCycle`, `ongoingPain`). | Longitudinal health trends and exportable doctor reports. |
+| **Doctor Visits & Questions** | `src/services/visits.ts`, `src/services/questions.ts` | Rule-based question preparation from flagged symptoms and medicines, visit consultation timeline, and 1-page printable A4 doctor summary. | FHIR / ABHA digital health record integration. |
+| **Healthcare Facilities** | `src/services/places.ts` | Live Geoapify Places API v2 with progressive radius expansion (5–50 km), Nominatim village geocoding, and 4-tier fallback cascade. | Real-time facility availability and verified contact hotlines. |
+| **Government Schemes** | `src/data/schemes.ts`, `src/services/schemes.ts` | 36 States & Union Territories coverage across 3 categorized tiers with check-in pattern personalization. | State portal application handoff and eligibility calculators. |
+| **Ask Sakhi AI Chat** | `src/services/chat.ts`, `/api/chat` | Server-sent events (SSE) streaming chat assistant with strict local safety guards (108, Tele-MANAS), dosage output sanitizer, and 16 curated offline intents. | Regional voice-to-text input and audio read-aloud. |
+| **Storage Adapter** | `src/services/storage.ts` | Centralized typed localStorage adapter with JSON backup/restore and one-tap total data wiping. | Encrypted local SQLite/OPFS storage. |
+
 ## Environment Variables
 
 Create `.env.local` in the project root (never committed, ignored by git):

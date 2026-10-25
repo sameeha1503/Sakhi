@@ -22,6 +22,16 @@ export type Medicine = {
   category?: MedicineCategory | undefined;
 };
 
+export type ScannedMedicine = {
+  name: string;
+  dose: string;
+  frequency: number;
+  timings: TimeOfDay[];
+  food: FoodTiming;
+  durationDays: number;
+  category: MedicineCategory;
+};
+
 export type DoseStatus = "pending" | "taken" | "skipped";
 
 export type DoseRecord = {

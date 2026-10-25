@@ -121,12 +121,12 @@ function MedicinesPage() {
           </section>
         )}
 
-        {/* Quick Scan Action */}
+        {/* Quick Add Medicines Action */}
         <Link
           to="/scan"
-          className="tap flex items-center justify-center gap-3 bg-primary p-4 text-xl font-bold text-primary-foreground shadow-md"
+          className="tap flex items-center justify-center gap-3 bg-primary p-4 text-xl font-bold text-primary-foreground shadow-md rounded-2xl"
         >
-          <Camera className="size-7" />
+          <Plus className="size-7" />
           {t("medicines.scanPhoto")}
         </Link>
 

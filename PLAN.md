@@ -36,9 +36,9 @@ PHASE 1: Doctor visit, schemes, Home dashboard
 
 PHASE 2: Medicines and reminders
 
-- services/scanner.ts: scanPrescription(file) waits about 1.5 s and returns a realistic hard-coded extraction (4-5 medicines with dose, times per day, timing, duration). Keep the signature so a real vision API can replace it.
-- services/medicines.ts: CRUD, dose schedule, taken/skipped log, adherence, refill alert when 3 or fewer days remain.
-- /medicines: today's doses as large cards with Taken and Skip, full list, history, adherence, "Add prescription". /scan: choose or capture a photo, "reading your prescription", editable cards, she must confirm before saving, with the note "Please check this with your doctor or pharmacist" in every language.
+- services/medicines.ts: CRUD, dose schedule, taken/skipped log, adherence, refill alert when 3 or fewer days remain. ScannedMedicine type exported from medicines.ts; mock scanner removed.
+- /medicines: today's doses as large cards with Taken and Skip, full list, history, adherence, "Add prescription" / "Add medicines".
+- /scan: "Add your medicines" honest manual entry starting with one empty medicine card, "Add another medicine", remove card, and "Save to my medicines" flow. Secondary button: "Save prescription photo to my private vault" saves the document directly to the private vault under PIN protection without reading/OCR (AI prescription reading planned). Note: "Please check this with your doctor or pharmacist" above form in every language.
 - A plain-language "what it is for" line from a small static dictionary with a safe fallback.
 - Reminders while the app is open: banner and toast every minute for due doses, optional browser Notification opt-in, discreet wording ("Time for your tablet"). README note: reliable background reminders need Twilio WhatsApp/SMS later.
 

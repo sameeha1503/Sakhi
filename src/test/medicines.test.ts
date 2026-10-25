@@ -9,7 +9,6 @@ import {
   type Medicine,
   type DoseRecord,
 } from "@/services/medicines";
-import { scanPrescription } from "@/services/scanner";
 import { storage } from "@/services/storage";
 
 describe("Medicines & Dose Reminders (Phase 3)", () => {
@@ -265,14 +264,13 @@ describe("Medicines & Dose Reminders (Phase 3)", () => {
     expect(medicineService.all()).toHaveLength(0);
   });
 
-  it("scans prescription with realistic extraction", async () => {
-    const dummyBlob = new Blob(["dummy prescription"], { type: "image/jpeg" });
-    const result = await scanPrescription(dummyBlob);
+  it("has no hardcoded mock prescription scanner or sample extractions", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const scannerPath = path.resolve(__dirname, "../services/scanner.ts");
+    expect(fs.existsSync(scannerPath)).toBe(false);
 
-    expect(result).toHaveLength(5);
-    expect(result[0]?.name).toContain("Ferrous Ascorbate");
-    expect(result[0]?.category).toBe("iron");
-    expect(result[1]?.category).toBe("calcium");
-    expect(result[2]?.category).toBe("painRelief");
+    // Initial state is strictly empty
+    expect(medicineService.all()).toEqual([]);
   });
 });

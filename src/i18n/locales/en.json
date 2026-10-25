@@ -187,7 +187,7 @@
     "noDosesToday": "No tablets scheduled for today",
     "empty": "No medicines added yet",
     "addPrescription": "Add prescription",
-    "scanPhoto": "Scan prescription photo",
+    "scanPhoto": "Add medicines",
     "taken": "Taken",
     "skip": "Skip",
     "skipped": "Skipped",
@@ -225,7 +225,7 @@
     }
   },
   "scan": {
-    "title": "Scan prescription",
+    "title": "Add your medicines",
     "subtitle": "Take a clear picture of your doctor's slip",
     "takePhoto": "Take photo",
     "chooseGallery": "Upload photo",
@@ -241,7 +241,11 @@
     "foodWhen": "Food timing",
     "save": "Save to my medicines",
     "retry": "Scan again",
-    "deleteMed": "Remove"
+    "deleteMed": "Remove",
+    "addAnother": "Add another medicine",
+    "savePhotoToVault": "Save prescription photo to my private vault",
+    "photoAutoReadComingSoon": "Reading prescriptions automatically is coming soon.",
+    "photoSavedToVault": "Prescription photo saved to your private vault."
   },
   "reminders": {
     "discreetTitle": "Time for your tablet",
