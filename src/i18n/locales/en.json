@@ -222,6 +222,15 @@
       "antacid": "Stomach relief for gas or acidity",
       "antibiotic": "Prescribed medicine to clear infections",
       "general": "Medicine as prescribed by your doctor"
+    },
+    "info": {
+      "explainedByAi": "Explained by AI. Please confirm with your doctor or pharmacist.",
+      "generalInfoFallback": "General information only.",
+      "notSure": "We are not sure about this medicine. Please ask your pharmacist.",
+      "moreAbout": "More about this medicine",
+      "howTaken": "How it is usually taken",
+      "sideEffects": "Common side effects",
+      "askDoctor": "Ask a doctor if"
     }
   },
   "scan": {

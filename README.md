@@ -53,6 +53,12 @@ SCAN_MODEL=gemini-2.5-flash
 SCAN_MODEL_FALLBACK=gemini-2.0-flash
 # Daily request cap for primary model before routing to fallback (default: 15)
 SCAN_DAILY_LIMIT=15
+
+# --- Medicine Explanations (Server-Side Only) ---
+# Optional model override for medicine explanations (defaults to SCAN_MODEL_FALLBACK or gemini-2.0-flash)
+EXPLAIN_MODEL=
+# Optional daily request cap for medicine explanations (default: 300)
+EXPLAIN_DAILY_LIMIT=300
 ```
 
 ### Prescription Scanner (Vision AI via Google Gemini)
@@ -72,6 +78,18 @@ Sakhi includes a real prescription digitizer powered by Google Gemini through it
 - **Known Limitations & Human-in-the-Loop Verification**:
   - Doctor handwriting and abbreviations vary widely across clinics and languages. Vision models can misread dosages or brand names.
   - Sakhi flags uncertain entries with an amber **"Please check this one"** (`needsCheck`) badge, highlights empty dose/duration fields, and requires the user to review and confirm every medicine before saving to their active list.
+
+### Medicine Explanations (AI-Powered with Local Caching & Built-in Fallback)
+
+"What is this medicine for" delivers real, AI-generated explanations per medicine in the user's active language:
+
+- **AI-Generated in 11 Languages**: Generates plain-language explanations at a 6th-grade reading level (used for, how it is usually taken, common side effects, and when to ask a doctor) using `EXPLAIN_MODEL` (or `SCAN_MODEL_FALLBACK`, e.g., `gemini-2.0-flash`).
+- **Local Storage Cache (90-Day TTL)**: Cached via the local storage adapter keyed by normalized medicine name and language code. Only uncached names are requested in a single batch, and in-flight requests are automatically deduplicated. Included in the "Delete all my data" wipe.
+- **Safety Limits & Daily Budget**: Rate limited to 10 req/min and 60 req/day per client IP, plus a global daily counter (`EXPLAIN_DAILY_LIMIT`, default: 300) resetting at midnight `America/Los_Angeles`. When exhausted, requests return `explain_unavailable` (503) without calling upstream.
+- **Strict Privacy**: Only medicine names, doses, and the target language code are sent to the model. Zero user logs, profile data, or locations. Medicine names and model outputs are never stored or logged on the server.
+- **Offline & Low-Confidence Fallback**: When offline, unconfigured, or rate-limited, the UI seamlessly falls back to categorized purpose strings with a _"General information only"_ label. If the model is unsure of a medicine name, it sets `confidence: "low"` and displays _"We are not sure about this medicine. Please ask your pharmacist."_ with no guessed usage.
+- **Clinical Safety Filter**: Code-level safety filtering automatically drops any field containing dosing advice, diagnoses, or phrases like _"stop taking"_ or _"increase the dose"_.
+- **Known Limitations**: Brand-name accuracy across Indian regional manufacturers and regional-language medical translations require review by a licensed pharmacist and native speakers.
 
 ### How to Get an AI Key & Model Recommendations
 
@@ -166,19 +184,19 @@ When deploying to Cloudflare Workers / Pages, Vercel, or Node.js hosts, define t
 
 ### Supported Languages & Localization Review Status
 
-| Language  | Code | Native Script |     Awareness Cards Status     | Overall Status |
-| :-------- | :--: | :------------ | :----------------------------: | :------------: |
-| English   | `en` | English       |            Complete            |    Verified    |
-| Hindi     | `hi` | हिन्दी        | Complete (needs native review) |    Verified    |
-| Telugu    | `te` | తెలుగు        | Complete (needs native review) |    Verified    |
-| Tamil     | `ta` | தமிழ்         | Complete (needs native review) |    Verified    |
-| Kannada   | `kn` | ಕನ್ನಡ         | Complete (needs native review) |    Verified    |
-| Malayalam | `ml` | മലയാളം        | Complete (needs native review) |    Verified    |
-| Marathi   | `mr` | मराठी         | Complete (needs native review) |    Verified    |
-| Bengali   | `bn` | বাংলা         | Complete (needs native review) |    Verified    |
-| Gujarati  | `gu` | ગુજરાતી       | Complete (needs native review) |    Verified    |
-| Punjabi   | `pa` | ਪੰਜਾਬੀ        | Complete (needs native review) |    Verified    |
-| Odia      | `or` | ଓଡ଼ିଆ         | Complete (needs native review) |    Verified    |
+| Language  | Code | Native Script | Awareness Cards Status | Medicine Info Status | Overall Status |
+| :-------- | :--: | :------------ | :--------------------: | :------------------: | :------------: |
+| English   | `en` | English       |        Complete        |       Complete       |    Verified    |
+| Hindi     | `hi` | हिन्दी        |  Needs native review   | Needs native review  |    Verified    |
+| Telugu    | `te` | తెలుగు        |  Needs native review   | Needs native review  |    Verified    |
+| Tamil     | `ta` | தமிழ்         |  Needs native review   | Needs native review  |    Verified    |
+| Kannada   | `kn` | ಕನ್ನಡ         |  Needs native review   | Needs native review  |    Verified    |
+| Malayalam | `ml` | മലയാളം        |  Needs native review   | Needs native review  |    Verified    |
+| Marathi   | `mr` | मराठी         |  Needs native review   | Needs native review  |    Verified    |
+| Bengali   | `bn` | বাংলা         |  Needs native review   | Needs native review  |    Verified    |
+| Gujarati  | `gu` | ગુજરાતી       |  Needs native review   | Needs native review  |    Verified    |
+| Punjabi   | `pa` | ਪੰਜਾਬੀ        |  Needs native review   | Needs native review  |    Verified    |
+| Odia      | `or` | ଓଡ଼ିଆ         |  Needs native review   | Needs native review  |    Verified    |
 
 ## Getting Started
 

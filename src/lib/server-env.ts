@@ -150,13 +150,33 @@ export function logScanStartup(): void {
   }
 }
 
+let hasLoggedExplain = false;
+
 /**
- * Logs Geoapify, LLM, and Scanner startup environment statuses.
+ * Logs whether EXPLAIN_MODEL is present on startup.
+ * Guaranteed to log at most once per process.
+ */
+export function logExplainStartup(): void {
+  const g = globalThis as { __sakhi_explain_logged?: boolean };
+  if (hasLoggedExplain || g.__sakhi_explain_logged) {
+    return;
+  }
+  hasLoggedExplain = true;
+  g.__sakhi_explain_logged = true;
+
+  if (process.env["EXPLAIN_MODEL"]?.trim()) {
+    console.log("EXPLAIN_MODEL: set");
+  }
+}
+
+/**
+ * Logs Geoapify, LLM, Scanner, and Explain startup environment statuses.
  */
 export function logServerEnvStartup(): void {
   logGeoapifyStartup();
   logLlmStartup();
   logScanStartup();
+  logExplainStartup();
 }
 
 /**
@@ -166,9 +186,11 @@ export function resetLoggedStatusForTests(): void {
   hasLoggedGeoapify = false;
   hasLoggedLlm = false;
   hasLoggedScan = false;
+  hasLoggedExplain = false;
   delete (globalThis as { __sakhi_geoapify_logged?: boolean }).__sakhi_geoapify_logged;
   delete (globalThis as { __sakhi_llm_logged?: boolean }).__sakhi_llm_logged;
   delete (globalThis as { __sakhi_scan_logged?: boolean }).__sakhi_scan_logged;
+  delete (globalThis as { __sakhi_explain_logged?: boolean }).__sakhi_explain_logged;
   delete (globalThis as { __sakhi_env_logged?: boolean }).__sakhi_env_logged;
 }
 
@@ -242,5 +264,44 @@ export function getScanConfig(): ScanConfig {
  */
 export function isScanConfigured(): boolean {
   const config = getScanConfig();
+  return Boolean(config.apiKey && config.apiUrl && config.model);
+}
+
+export type ExplainConfig = {
+  provider: "openai" | "anthropic";
+  apiUrl: string | null;
+  apiKey: string | null;
+  model: string | null;
+  dailyLimit: number;
+};
+
+/**
+ * Returns Medicine Explanation configurations securely.
+ * Server-side only: never expose secrets to browser client.
+ * Reuses SCAN_API_KEY, SCAN_API_URL, SCAN_PROVIDER. Does NOT read LLM_*.
+ * Model defaults to EXPLAIN_MODEL, then SCAN_MODEL_FALLBACK, then SCAN_MODEL.
+ */
+export function getExplainConfig(): ExplainConfig {
+  loadServerEnv();
+  const scanConfig = getScanConfig();
+  const rawLimit = parseInt(process.env["EXPLAIN_DAILY_LIMIT"] || "300", 10);
+  const dailyLimit = Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 300;
+  const model =
+    process.env["EXPLAIN_MODEL"]?.trim() || scanConfig.modelFallback || scanConfig.model || null;
+
+  return {
+    provider: scanConfig.provider,
+    apiUrl: scanConfig.apiUrl,
+    apiKey: scanConfig.apiKey,
+    model,
+    dailyLimit,
+  };
+}
+
+/**
+ * Checks if Medicine Explanation service is configured without leaking values.
+ */
+export function isExplainConfigured(): boolean {
+  const config = getExplainConfig();
   return Boolean(config.apiKey && config.apiUrl && config.model);
 }

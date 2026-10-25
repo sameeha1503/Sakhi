@@ -25,6 +25,7 @@ import { Route as UrgentRouteImport } from './routes/urgent'
 import { Route as VaultRouteImport } from './routes/vault'
 import { Route as VisitRouteImport } from './routes/visit'
 import { Route as ApiChatRouteImport } from './routes/api.chat'
+import { Route as ApiExplainRouteImport } from './routes/api.explain'
 import { Route as ApiGeocodeRouteImport } from './routes/api.geocode'
 import { Route as ApiNearbyRouteImport } from './routes/api.nearby'
 import { Route as ApiScanRouteImport } from './routes/api.scan'
@@ -109,6 +110,11 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiExplainRoute = ApiExplainRouteImport.update({
+  id: '/api/explain',
+  path: '/api/explain',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGeocodeRoute = ApiGeocodeRouteImport.update({
   id: '/api/geocode',
   path: '/api/geocode',
@@ -142,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/vault': typeof VaultRoute
   '/visit': typeof VisitRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/explain': typeof ApiExplainRoute
   '/api/geocode': typeof ApiGeocodeRoute
   '/api/nearby': typeof ApiNearbyRoute
   '/api/scan': typeof ApiScanRoute
@@ -163,6 +170,7 @@ export interface FileRoutesByTo {
   '/vault': typeof VaultRoute
   '/visit': typeof VisitRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/explain': typeof ApiExplainRoute
   '/api/geocode': typeof ApiGeocodeRoute
   '/api/nearby': typeof ApiNearbyRoute
   '/api/scan': typeof ApiScanRoute
@@ -185,6 +193,7 @@ export interface FileRoutesById {
   '/vault': typeof VaultRoute
   '/visit': typeof VisitRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/explain': typeof ApiExplainRoute
   '/api/geocode': typeof ApiGeocodeRoute
   '/api/nearby': typeof ApiNearbyRoute
   '/api/scan': typeof ApiScanRoute
@@ -208,6 +217,7 @@ export interface FileRouteTypes {
     | '/vault'
     | '/visit'
     | '/api/chat'
+    | '/api/explain'
     | '/api/geocode'
     | '/api/nearby'
     | '/api/scan'
@@ -229,6 +239,7 @@ export interface FileRouteTypes {
     | '/vault'
     | '/visit'
     | '/api/chat'
+    | '/api/explain'
     | '/api/geocode'
     | '/api/nearby'
     | '/api/scan'
@@ -250,6 +261,7 @@ export interface FileRouteTypes {
     | '/vault'
     | '/visit'
     | '/api/chat'
+    | '/api/explain'
     | '/api/geocode'
     | '/api/nearby'
     | '/api/scan'
@@ -272,6 +284,7 @@ export interface RootRouteChildren {
   VaultRoute: typeof VaultRoute
   VisitRoute: typeof VisitRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiExplainRoute: typeof ApiExplainRoute
   ApiGeocodeRoute: typeof ApiGeocodeRoute
   ApiNearbyRoute: typeof ApiNearbyRoute
   ApiScanRoute: typeof ApiScanRoute
@@ -391,6 +404,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/explain': {
+      id: '/api/explain'
+      path: '/api/explain'
+      fullPath: '/api/explain'
+      preLoaderRoute: typeof ApiExplainRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/geocode': {
       id: '/api/geocode'
       path: '/api/geocode'
@@ -432,6 +452,7 @@ const rootRouteChildren: RootRouteChildren = {
   VaultRoute: VaultRoute,
   VisitRoute: VisitRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiExplainRoute: ApiExplainRoute,
   ApiGeocodeRoute: ApiGeocodeRoute,
   ApiNearbyRoute: ApiNearbyRoute,
   ApiScanRoute: ApiScanRoute,

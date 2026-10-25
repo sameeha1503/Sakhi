@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { getScanConfig } from "@/lib/server-env";
+import { callUpstreamChat } from "@/lib/server-ai";
 
 // In-memory sliding window rate limiter: 6 req/min, 30 req/day per client IP
 const minRateLimitMap = new Map<string, number[]>();
@@ -284,107 +285,19 @@ async function callUpstreamVision(
   mediaType: "image/jpeg" | "image/png" | "image/webp",
   timeoutMs = 30000,
 ): Promise<{ text: string; status: number; errorBody?: string }> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    let response: Response;
-
-    if (provider === "anthropic") {
-      response = await fetch(apiUrl, {
-        method: "POST",
-        headers: {
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: 4096,
-          temperature: 0,
-          system: SCAN_SYSTEM_PROMPT,
-          messages: [
-            {
-              role: "user",
-              content: [
-                {
-                  type: "image",
-                  source: {
-                    type: "base64",
-                    media_type: mediaType,
-                    data: image,
-                  },
-                },
-                {
-                  type: "text",
-                  text: "Extract all medicines from this prescription photo.",
-                },
-              ],
-            },
-          ],
-        }),
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        const errText = await response.text().catch(() => "");
-        return { text: "", status: response.status, errorBody: errText };
-      }
-
-      const data = (await response.json()) as { content?: Array<{ type: string; text?: string }> };
-      const text = data.content?.find((c) => c.type === "text")?.text || "";
-      return { text, status: 200 };
-    }
-
-    // Default: OpenAI-compatible endpoint (Google Gemini / OpenAI)
-    response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        temperature: 0,
-        response_format: { type: "json_object" },
-        messages: [
-          {
-            role: "system",
-            content: SCAN_SYSTEM_PROMPT,
-          },
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: "Extract all medicines from this prescription photo.",
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: `data:${mediaType};base64,${image}`,
-                },
-              },
-            ],
-          },
-        ],
-      }),
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      const errText = await response.text().catch(() => "");
-      return { text: "", status: response.status, errorBody: errText };
-    }
-
-    const data = (await response.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-    const text = data.choices?.[0]?.message?.content || "";
-    return { text, status: 200 };
-  } finally {
-    clearTimeout(timeoutId);
-  }
+  return callUpstreamChat({
+    provider,
+    apiUrl,
+    apiKey,
+    model,
+    systemPrompt: SCAN_SYSTEM_PROMPT,
+    userPrompt: "Extract all medicines from this prescription photo.",
+    image: {
+      data: image,
+      mediaType,
+    },
+    timeoutMs,
+  });
 }
 
 export const Route = createFileRoute("/api/scan")({

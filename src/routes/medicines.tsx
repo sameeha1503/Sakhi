@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { NotificationOptInButton } from "@/components/DoseReminders";
+import { MedicineExplanationCard } from "@/components/MedicineExplanationCard";
+import { getMedicineInfo, type MedicineExplanation } from "@/services/medicineInfo";
 import {
   medicineService,
   inferCategory,
@@ -52,19 +54,6 @@ const timingIcons: Record<TimeOfDay, typeof Sun> = {
   night: Moon,
 };
 
-function getPurposeText(t: (k: string) => string, category: string): string {
-  const map: Record<string, string> = {
-    iron: t("medicines.purpose.iron"),
-    calcium: t("medicines.purpose.calcium"),
-    painRelief: t("medicines.purpose.painRelief"),
-    hormonal: t("medicines.purpose.hormonal"),
-    antacid: t("medicines.purpose.antacid"),
-    antibiotic: t("medicines.purpose.antibiotic"),
-    general: t("medicines.purpose.general"),
-  };
-  return map[category] ?? map["general"] ?? "";
-}
-
 function MedicinesPage() {
   const { t, i18n } = useTranslation();
   const [schedule, setSchedule] = useState<ScheduledDose[]>([]);
@@ -73,6 +62,8 @@ function MedicinesPage() {
   const [refillAlerts, setRefillAlerts] = useState<{ medicine: Medicine; remainingDays: number }[]>(
     [],
   );
+  const [explanations, setExplanations] = useState<Record<string, MedicineExplanation>>({});
+  const [loadingMap, setLoadingMap] = useState<Record<string, boolean>>({});
 
   const loadData = () => {
     const today = todayISO();
@@ -85,6 +76,41 @@ function MedicinesPage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    const allNames = Array.from(
+      new Set([
+        ...medicines.map((m) => m.name.trim()),
+        ...schedule.map((s) => s.medicineName.trim()),
+      ]),
+    ).filter(Boolean);
+
+    if (allNames.length === 0) return;
+
+    const uncached = allNames.filter((name) => !explanations[name]);
+    if (uncached.length === 0) return;
+
+    const flags: Record<string, boolean> = {};
+    uncached.forEach((name) => {
+      flags[name] = true;
+    });
+    setLoadingMap((prev) => ({ ...prev, ...flags }));
+
+    getMedicineInfo(allNames, i18n.language)
+      .then((infoMap) => {
+        setExplanations((prev) => ({ ...prev, ...infoMap }));
+      })
+      .finally(() => {
+        setLoadingMap((prev) => {
+          const next = { ...prev };
+          allNames.forEach((name) => {
+            delete next[name];
+          });
+          return next;
+        });
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [medicines, schedule, i18n.language]);
 
   const markDose = (dose: ScheduledDose, status: "taken" | "skipped") => {
     medicineService.recordDose(dose.medicineId, dose.date, dose.timeOfDay, status);
@@ -201,10 +227,11 @@ function MedicinesPage() {
                     </div>
 
                     {/* What it is for note */}
-                    <div className="flex items-center gap-2 rounded-xl bg-secondary/60 px-3 py-2 text-sm font-medium text-foreground">
-                      <Sparkles className="size-4 shrink-0 text-accent" />
-                      <span className="truncate">{getPurposeText(t, purposeKey)}</span>
-                    </div>
+                    <MedicineExplanationCard
+                      name={dose.medicineName}
+                      info={explanations[dose.medicineName]}
+                      loading={loadingMap[dose.medicineName]}
+                    />
 
                     {/* Dose action buttons */}
                     {dose.status === "pending" ? (
@@ -317,9 +344,13 @@ function MedicinesPage() {
                         <p className="text-sm text-muted-foreground">
                           {med.dose} · {med.timings.map((t) => t).join(", ")} · {med.durationDays}d
                         </p>
-                        <p className="mt-1 text-xs font-semibold text-accent">
-                          {getPurposeText(t, purposeKey)}
-                        </p>
+                        <div className="mt-2">
+                          <MedicineExplanationCard
+                            name={med.name}
+                            info={explanations[med.name]}
+                            loading={loadingMap[med.name]}
+                          />
+                        </div>
                       </div>
                       <button
                         onClick={() => removeMed(med.id)}

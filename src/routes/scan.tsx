@@ -15,6 +15,8 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { MedicineExplanationCard } from "@/components/MedicineExplanationCard";
+import { getMedicineInfo, type MedicineExplanation } from "@/services/medicineInfo";
 import {
   scanPrescription,
   ScanError,
@@ -46,27 +48,16 @@ type EditableMedicine = ScannedMedicine & {
   tempId: string;
 };
 
-function getPurposeText(t: (k: string) => string, category: string): string {
-  const map: Record<string, string> = {
-    iron: t("medicines.purpose.iron"),
-    calcium: t("medicines.purpose.calcium"),
-    painRelief: t("medicines.purpose.painRelief"),
-    hormonal: t("medicines.purpose.hormonal"),
-    antacid: t("medicines.purpose.antacid"),
-    antibiotic: t("medicines.purpose.antibiotic"),
-    general: t("medicines.purpose.general"),
-  };
-  return map[category] ?? map["general"] ?? "";
-}
-
 function ScanPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
 
   const [step, setStep] = useState<"upload" | "scanning" | "confirm">("upload");
   const [error, setError] = useState<ScanErrorCode | null>(null);
   const [medicines, setMedicines] = useState<EditableMedicine[]>([]);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [explanations, setExplanations] = useState<Record<string, MedicineExplanation>>({});
+  const [loadingNames, setLoadingNames] = useState<Record<string, boolean>>({});
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -105,11 +96,53 @@ function ScanPage() {
       }));
       setMedicines(withIds);
       setStep("confirm");
+
+      // Fetch AI explanations once after names are read
+      const validMeds = withIds.filter((m) => m.name.trim());
+      if (validMeds.length > 0) {
+        const flags: Record<string, boolean> = {};
+        validMeds.forEach((m) => {
+          flags[m.name] = true;
+        });
+        setLoadingNames((prev) => ({ ...prev, ...flags }));
+        getMedicineInfo(validMeds, i18n.language)
+          .then((infoMap) => {
+            setExplanations((prev) => ({ ...prev, ...infoMap }));
+          })
+          .finally(() => {
+            setLoadingNames((prev) => {
+              const next = { ...prev };
+              validMeds.forEach((m) => {
+                delete next[m.name];
+              });
+              return next;
+            });
+          });
+      }
     } catch (err: unknown) {
       const code: ScanErrorCode = err instanceof ScanError ? err.code : "upstream_error";
       setError(code);
       setStep("upload");
     }
+  };
+
+  const handleNameBlur = (med: EditableMedicine) => {
+    const trimmed = med.name.trim();
+    if (!trimmed) return;
+    if (explanations[trimmed]) return;
+
+    setLoadingNames((prev) => ({ ...prev, [trimmed]: true }));
+    getMedicineInfo([{ name: trimmed, dose: med.dose }], i18n.language)
+      .then((infoMap) => {
+        setExplanations((prev) => ({ ...prev, ...infoMap }));
+      })
+      .finally(() => {
+        setLoadingNames((prev) => {
+          const next = { ...prev };
+          delete next[trimmed];
+          return next;
+        });
+      });
   };
 
   const updateMed = (tempId: string, patch: Partial<EditableMedicine>) => {
@@ -336,6 +369,7 @@ function ScanPage() {
                       type="text"
                       value={med.name}
                       onChange={(e) => updateMed(med.tempId, { name: e.target.value })}
+                      onBlur={() => handleNameBlur(med)}
                       placeholder={t("scan.medName")}
                       className="tap flex-1 rounded-xl border px-3 text-lg font-bold outline-none focus:border-primary"
                     />
@@ -363,12 +397,12 @@ function ScanPage() {
                     )}
                   </div>
 
-                  {/* Plain-language purpose from static dictionary */}
-                  <div className="rounded-xl bg-secondary/50 p-2.5 text-sm">
-                    <span className="font-semibold text-primary">
-                      💡 {getPurposeText(t, purposeKey)}
-                    </span>
-                  </div>
+                  {/* Plain-language explanation (AI with offline fallback) */}
+                  <MedicineExplanationCard
+                    name={med.name}
+                    info={explanations[med.name]}
+                    loading={loadingNames[med.name]}
+                  />
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>

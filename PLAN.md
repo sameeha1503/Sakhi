@@ -39,7 +39,7 @@ PHASE 2: Medicines and reminders
 - services/scanner.ts: scanPrescription(file) waits about 1.5 s and returns a realistic hard-coded extraction (4-5 medicines with dose, times per day, timing, duration). Keep the signature so a real vision API can replace it.
 - services/medicines.ts: CRUD, dose schedule, taken/skipped log, adherence, refill alert when 3 or fewer days remain.
 - /medicines: today's doses as large cards with Taken and Skip, full list, history, adherence, "Add prescription". /scan: choose or capture a photo, "reading your prescription", editable cards, she must confirm before saving, with the note "Please check this with your doctor or pharmacist" in every language.
-- A plain-language "what it is for" line from a small static dictionary with a safe fallback.
+- A plain-language "what it is for" line (AI-generated per medicine in the active language, cached on-device for 90 days with safe fallback).
 - Reminders while the app is open: banner and toast every minute for due doses, optional browser Notification opt-in, discreet wording ("Time for your tablet"). README note: reliable background reminders need Twilio WhatsApp/SMS later.
 
 PHASE 3: Demo profile
