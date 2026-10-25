@@ -1,6 +1,25 @@
 # Sakhi roadmap
 
-- [x] Phase 1: setup, language picker, i18n, nav, fake auth, consent, settings (verified; language sync & navigation guards added)
+- [x] **PHASE 0: Audit and Baseline (Completed)**
+  - Clean dev server, test suite (15 files, 170 tests passing), lint (0 errors), typecheck (`tsc --noEmit` 0 errors), and production build.
+  - Design baseline applied:
+    - Warm blush-white background (`#FFF8FA`) with faint mint radial gradient.
+    - Curated color tokens: primary teal `#0B7A75`, secondary soft teal `#D9F2EF`, accent berry rose `#C2255C`, success `#276749`, warning `#92580A`, destructive `#B42318` strictly for urgent states, text `#2B1B2E` (contrast ratio 14.6:1).
+    - Serif headings (`Lora`, `Rozha One`) configured across `h1`–`h6` with clean sans body (`Baloo 2` and 9 Noto Sans Indic scripts).
+    - Slim top bar with app name and language selector across all screen sizes.
+    - Floating pill bottom navigation (Home, Log, Medicines, Care, Profile) on all screen sizes with $\ge 44$px tap targets.
+    - Home dashboard module cards: 2 columns from 768px, 1 on phones, with tinted borders in accent colors, round icon badges, uppercase tag pills, serif titles, short descriptions, and "Open →" links.
+    - Floating chat widget button positioned above the bottom pill navigation on all screen sizes.
+  - Learn feature fully removed (route, assets, links, `learn.*` keys; `chat.kb.*` and `flags.*` preserved).
+  - Default README replaced with concise Sakhi README.
+  - Environment variables: `.env.local` kept gitignored, `.env.example` lists all brief variables, no keys in client code.
+- [ ] **PHASE 1: Doctor visit, schemes, Home dashboard**
+- [ ] **PHASE 2: Medicines and reminders**
+- [ ] **PHASE 3: Demo profile**
+- [ ] **PHASE 4: Care journey and same-day safety**
+- [ ] **PHASE 5: Ask Sakhi chat**
+- [ ] **PHASE 6: Share with doctor (QR)**
+
 - [x] Phase 2: symptom log, cycle tracker, pattern flags, red-flag screen (awareness cards migrated to Ask Sakhi knowledge base; verified with automated E2E & flow test suite across EN/HI/TE)
 - [x] Phase 3: mock prescription scanner, medicines, dose reminders (verified; scan route, dose schedule generation, adherence history, refill alerts, discreet reminders, and unit tests added)
 - [x] Phase 4: hospital map, question prep, visit timeline, doctor PDF (verified; Leaflet SSR map with 34 facilities & geolocation fallback, question prep generated from pattern flags & symptoms, visits CRUD with 3-day follow-up reminder banner on Home, printable 1-page A4 doctor summary with native EN/HI/TE support, unit tests passed)

@@ -8,7 +8,7 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { loadEnv } from "vite";
 
 // Ensure .env.local and .env are loaded into process.env for server runtime (/api/* routes, SSR)
-const mode = process.env.NODE_ENV || "development";
+const mode = process.env["NODE_ENV"] || "development";
 const loadedEnv = loadEnv(mode, process.cwd(), "");
 for (const [key, value] of Object.entries(loadedEnv)) {
   if (!process.env[key]) {
@@ -17,7 +17,7 @@ for (const [key, value] of Object.entries(loadedEnv)) {
 }
 
 // Startup presence log: log ONLY whether key is "set" or "missing", NEVER the secret value
-const isGeoapifySet = Boolean(process.env.GEOAPIFY_API_KEY?.trim());
+const isGeoapifySet = Boolean(process.env["GEOAPIFY_API_KEY"]?.trim());
 const g = globalThis as { __sakhi_geoapify_logged?: boolean };
 if (!g.__sakhi_geoapify_logged) {
   g.__sakhi_geoapify_logged = true;

@@ -103,91 +103,70 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
         </div>
       )}
 
-      {/* Desktop Sticky Header (768px and above) */}
-      <header className="sticky top-0 z-40 hidden border-b border-border/80 bg-card/95 backdrop-blur-md md:block">
-        <div className="mx-auto flex h-18 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      {/* Slim Top Bar with App Name on all screen sizes */}
+      <header className="sticky top-0 z-40 border-b border-border/70 bg-card/95 backdrop-blur-md">
+        <div className="mx-auto flex h-14 sm:h-16 max-w-5xl items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Logo / Name */}
           <Link
             to="/home"
-            className="group flex items-center gap-3 transition-transform hover:opacity-95"
+            className="group flex items-center gap-2.5 transition-transform hover:opacity-95"
           >
-            <div className="grid size-10 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-xs transition-transform group-hover:scale-105">
-              <Flower2 className="size-6" />
+            <div className="grid size-9 sm:size-10 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-xs transition-transform group-hover:scale-105">
+              <Flower2 className="size-5 sm:size-6" />
             </div>
             <div className="flex flex-col">
-              <span className="text-2xl font-bold tracking-tight text-primary leading-tight">
+              <span className="text-xl sm:text-2xl font-bold tracking-tight text-primary leading-tight font-serif">
                 {t("app.name")}
               </span>
-              <span className="text-xs font-semibold text-muted-foreground hidden lg:block leading-none">
+              <span className="text-[11px] font-semibold text-muted-foreground hidden sm:block leading-none">
                 {t("app.tagline")}
               </span>
             </div>
           </Link>
 
-          {/* Navigation Links in Center / Right */}
-          <nav className="flex items-center gap-1 lg:gap-2">
-            {tabs.map(({ to, icon: Icon, key }) => (
-              <Link
-                key={to}
-                to={to}
-                className="flex items-center gap-2 rounded-xl px-3.5 py-2 text-base font-semibold text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
-                activeProps={{
-                  className: "bg-primary/10 text-primary font-bold shadow-2xs hover:bg-primary/15",
-                }}
-              >
-                <Icon className="size-5 shrink-0" />
-                <span className="whitespace-nowrap">{t(`nav.${key}`)}</span>
-              </Link>
-            ))}
-          </nav>
-
-          {/* Right: Language Selector Dropdown & Profile Quick Link */}
-          <div className="flex items-center gap-3">
+          {/* Right: Language Selector Dropdown */}
+          <div className="flex items-center gap-2">
             <LanguageSelect variant="header" />
-
-            <Link
-              to="/profile"
-              className="grid size-10 place-items-center rounded-2xl border-2 border-border text-foreground transition-all hover:border-primary hover:text-primary active:scale-95"
-              activeProps={{ className: "border-primary bg-primary/10 text-primary" }}
-              aria-label={t("nav.profile")}
-            >
-              <User className="size-5" />
-            </Link>
           </div>
         </div>
       </header>
 
-      {/* Main Container - max-w-6xl on desktop, full padding */}
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6 lg:px-8 pt-4 pb-24 md:pt-6 md:pb-12">
+      {/* Main Container */}
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 sm:px-6 lg:px-8 pt-4 pb-28 md:pt-6 md:pb-28">
         {title && <h1 className="mb-4 text-3xl font-bold md:text-4xl">{title}</h1>}
         {children}
       </main>
 
-      {/* Desktop Footer (768px and above) */}
-      <footer className="mt-auto hidden border-t border-border/60 bg-card/60 py-6 md:block">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 text-sm text-muted-foreground sm:flex-row sm:px-6 lg:px-8">
+      {/* Footer */}
+      <footer className="mt-auto border-t border-border/40 py-6 pb-24 text-center text-xs text-muted-foreground">
+        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-2 px-4 sm:flex-row sm:px-6">
           <div className="flex items-center gap-2">
-            <Flower2 className="size-4 text-primary" />
+            <Flower2 className="size-3.5 text-primary" />
             <span className="font-semibold text-foreground">{t("footer.allRights")}</span>
           </div>
-          <p className="text-center sm:text-right text-xs md:text-sm">
-            {t("footer.privacyNotice")}
-          </p>
+          <p>{t("footer.privacyNotice")}</p>
         </div>
       </footer>
 
-      {/* Mobile Bottom Navigation (Below 768px only) */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t bg-card md:hidden shadow-lg">
-        <div className="mx-auto grid max-w-md grid-cols-5">
+      {/* Floating Pill Bottom Navigation (Home, Log, Medicines, Care, Profile) on all screen sizes */}
+      <nav
+        aria-label="Navigation"
+        className="fixed bottom-3 sm:bottom-4 inset-x-0 z-30 flex justify-center px-3 sm:px-4 pointer-events-none"
+      >
+        <div className="pointer-events-auto flex items-center justify-around sm:justify-center gap-1 sm:gap-2 rounded-full bg-card/95 border border-border shadow-lg backdrop-blur-md px-2.5 sm:px-4 py-1.5 max-w-md w-full">
           {tabs.map(({ to, icon: Icon, key }) => (
             <Link
               key={to}
               to={to}
-              className="flex min-h-16 flex-col items-center justify-center gap-0.5 text-xs font-semibold text-muted-foreground"
-              activeProps={{ className: "text-primary font-bold" }}
+              className="flex min-h-[44px] min-w-[44px] flex-col items-center justify-center rounded-full px-2.5 sm:px-3 py-1 text-xs font-semibold text-muted-foreground transition-all hover:bg-muted hover:text-foreground active:scale-95"
+              activeProps={{
+                className: "bg-primary/10 text-primary font-bold shadow-2xs hover:bg-primary/15",
+              }}
             >
-              <Icon className="size-6" />
-              <span className="leading-tight truncate px-0.5">{t(`nav.${key}`)}</span>
+              <Icon className="size-5" />
+              <span className="leading-tight text-[11px] sm:text-xs truncate max-w-[58px] sm:max-w-none">
+                {t(`nav.${key}`)}
+              </span>
             </Link>
           ))}
         </div>

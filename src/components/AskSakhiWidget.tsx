@@ -178,10 +178,10 @@ export function AskSakhiWidget() {
 
   return (
     <>
-      {/* Floating Trigger Button: Fixed above bottom navigation on phones (bottom-20), bottom-6 on desktop */}
+      {/* Floating Trigger Button: Fixed above bottom navigation on all screens */}
       <aside
         aria-label={t("chat.title")}
-        className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-40 flex flex-col items-end"
+        className="fixed bottom-20 sm:bottom-22 right-4 sm:right-6 z-40 flex flex-col items-end"
       >
         {/* First-visit Tooltip Speech Bubble */}
         {showTooltip && !isOpen && (
