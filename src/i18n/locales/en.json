@@ -735,5 +735,56 @@
     "dosageDisclaimer": "Please ask your doctor or pharmacist about medicines and doses.",
     "distressNotice": "You are not alone. Please reach out to caring counselors at Tele-MANAS (14416) or emergency services (112) for free, confidential emotional support anytime.",
     "refusedMedicalNotice": "Sakhi cannot provide medicine dosages, medical diagnoses, or instructions for abortion or contraception. Please consult a doctor or licensed pharmacist for your safety."
+  },
+  "awareness": {
+    "tabTitle": "Learn",
+    "askTab": "Ask",
+    "becauseYouLogged": "Because of what you logged",
+    "disclaimer": "Sakhi shares general information, not medical advice. Please see a doctor if you are worried.",
+    "prev": "Previous card",
+    "next": "Next card",
+    "cardProgress": "Card {{current}} of {{total}}",
+    "actions": {
+      "askSakhi": "Ask Sakhi about this",
+      "logSymptoms": "Log how I feel",
+      "doctorVisit": "Prepare for a doctor visit",
+      "findCare": "Find care near me",
+      "urgentCare": "View emergency care",
+      "schemes": "Check health schemes"
+    },
+    "cards": {
+      "pcosWhat": {
+        "title": "What is PCOS/PCOD?",
+        "body": "PCOS is a common hormonal imbalance where ovaries can produce slightly more male hormones. It may cause irregular periods, acne, or weight shifts. Healthy food and doctor guidance help manage it well."
+      },
+      "pcosSigns": {
+        "title": "Signs that may point to PCOS",
+        "body": "Signs can include missed or late periods, facial or body hair, stubborn acne, and difficulty losing weight. Tracking symptoms is worth discussing with a doctor to evaluate your hormones."
+      },
+      "endoWhat": {
+        "title": "What is endometriosis?",
+        "body": "Endometriosis occurs when tissue similar to the uterus lining grows outside the womb. During periods, it can cause inflammation and severe pain. A doctor can guide you on soothing treatments."
+      },
+      "endoSigns": {
+        "title": "Signs that may point to endometriosis",
+        "body": "Signs may include severe cramps that stop daily activities, pelvic pain between periods, pain during sex, or heavy bleeding. Discussing these symptoms with a doctor can bring clarity and relief."
+      },
+      "cycleNormal": {
+        "title": "What is a normal cycle?",
+        "body": "A typical cycle lasts between 21 and 35 days from the first day of one period to the next. Bleeding usually lasts 2 to 7 days. Mild variations can be normal from month to month."
+      },
+      "whenDoctor": {
+        "title": "When should I see a doctor?",
+        "body": "It is worth seeing a doctor if your periods stop for over 3 months, come more often than 21 days, bleeding exceeds 7 days, or cramps remain unbearable despite rest."
+      },
+      "urgentCare": {
+        "title": "Red flags that need urgent care",
+        "body": "Seek emergency care immediately if you soak two large pads an hour for two hours, feel fainting dizziness, experience sudden severe belly pain, or high fever with pelvic pain."
+      },
+      "anemiaBasics": {
+        "title": "Eating and anaemia basics",
+        "body": "Heavy monthly bleeding can lead to lower iron levels, causing fatigue and dizziness. Eating leafy greens, jaggery, and lentils can help. A simple blood test is worth discussing with a doctor."
+      }
+    }
   }
 }

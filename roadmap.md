@@ -83,6 +83,28 @@
     - Local privacy disclaimer in Settings informing users data is stored on-device.
     - Demo profile data populates calendar; "Delete all my data" completely wipes all entries and notes.
     - 100% key parity across all 11 Indian languages and 16 unit tests in `src/test/cycle-calendar.test.ts`.
+- [x] Awareness Cards (Floating, inside Ask Sakhi):
+  - **Floating Trigger & Tabbed Panel**:
+    - Embedded into `AskSakhiWidget.tsx` with a dedicated floating "Learn" pill button with a lightbulb icon stacked right above the chat trigger button.
+    - Same visibility constraints: hidden on `/`, `/consent`, `/signup`, `/urgent`, `/share`; proper `bottom-20` / `bottom-6` offsets avoiding mobile navigation overlap.
+    - Dialog includes two accessible tabs: **"Ask"** (live assistant) and **"Learn"** (awareness cards carousel).
+  - **8 Educational Awareness Cards (`src/data/awarenessCards.ts`)**:
+    - PCOS overview (`pcos_what`) & PCOS signs (`pcos_signs`).
+    - Endometriosis overview (`endo_what`) & Endometriosis signs (`endo_signs`).
+    - Normal cycle guidelines (`cycle_normal`).
+    - When to see a doctor (`when_doctor`).
+    - Urgent care red flags (`urgent_care` $\rightarrow$ `/urgent`).
+    - Eating & anaemia basics (`anemia_basics` $\rightarrow$ `/schemes`).
+  - **Rule-Based Personalization & Non-Diagnostic Language**:
+    - Orders cards lightly based on on-device pattern flags (`irregularPlus`, `painCycle`, `heavyRepeat`) showing relevant cards first with a supportive **"Because of what you logged"** badge.
+    - Strictly non-diagnostic language: uses only supportive phrases ("may", "can be a sign", "worth discussing with a doctor"); never "you have" or "you are diagnosed".
+    - Disclaimer footer on every card: _"Sakhi shares general information, not medical advice. Please see a doctor if you are worried."_
+  - **Controls, Offline Storage & 11-Locale Parity**:
+    - Mobile touch swipe and keyboard arrow navigation (Left/Right).
+    - Progress dots and Next/Back buttons with $\ge 44$px touch targets.
+    - Persists last viewed card via storage adapter (`src/services/storage.ts`) and wipes on "Delete all my data".
+    - Works 100% offline with zero network calls.
+    - 100% parity across all 11 Indic languages under `awareness.*` namespace with 8 Vitest unit tests in `src/test/awareness-cards.test.tsx`.
   - **Removed Route & Assets**: Deleted `src/routes/learn.tsx` and static imagery `src/assets/learn-pcos.jpg` and `src/assets/learn-endo.jpg`.
   - **Replaced Links with Ask Sakhi**: Pattern flags banner on Cycle page now features an **"Ask Sakhi"** button (dispatches custom event to open the chat widget with relevant contextual questions: _"What is PCOS?"_, _"What are signs of endometriosis?"_, or _"Is my cycle normal?"_) alongside doctor visit preparation.
   - **Rebalanced Home Dashboard**: Symmetrical 6-card grid below the Doctor Visit banner (2 rows of 3 on desktop, 3 rows of 2 on tablet) eliminating trailing odd gaps.

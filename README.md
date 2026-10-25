@@ -107,6 +107,47 @@ When deploying to Cloudflare Workers / Pages, Vercel, or Node.js hosts, define t
   - "Download my data" exports full check-in history as formatted JSON.
   - "Restore from backup" validates JSON via Zod and merges entries with confirmation prompt.
 
+### Health Awareness Cards (Floating, inside Ask Sakhi)
+
+- **Floating Trigger & Two-Tab Drawer (`AskSakhiWidget`)**:
+  - Integrated directly into the existing Ask Sakhi floating widget without adding extra round buttons.
+  - Features a small floating "Learn" pill with a lightbulb icon stacked above the chat trigger, with identical route visibility (hidden on `/`, `/consent`, `/signup`, `/urgent`, `/share`).
+  - Opens the same bottom sheet (mobile) / 380px anchored panel (desktop) with two accessible tabs: **"Ask"** (live streaming AI assistant) and **"Learn"** (swipeable awareness cards).
+- **8 Core Educational Cards (`src/data/awarenessCards.ts`)**:
+  1. **What is PCOS/PCOD?** (Action: "Ask Sakhi about this" $\rightarrow$ switches to Ask tab)
+  2. **Signs that may point to PCOS** (Action: "Log how I feel" $\rightarrow$ `/log`)
+  3. **What is endometriosis?** (Action: "Ask Sakhi about this" $\rightarrow$ switches to Ask tab)
+  4. **Signs that may point to endometriosis** (Action: "Prepare for a doctor visit" $\rightarrow$ `/visit`)
+  5. **What is a normal cycle?** (Action: "Log how I feel" $\rightarrow$ `/log`)
+  6. **When should I see a doctor?** (Action: "Find care near me" $\rightarrow$ `/care`)
+  7. **Red flags that need urgent care** (Action: "View emergency care" $\rightarrow$ `/urgent`)
+  8. **Eating and anaemia basics** (Action: "Check health schemes" $\rightarrow$ `/schemes`)
+- **Light Personalization & Non-Diagnostic Language**:
+  - Rule-based ordering: users with active pattern flags (`irregularPlus`, `painCycle`, `heavyRepeat`) see the matching card first with a supportive **"Because of what you logged"** badge.
+  - Strict clinical safety: uses only supportive phrasing ("may", "can be a sign", "worth discussing with a doctor"); strictly never uses diagnostic language ("you have", "you are diagnosed").
+  - Persistent disclaimer footer on every card: _"Sakhi shares general information, not medical advice. Please see a doctor if you are worried."_
+- **Accessible & Offline-First**:
+  - Full touch swipe support and keyboard arrow navigation (Left/Right).
+  - Progress dots and Next/Back buttons with $\ge 44$px touch targets.
+  - Remembers last viewed card via the storage adapter (`src/services/storage.ts`), completely wiped on "Delete all my data".
+  - Operates 100% offline with zero network requests.
+
+### Supported Languages & Localization Review Status
+
+| Language | Code | Native Script | Awareness Cards Status | Overall Status |
+| :--- | :---: | :--- | :---: | :---: |
+| English | `en` | English | Complete | Verified |
+| Hindi | `hi` | हिन्दी | Complete (needs native review) | Verified |
+| Telugu | `te` | తెలుగు | Complete (needs native review) | Verified |
+| Tamil | `ta` | தமிழ் | Complete (needs native review) | Verified |
+| Kannada | `kn` | ಕನ್ನಡ | Complete (needs native review) | Verified |
+| Malayalam | `ml` | മലയാളം | Complete (needs native review) | Verified |
+| Marathi | `mr` | मराठी | Complete (needs native review) | Verified |
+| Bengali | `bn` | বাংলা | Complete (needs native review) | Verified |
+| Gujarati | `gu` | ગુજરાતી | Complete (needs native review) | Verified |
+| Punjabi | `pa` | ਪੰਜਾਬੀ | Complete (needs native review) | Verified |
+| Odia | `or` | ଓଡ଼ିଆ | Complete (needs native review) | Verified |
+
 ## Getting Started
 
 ```bash
