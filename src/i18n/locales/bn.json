@@ -275,6 +275,7 @@
     "drive": "গাড়িতে",
     "callNotice": "সময় ও পরিষেবা পরিবর্তন হতে পারে। যাওয়ার আগে ফোন করুন।",
     "osmAttribution": "© OpenStreetMap অবদানকারী",
+    "liveSearchNotConfigured": "লাইভ অনুসন্ধান কনফিগার করা নেই",
     "sampleDataBanner": "নমুনা তথ্য দেখানো হচ্ছে — ইন্টারনেট নেই",
     "cachedDataBanner": "সংরক্ষিত ফলাফল (সর্বশেষ আপডেট: {{time}})"
   },

@@ -275,6 +275,7 @@
     "drive": "ಚಾಲನೆ",
     "callNotice": "ಸಮಯ ಮತ್ತು ಸೇವೆಗಳು ಬದಲಾಗಬಹುದು. ಹೊರಡುವ ಮುನ್ನ ಕರೆ ಮಾಡಿ.",
     "osmAttribution": "© OpenStreetMap ಕೊಡುಗೆದಾರರು",
+    "liveSearchNotConfigured": "ಲೈವ್ ಹುಡುಕಾಟ ಕಾನ್ಫಿಗರ್ ಮಾಡಲಾಗಿಲ್ಲ",
     "sampleDataBanner": "ಮಾದರಿ ವಿವರಗಳನ್ನು ತೋರಿಸಲಾಗುತ್ತಿದೆ — ಇಂಟರ್ನೆಟ್ ಲಭ್ಯವಿಲ್ಲ",
     "cachedDataBanner": "ಹಿಂದೆ ಉಳಿಸಿದ ಫಲಿತಾಂಶಗಳು (ಕೊನೆಯ ನವೀಕರಣ: {{time}})"
   },

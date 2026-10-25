@@ -25,6 +25,8 @@ import { Route as UrgentRouteImport } from './routes/urgent'
 import { Route as VaultRouteImport } from './routes/vault'
 import { Route as VisitRouteImport } from './routes/visit'
 import { Route as ApiChatRouteImport } from './routes/api.chat'
+import { Route as ApiGeocodeRouteImport } from './routes/api.geocode'
+import { Route as ApiNearbyRouteImport } from './routes/api.nearby'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -106,6 +108,16 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGeocodeRoute = ApiGeocodeRouteImport.update({
+  id: '/api/geocode',
+  path: '/api/geocode',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiNearbyRoute = ApiNearbyRouteImport.update({
+  id: '/api/nearby',
+  path: '/api/nearby',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -124,6 +136,8 @@ export interface FileRoutesByFullPath {
   '/vault': typeof VaultRoute
   '/visit': typeof VisitRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/geocode': typeof ApiGeocodeRoute
+  '/api/nearby': typeof ApiNearbyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -142,6 +156,8 @@ export interface FileRoutesByTo {
   '/vault': typeof VaultRoute
   '/visit': typeof VisitRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/geocode': typeof ApiGeocodeRoute
+  '/api/nearby': typeof ApiNearbyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -161,6 +177,8 @@ export interface FileRoutesById {
   '/vault': typeof VaultRoute
   '/visit': typeof VisitRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/geocode': typeof ApiGeocodeRoute
+  '/api/nearby': typeof ApiNearbyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -181,6 +199,8 @@ export interface FileRouteTypes {
     | '/vault'
     | '/visit'
     | '/api/chat'
+    | '/api/geocode'
+    | '/api/nearby'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -199,6 +219,8 @@ export interface FileRouteTypes {
     | '/vault'
     | '/visit'
     | '/api/chat'
+    | '/api/geocode'
+    | '/api/nearby'
   id:
     | '__root__'
     | '/'
@@ -217,6 +239,8 @@ export interface FileRouteTypes {
     | '/vault'
     | '/visit'
     | '/api/chat'
+    | '/api/geocode'
+    | '/api/nearby'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -236,6 +260,8 @@ export interface RootRouteChildren {
   VaultRoute: typeof VaultRoute
   VisitRoute: typeof VisitRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiGeocodeRoute: typeof ApiGeocodeRoute
+  ApiNearbyRoute: typeof ApiNearbyRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -352,6 +378,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/geocode': {
+      id: '/api/geocode'
+      path: '/api/geocode'
+      fullPath: '/api/geocode'
+      preLoaderRoute: typeof ApiGeocodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/nearby': {
+      id: '/api/nearby'
+      path: '/api/nearby'
+      fullPath: '/api/nearby'
+      preLoaderRoute: typeof ApiNearbyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -372,6 +412,8 @@ const rootRouteChildren: RootRouteChildren = {
   VaultRoute: VaultRoute,
   VisitRoute: VisitRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiGeocodeRoute: ApiGeocodeRoute,
+  ApiNearbyRoute: ApiNearbyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -275,6 +275,7 @@
     "drive": "ଗାଡ଼ି ଯୋଗେ",
     "callNotice": "ସମୟ ଏବଂ ସେବା ବଦଳିପାରେ। ଯିବା ପୂର୍ବରୁ ଦୟାକରି ଫୋନ୍ କରନ୍ତୁ।",
     "osmAttribution": "© OpenStreetMap ଯୋଗଦାନକାରୀ",
+    "liveSearchNotConfigured": "ଲାଇଭ୍ ସନ୍ଧାନ କନଫିଗର୍ ହୋଇନାହିଁ",
     "sampleDataBanner": "ନମୁନା ତଥ୍ୟ ଦର୍ଶାଯାଉଛି — ଇଣ୍ଟରନେଟ୍ ଉପଲବ୍ଧ ନାହିଁ",
     "cachedDataBanner": "ସଂରକ୍ଷିତ ଫଳାଫଳ (ଶେଷ ଅପଡେଟ୍: {{time}})"
   },

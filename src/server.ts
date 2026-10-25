@@ -1,7 +1,11 @@
 import "./lib/error-capture";
+import { loadServerEnv } from "./lib/server-env";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+
+// Initialize server environment (.env.local in dev/Node) and startup presence log
+loadServerEnv();
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -46,6 +50,12 @@ function isH3SwallowedErrorBody(body: string): boolean {
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    if (env && typeof env === "object") {
+      const bindings = env as Record<string, unknown>;
+      if (typeof bindings["GEOAPIFY_API_KEY"] === "string" && !process.env["GEOAPIFY_API_KEY"]) {
+        process.env["GEOAPIFY_API_KEY"] = bindings["GEOAPIFY_API_KEY"];
+      }
+    }
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);

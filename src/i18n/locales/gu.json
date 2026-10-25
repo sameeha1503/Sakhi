@@ -275,6 +275,7 @@
     "drive": "ડ્રાઇવ",
     "callNotice": "સમય અને સુવિધાઓ બદલાઈ શકે છે. જતાં પહેલાં કૃપા કરીને ફોન કરો.",
     "osmAttribution": "© OpenStreetMap યોગદાનકર્તાઓ",
+    "liveSearchNotConfigured": "લાઇવ શોધ ગોઠવેલ નથી",
     "sampleDataBanner": "નમૂના માહિતી બતાવાઈ રહી છે — ઇન્ટરનેટ ઉપલબ્ધ નથી",
     "cachedDataBanner": "સાચવેલાં પરિણામો (છેલ્લું અપડેટ: {{time}})"
   },

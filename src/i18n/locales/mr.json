@@ -275,6 +275,7 @@
     "drive": "गाडीने",
     "callNotice": "वेळ व सुविधा बदलू शकतात. जाण्यापूर्वी कृपया फोन करा.",
     "osmAttribution": "© OpenStreetMap योगदानकर्ते",
+    "liveSearchNotConfigured": "थेट शोध कॉन्फिगर केलेला नाही",
     "sampleDataBanner": "नमुना माहिती दाखवत आहोत — इंटरनेट उपलब्ध नाही",
     "cachedDataBanner": "मागील माहिती (शेवटचे अपडेट: {{time}})"
   },

@@ -275,6 +275,7 @@
     "drive": "drive",
     "callNotice": "Hours and services can change. Please call before you go.",
     "osmAttribution": "© OpenStreetMap contributors",
+    "liveSearchNotConfigured": "Live search is not configured",
     "sampleDataBanner": "Showing sample data — no internet or service unavailable",
     "cachedDataBanner": "Showing cached results (last updated: {{time}})"
   },

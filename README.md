@@ -251,6 +251,37 @@ To migrate to **Google Places API**:
 
 ---
 
+## Environment Variables & Configuration
+
+Sakhi keeps all secret API keys strictly on the server. Environment variables without the `VITE_` prefix are never bundled into client-side code, sent to the browser, or included in any API response.
+
+### 1. Setting Up `GEOAPIFY_API_KEY`
+
+Live healthcare facility search (`/care`) and village/town geocoding use the **Geoapify Places & Geocoding APIs**.
+
+1. Obtain a free API key at [myprojects.geoapify.com](https://myprojects.geoapify.com) (Free tier, no credit card required).
+2. Create a local environment file named `.env.local` in the project root (or copy `.env.example`):
+   ```bash
+   GEOAPIFY_API_KEY=your_geoapify_key_here
+   ```
+3. Keep `.env.local` private. It is ignored by git in `.gitignore` and must never be committed.
+
+### 2. Runtime Behavior & Startup Logging
+
+- **Startup Presence Log**: On server startup, the server logs only whether the key is configured:
+  - `GEOAPIFY_API_KEY: set` — when a non-empty key is provided in `.env.local` or environment variables.
+  - `GEOAPIFY_API_KEY: missing` — when the key is not configured.
+  - The secret key value is **never** printed to logs and never returned in API payloads.
+- **Server Routes**:
+  - `/api/nearby`: Proxies healthcare facility queries to Geoapify Places API on the server.
+  - `/api/geocode`: Proxies location/PIN searches to Geoapify Geocoding API on the server.
+- **When Key is Missing**:
+  - The `/care` page displays a visible warning banner: **"Live search is not configured"**.
+  - A helpful message is logged to the developer console pointing to this README section.
+  - Sakhi falls back gracefully to curated local facilities (`src/data/sampleFacilities.ts`) so all navigation, distance, and directory views remain fully functional without crashing.
+
+---
+
 ## Folder Layout
 
 ```
@@ -294,7 +325,9 @@ screenshot-to-spark-0803-main/
 │   │   ├── visit.tsx        # Consolidated doctor visit (questions, visits, summary) (/visit)
 │   │   ├── schemes.tsx      # Government health schemes finder (/schemes)
 │   │   ├── vault.tsx        # Private PIN-locked document vault (/vault)
-│   │   └── api.chat.ts      # Server route for Ask Sakhi assistant (/api/chat)
+│   │   ├── api.chat.ts      # Server route for Ask Sakhi assistant (/api/chat)
+│   │   ├── api.nearby.ts    # Server route for healthcare facility search (/api/nearby)
+│   │   └── api.geocode.ts   # Server route for village/town geocoding (/api/geocode)
 │   ├── services/            # Centralized data access and business logic
 │   │   ├── auth.ts          # User profile, session, and onboarding preferences
 │   │   ├── cycle.ts         # Menstrual cycle analytics and red-flag rules

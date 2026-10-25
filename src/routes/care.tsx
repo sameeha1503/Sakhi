@@ -24,7 +24,7 @@ import {
 import { AppShell } from "@/components/AppShell";
 import {
   findNearby,
-  searchLocationNominatim,
+  searchLocation,
   locationPrefs,
   type Place,
   type FindNearbyResult,
@@ -91,6 +91,12 @@ function CarePage() {
     try {
       const result = await findNearby(lat, lng, 50);
       setNearbyResult(result);
+      if (result.liveSearchConfigured === false) {
+        console.warn(
+          "[care] Live search is not configured: GEOAPIFY_API_KEY is missing. " +
+            "See README.md ('Environment Variables') to set up your free Geoapify key.",
+        );
+      }
     } catch (err) {
       console.error("[care] Failed to fetch nearby places:", err);
     } finally {
@@ -173,7 +179,7 @@ function CarePage() {
     setSearchResults([]);
 
     try {
-      const results = await searchLocationNominatim(query);
+      const results = await searchLocation(query);
       if (results.length === 0) {
         setSearchMessage(t("care.noSearchResults"));
       } else {
@@ -234,7 +240,11 @@ function CarePage() {
             className="flex items-center gap-3 rounded-2xl border-2 border-warning/40 bg-warning-tint p-4 text-sm font-semibold text-warning shadow-xs"
           >
             <AlertTriangle className="size-5 shrink-0 text-warning" />
-            <p className="flex-1">{t("care.sampleDataBanner")}</p>
+            <p className="flex-1">
+              {nearbyResult.liveSearchConfigured === false
+                ? t("care.liveSearchNotConfigured")
+                : t("care.sampleDataBanner")}
+            </p>
           </div>
         )}
 

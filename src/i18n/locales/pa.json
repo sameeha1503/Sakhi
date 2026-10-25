@@ -275,6 +275,7 @@
     "drive": "ਗੱਡੀ ਰਾਹੀਂ",
     "callNotice": "ਸਮੇਂ ਅਤੇ ਸਹੂਲਤਾਂ ਬਦਲ ਸਕਦੀਆਂ ਹਨ। ਜਾਣ ਤੋਂ ਪਹਿਲਾਂ ਕਿਰਪਾ ਕਰਕੇ ਫੋਨ ਕਰੋ।",
     "osmAttribution": "© OpenStreetMap ਯੋਗਦਾਨੀ",
+    "liveSearchNotConfigured": "ਲਾਈਵ ਖੋਜ ਕੌਂਫਿਗਰ ਨਹੀਂ ਕੀਤੀ ਗਈ ਹੈ",
     "sampleDataBanner": "ਨਮੂਨਾ ਜਾਣਕਾਰੀ ਦਿਖਾਈ ਜਾ ਰਹੀ ਹੈ — ਇੰਟਰਨੈੱਟ ਉਪਲਬਧ ਨਹੀਂ",
     "cachedDataBanner": "ਸੰਭਾਲੇ ਗਏ ਨਤੀਜੇ (ਆਖਰੀ ਅੱਪਡੇਟ: {{time}})"
   },

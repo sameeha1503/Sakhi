@@ -36,6 +36,7 @@ export interface FindNearbyResult {
   totalFound: number;
   isCached: boolean;
   isFallbackSample: boolean;
+  liveSearchConfigured?: boolean;
   lastUpdated?: string | null;
 }
 
@@ -463,6 +464,92 @@ export async function findNearby(
     return cached.result;
   }
 
+  // Helper for generating sample fallback results
+  const createSampleFallback = (isConfigured: boolean): FindNearbyResult => {
+    const sampleFallbackPlaces: Place[] = SAMPLE_FACILITIES.map((s) => {
+      const dist = Number(distanceKm({ lat, lng }, s).toFixed(1));
+      return {
+        id: s.id,
+        name: s.name,
+        type: s.type,
+        lat: s.lat,
+        lng: s.lng,
+        phone: s.phone,
+        address: `${s.town}, ${s.district}, ${s.state}`,
+        town: s.town,
+        district: s.district,
+        state: s.state,
+        operator: s.isGovernment ? "Government" : null,
+        isGovernment: !!s.isGovernment,
+        emergency: s.type === "hospital",
+        hasWomenHealth: s.hasGynaecology,
+        hasGynaecology: s.hasGynaecology,
+        opening_hours: null,
+        km: dist,
+        isApproxDistance: true,
+      };
+    }).sort((a, b) => (a.km ?? 0) - (b.km ?? 0));
+
+    return {
+      places: sampleFallbackPlaces,
+      radiusUsedKm: 50,
+      totalFound: sampleFallbackPlaces.length,
+      isCached: false,
+      isFallbackSample: true,
+      liveSearchConfigured: isConfigured,
+    };
+  };
+
+  // 2. Try server-side live healthcare search (/api/nearby powered by Geoapify)
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 7000);
+    const apiUrl = `/api/nearby?lat=${lat}&lng=${lng}&radius=${maxRadiusLimitKm * 1000}`;
+    const res = await fetch(apiUrl, {
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+
+    if (res.ok) {
+      const data = (await res.json()) as {
+        configured?: boolean;
+        places?: Place[];
+        radiusUsedKm?: number;
+      };
+
+      // Server indicates GEOAPIFY_API_KEY is not configured
+      if (data?.configured === false) {
+        return createSampleFallback(false);
+      }
+
+      if (data?.configured === true && Array.isArray(data.places) && data.places.length > 0) {
+        const places = data.places;
+        await enrichWithOsrmRoadDistance({ lat, lng }, places);
+
+        const result: FindNearbyResult = {
+          places,
+          radiusUsedKm: data.radiusUsedKm || maxRadiusLimitKm,
+          totalFound: places.length,
+          isCached: false,
+          isFallbackSample: false,
+          liveSearchConfigured: true,
+          lastUpdated: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        };
+
+        sessionCache.set(cacheKey, { result, timestamp: Date.now() });
+
+        if (locationPrefs.isRememberEnabled()) {
+          storage.set("cached_places_result", { ...result, isCached: true });
+        }
+
+        return result;
+      }
+    }
+  } catch {
+    // API endpoint failed or running in test/mock environment: proceed to Overpass fallback
+  }
+
   const radiiKm = [5, 10, 25, 50].filter((r) => r <= maxRadiusLimitKm);
   if (radiiKm.length === 0) radiiKm.push(maxRadiusLimitKm);
 
@@ -557,6 +644,40 @@ export async function findNearby(
     isCached: false,
     isFallbackSample: true,
   };
+}
+
+/**
+ * Searches for a location by query string (village, town, or PIN code) using OpenStreetMap Nominatim.
+ * Strictly respects Nominatim usage policy: $\le 1$ request per second.
+ */
+/**
+ * Searches for a location by query string using the server /api/geocode endpoint (Geoapify),
+ * with graceful fallback to Nominatim.
+ */
+export async function searchLocation(query: string): Promise<GeocodingResult[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 6000);
+    const res = await fetch(`/api/geocode?q=${encodeURIComponent(trimmed)}`, {
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+
+    if (res.ok) {
+      const data = (await res.json()) as { configured?: boolean; results?: GeocodingResult[] };
+      if (data?.configured === true && Array.isArray(data.results) && data.results.length > 0) {
+        return data.results;
+      }
+    }
+  } catch {
+    // Continue to Nominatim fallback
+  }
+
+  return searchLocationNominatim(trimmed);
 }
 
 /**
